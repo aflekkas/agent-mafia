@@ -8,9 +8,9 @@ No hosted account is required. Clone the repo, add your own OpenAI key for gener
 
 ## Why Play It
 
-- A complete six-player Mafia loop: two Mafia, one Detective, one Doctor, two Villagers.
+- A complete six-player Mafia loop: one Mafia, one Detective, one Doctor, three Villagers.
 - One human seat against five NPC personalities: Don Vito, Salvatore, Rosa, Vincenzo, and Carmela.
-- Hidden roles, Mafia partner knowledge, Detective investigations, Doctor saves, day discussion, voting, eliminations, and win checks.
+- Hidden roles, solo Mafia deception, Detective investigations, Doctor saves, day discussion, voting, eliminations, and win checks.
 - OpenAI-powered NPC turns with deterministic fallback turns when no API key is configured.
 - Optional direct ElevenLabs REST TTS, plus browser speech synthesis fallback and a text transcript for every spoken line.
 - Text-first human input, with an optional browser mic helper that fills the text box.

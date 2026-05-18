@@ -54,18 +54,18 @@ Six seats:
 
 Roles:
 
-- 2 Mafia
+- 1 Mafia
 - 1 Detective
 - 1 Doctor
-- 2 Villagers
+- 3 Villagers
 
 Current rule details:
 
 - Roles are randomized each game.
 - The human can receive any role.
 - The Detective learns identities only by investigating at night.
-- Mafia know each other privately.
-- Mafia should produce observable partner behavior: subtle defense, pressure redirection, vote alignment, soft questioning of cases on the partner, or strategic distancing when the partner is clearly doomed.
+- The Mafia plays alone and has no partner.
+- Mafia should produce observable self-preservation behavior: pressure redirection, opportunistic agreement, soft questioning of cases on useful town targets, fake uncertainty, or strategic distancing from a doomed town push.
 - The first night has no Mafia kill, but Doctor and Detective actions may still happen.
 - Mafia win at parity with non-Mafia.
 - Town wins when all Mafia are eliminated.
@@ -89,7 +89,7 @@ NPCs should:
 - Avoid random accusations.
 - Avoid punishing scheduled silence before a player has had a turn.
 - Use hidden knowledge carefully without revealing why they know it.
-- Mafia must use partner knowledge behaviorally, not by announcing it.
+- Mafia must use solo-role knowledge behaviorally, not by announcing it.
 - Keep public speech compact and characterful.
 
 The current model response uses a plain `speech` string.

@@ -29,7 +29,7 @@ Sound can remain muted. The game still works with text and transcript only.
 - Five distinct NPC personalities.
 - Private human role and redacted hidden information.
 - Detective investigation notebook if the human is Detective.
-- Mafia partner visibility if the human is Mafia.
+- Solo Mafia private objective if the human is Mafia.
 - Optional browser/ElevenLabs voice playback.
 - Vote and elimination resolution.
 

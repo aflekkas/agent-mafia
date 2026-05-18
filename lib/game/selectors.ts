@@ -89,7 +89,7 @@ export function privateKnowledgeFor(state: GameState, playerId: PlayerId): strin
     const partners = state.players
       .filter((candidate) => candidate.role === "mafia" && candidate.id !== playerId)
       .map((candidate) => candidate.name);
-    facts.push(`Your Mafia partner: ${partners.join(", ") || "none"}.`);
+    facts.push(partners.length ? `Your Mafia partner: ${partners.join(", ")}.` : "You are the only Mafia. There is no partner.");
   }
 
   if (player.role === "detective") {

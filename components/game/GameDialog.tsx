@@ -29,7 +29,7 @@ export function GameDialog({
             </article>
             <article>
               <strong>Mafia Pair</strong>
-              <p>Two Mafia know each other, coordinate through lies, and win if they reach parity.</p>
+              <p>One Mafia lies alone and wins if they bring the town down to parity.</p>
             </article>
             <article>
               <strong>Doctor</strong>

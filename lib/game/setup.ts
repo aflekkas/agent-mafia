@@ -62,7 +62,7 @@ const PLAYER_META: Record<PlayerId, Omit<Player, "role" | "alive" | "suspicion" 
   }
 };
 
-const ROLE_BAG: Role[] = ["mafia", "mafia", "detective", "doctor", "villager", "villager"];
+const ROLE_BAG: Role[] = ["mafia", "detective", "doctor", "villager", "villager", "villager"];
 
 export interface CreateGameOptions {
   humanName?: string;
@@ -139,7 +139,7 @@ export function createScenarioSeed(name: "scenario-a" | "scenario-b", options: C
       salvatore: "villager",
       rosa: "detective",
       vincenzo: "doctor",
-      carmela: "mafia",
+      carmela: "villager",
       player_6: "villager"
     });
   }
@@ -149,7 +149,7 @@ export function createScenarioSeed(name: "scenario-a" | "scenario-b", options: C
     salvatore: "doctor",
     rosa: "villager",
     vincenzo: "detective",
-    carmela: "mafia",
+    carmela: "villager",
     player_6: "mafia"
   });
 }
@@ -307,18 +307,17 @@ export function makeId(prefix: string): string {
 }
 
 function addOpeningPrivateKnowledge(state: GameState): GameState {
-  return addMafiaOpeningPartners(state);
+  return addMafiaOpeningIntel(state);
 }
 
-function addMafiaOpeningPartners(state: GameState): GameState {
+function addMafiaOpeningIntel(state: GameState): GameState {
   const mafiaPlayers = state.players.filter((player) => player.role === "mafia");
   return mafiaPlayers.reduce((nextState, mafia) => {
-    const partners = mafiaPlayers.filter((partner) => partner.id !== mafia.id).map((partner) => partner.name);
     return addTranscript(
       nextState,
       "system",
       "Private note",
-      `Your Mafia partner is ${partners.join(", ") || "no one"}. Defend them subtly, redirect heat when useful, and coordinate through public behavior without exposing the partnership.`,
+      "You are the only Mafia. Survive alone, redirect heat onto town players, fake uncertainty, and choose night kills that keep your cover intact.",
       "action",
       [mafia.id]
     );
@@ -329,7 +328,7 @@ function isOpeningPrivateKnowledge(entry: TranscriptEntry): boolean {
   return (
     entry.privateTo?.length === 1 &&
     entry.speakerId === "system" &&
-    entry.text.includes("Your Mafia partner is")
+    (entry.text.includes("Your Mafia partner is") || entry.text.includes("You are the only Mafia."))
   );
 }
 
