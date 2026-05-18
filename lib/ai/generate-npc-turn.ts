@@ -177,7 +177,7 @@ function fallbackNpcTurn(state: GameState, player: Player, reason: string): NpcT
       ? fallbackVoteLine(state, player, target)
       : state.phase === "day-discussion"
         ? fallbackDiscussionLine(state, player)
-      : fallbackLineForPlayer(player, state.transcript.length + player.seat);
+      : fallbackLineForPlayer(state, player, state.transcript.length + player.seat);
 
   return {
     inner_monologue: `Fallback turn used: ${reason}`,
@@ -188,15 +188,18 @@ function fallbackNpcTurn(state: GameState, player: Player, reason: string): NpcT
   };
 }
 
-function fallbackLineForPlayer(player: Player, index: number): string {
+function fallbackLineForPlayer(state: GameState, player: Player, index: number): string {
   const lines = player.fallbackLines?.length
     ? player.fallbackLines
     : ["I do not like that answer. Something about it is too clean."];
-  return lines[index % lines.length];
+  const deadNames = state.players.filter((candidate) => !candidate.alive).map((candidate) => candidate.name);
+  const liveLines = lines.filter((line) => !deadNames.some((name) => line.toLowerCase().includes(name.toLowerCase())));
+  const pool = liveLines.length ? liveLines : lines;
+  return pool[index % pool.length];
 }
 
 function fallbackDiscussionLine(state: GameState, player: Player): string {
-  const latest = state.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "speech").at(-1);
+  const latest = state.transcript.filter((entry) => entry.day === state.day && !entry.privateTo?.length && entry.kind === "speech").at(-1);
   if (latest?.speakerId === "player_6") {
     if (/mafia|kill|destroy|fuck|shit|ass|crack|bend|puh/i.test(latest.text)) {
       return `${latest.speakerName}, what the fuck are you talking about? That is not a read, that is you setting the room on fire. Name a suspect or stop wasting the table's time.`;
@@ -204,17 +207,16 @@ function fallbackDiscussionLine(state: GameState, player: Player): string {
     return `${latest.speakerName}, slow down and make that useful. Give me one name, one reason, and who benefits if we follow you.`;
   }
 
-  return fallbackLineForPlayer(player, state.transcript.length + player.seat);
+  return fallbackLineForPlayer(state, player, state.transcript.length + player.seat);
 }
 
 function fallbackVoteLine(state: GameState, player: Player, targetId: PlayerId): string {
   const target = getPlayer(state, targetId);
-  const note = target.notes.at(-1);
-  if (note) {
-    return `The pattern on ${target.name} is the clearest thing at the table: ${note}`;
+  if (target.suspicion > 0 || target.notes.length) {
+    return `${target.name} has picked up too many contradictions and soft defenses. I want that seat resolved before the table drifts again.`;
   }
   if (player.role === "mafia" && target.role !== "mafia") {
-    return `This keeps the heat away from the wrong people and gives the table a clean name to test.`;
+    return `${target.name} is the safest pressure point for me right now. If the room follows it, my side gets another day to breathe.`;
   }
   return `I do not love this read, but ${target.name} has the least convincing position right now.`;
 }
@@ -267,6 +269,8 @@ function cleanSingleSpeakerSpeech(state: GameState, speech: string): string {
   let cleaned = speech
     .replace(/<\/?[A-Z_]+>/g, "")
     .replace(/\s+/g, " ")
+    .trim()
+    .replace(/["“”]\s*,\s*$/, "")
     .trim();
 
   for (const name of speakerNames) {
@@ -281,7 +285,7 @@ function cleanSingleSpeakerSpeech(state: GameState, speech: string): string {
 
 function repairMisaddressedReply(state: GameState, player: Player, speech: string): string {
   const latest = state.transcript
-    .filter((entry) => !entry.privateTo?.length && ["speech", "vote"].includes(entry.kind))
+    .filter((entry) => entry.day === state.day && !entry.privateTo?.length && ["speech", "vote"].includes(entry.kind))
     .at(-1);
   if (!latest || latest.speakerId === player.id || latest.speakerId === "narrator" || latest.speakerId === "system") {
     return speech;

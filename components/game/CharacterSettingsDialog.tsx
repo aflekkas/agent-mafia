@@ -1,6 +1,7 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent, RefObject } from "react";
 import { AiSettings2 } from "pixelarticons/react/AiSettings2";
 import { Cancel } from "pixelarticons/react/Cancel";
 import { Castle } from "pixelarticons/react/Castle";
@@ -41,6 +42,60 @@ const PRESET_ICONS: Record<string, typeof AiSettings2> = {
   chaos: Fire
 };
 
+type FloatingMenuPlacement = "above" | "below";
+
+const MENU_GAP = 6;
+const MENU_MAX_HEIGHT = 340;
+const MENU_MIN_HEIGHT = 112;
+const MENU_VIEWPORT_PADDING = 18;
+
+function useAnchoredMenuPlacement(open: boolean, anchorRef: RefObject<HTMLElement | null>) {
+  const [placement, setPlacement] = useState<FloatingMenuPlacement>("below");
+  const [maxHeight, setMaxHeight] = useState(MENU_MAX_HEIGHT);
+
+  const updatePlacement = useCallback(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) {
+      return;
+    }
+
+    const rect = anchor.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const spaceBelow = viewportHeight - rect.bottom - MENU_VIEWPORT_PADDING - MENU_GAP;
+    const spaceAbove = rect.top - MENU_VIEWPORT_PADDING - MENU_GAP;
+    const nextPlacement = spaceBelow >= MENU_MIN_HEIGHT || spaceBelow >= spaceAbove ? "below" : "above";
+    const availableSpace = Math.max(nextPlacement === "below" ? spaceBelow : spaceAbove, MENU_MIN_HEIGHT);
+
+    setPlacement(nextPlacement);
+    setMaxHeight(Math.min(MENU_MAX_HEIGHT, availableSpace));
+  }, [anchorRef]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    updatePlacement();
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
+    };
+  }, [open, updatePlacement]);
+
+  return {
+    updatePlacement,
+    menuProps: {
+      "data-placement": placement,
+      style: {
+        "--character-select-menu-max-height": `${Math.round(maxHeight)}px`
+      } as CSSProperties
+    }
+  };
+}
+
 function CharacterSelect({
   label,
   selectedProfileId,
@@ -59,6 +114,7 @@ function CharacterSelect({
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { updatePlacement, menuProps } = useAnchoredMenuPlacement(open, rootRef);
   const selectedIndex = Math.max(
     0,
     CHARACTER_PROFILES.findIndex((profile) => profile.id === selectedProfileId)
@@ -122,6 +178,7 @@ function CharacterSelect({
   }
 
   function openMenu() {
+    updatePlacement();
     setOpen(true);
     requestAnimationFrame(() => searchInputRef.current?.focus());
   }
@@ -225,7 +282,7 @@ function CharacterSelect({
         <ChevronDown aria-hidden="true" />
       </button>
       {open ? (
-        <div className="character-select-menu">
+        <div className="character-select-menu" {...menuProps}>
           <label className="character-select-search" htmlFor={searchId}>
             <Search aria-hidden="true" />
             <input

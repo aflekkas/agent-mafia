@@ -14,7 +14,7 @@ No hosted account is required. Clone the repo, add your own OpenAI key for gener
 - OpenAI-powered NPC turns with deterministic fallback turns when no API key is configured.
 - Optional direct ElevenLabs REST TTS, plus browser speech synthesis fallback and a text transcript for every spoken line.
 - Text-first human input, with an optional browser mic helper that fills the text box.
-- Pixel noir 2D table UI with character portraits, role cards, vote board, transcript, and local debug logs.
+- Pixel noir 2D table UI with animated character state portraits, role cards, vote board, transcript, and local debug logs.
 
 ## Screenshots
 
@@ -58,6 +58,9 @@ OPENAI_API_MODE=responses
 OPENAI_REASONING_EFFORT=low
 OPENAI_MAX_OUTPUT_TOKENS=900
 OPENAI_TEMPERATURE=0.62
+OPENAI_CHARACTER_MODEL=
+OPENAI_IMAGE_MODEL=
+OPENAI_IMAGE_QUALITY=low
 
 ELEVENLABS_API_KEY=
 ELEVENLABS_TTS_MODEL=eleven_flash_v2_5
@@ -81,6 +84,7 @@ Important details:
 - `OPENAI_REASONING_EFFORT=low|medium|high` controls reasoning depth for compatible models.
 - `OPENAI_MAX_OUTPUT_TOKENS` includes reasoning tokens for reasoning models.
 - `OPENAI_TEMPERATURE` is only used by the chat fallback path.
+- `OPENAI_CHARACTER_MODEL`, `OPENAI_IMAGE_MODEL`, and `OPENAI_IMAGE_QUALITY` optionally override the character generation scripts.
 - `ELEVENLABS_API_KEY` and the per-speaker `ELEVENLABS_VOICE_*` IDs enable direct REST TTS.
 - If ElevenLabs is not configured, the game falls back to browser speech synthesis and always keeps the transcript visible.
 
@@ -106,6 +110,8 @@ Use pnpm for dependency installation and scripts. Do not add new frameworks, dat
 pnpm dev -- -p 3001
 pnpm typecheck
 pnpm build
+pnpm generate:character-states -- --dry-run --ids=all
+pnpm generate:character -- --dry-run --id=paranoid-tailor --name="Marco Needle" --summary="Paranoid Palermo tailor" --description="A twitchy old tailor who notices clothing, posture, and nervous hands."
 ```
 
 Optional API-only smoke test:
@@ -141,7 +147,9 @@ Every started or updated game writes a full JSON snapshot to `.agent-mafia-logs/
 - `lib/game/` - game state, role setup, phase advancement, votes, night actions, redaction, selectors, and profanity sanitization.
 - `lib/ai/` - NPC personas, prompts, OpenAI turn generation, and fallback turns.
 - `lib/voice/` - speaker-to-ElevenLabs voice ID mapping.
-- `public/avatars/` and `public/portraits/` - player and NPC table portraits.
+- `scripts/generate-character.mjs` - non-interactive character metadata, portrait, and sprite-sheet generator.
+- `scripts/generate-character-sprites.mjs` - 3x3 animated-state sprite-sheet generator for existing profiles.
+- `public/avatars/` and `public/portraits/` - player avatars, NPC portraits, and animated-state sprite sheets.
 - `public/readme/` - README screenshots captured from the app.
 - `public/sfx/` - local ambience and UI sounds.
 - `docs/` - current architecture, voice, demo, portrait generation, and cleanup notes.
@@ -151,7 +159,7 @@ Every started or updated game writes a full JSON snapshot to `.agent-mafia-logs/
 - `docs/architecture.md` - how the current app works.
 - `docs/voice.md` - current voice/TTS behavior and env vars.
 - `docs/demo.md` - local demo runbook.
-- `docs/portraits.md` - pixel-art portrait generation prompt.
+- `docs/portraits.md` - portrait, sprite-sheet, and new-character generation workflow.
 - `docs/refactor-notes.md` - cleanup findings and maintenance notes.
 - `docs/nextjs-16.md` - Next.js 16 upgrade and local documentation rules.
 - `AGENTS.md` - instructions for coding agents working in this repo.

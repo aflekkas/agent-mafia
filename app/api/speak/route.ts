@@ -9,6 +9,7 @@ import { SpeakerId } from "@/lib/game/types";
 export const runtime = "nodejs";
 
 const OUTPUT_FORMAT = "mp3_44100_128";
+const DEFAULT_ELEVENLABS_TIMEOUT_MS = 8000;
 const VOICE_SETTINGS = {
   stability: 0.42,
   similarity_boost: 0.72,
@@ -27,6 +28,8 @@ export async function POST(request: Request) {
   const modelId = process.env.ELEVENLABS_TTS_MODEL || "eleven_flash_v2_5";
   const configuredMaxCharacters = Number.parseInt(process.env.ELEVENLABS_MAX_TTS_CHARS || "900", 10);
   const maxCharacters = Number.isFinite(configuredMaxCharacters) ? configuredMaxCharacters : 900;
+  const configuredTimeout = Number.parseInt(process.env.ELEVENLABS_TTS_TIMEOUT_MS || String(DEFAULT_ELEVENLABS_TIMEOUT_MS), 10);
+  const timeoutMs = Number.isFinite(configuredTimeout) ? configuredTimeout : DEFAULT_ELEVENLABS_TIMEOUT_MS;
 
   if (!process.env.ELEVENLABS_API_KEY || !voiceId || !text) {
     return NextResponse.json({
@@ -59,19 +62,27 @@ export async function POST(request: Request) {
     }
   }
 
-  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "xi-api-key": process.env.ELEVENLABS_API_KEY
-    },
-    body: JSON.stringify({
-      text,
-      model_id: modelId,
-      output_format: OUTPUT_FORMAT,
-      voice_settings: VOICE_SETTINGS
-    })
-  });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "xi-api-key": process.env.ELEVENLABS_API_KEY
+      },
+      body: JSON.stringify({
+        text,
+        model_id: modelId,
+        output_format: OUTPUT_FORMAT,
+        voice_settings: VOICE_SETTINGS
+      })
+    }, timeoutMs);
+  } catch (error) {
+    return NextResponse.json({
+      fallback: true,
+      reason: isAbortError(error) ? "ElevenLabs TTS timed out." : "ElevenLabs TTS request failed."
+    });
+  }
 
   if (!response.ok || !response.body) {
     return NextResponse.json({
@@ -143,4 +154,22 @@ async function writeCachedAudio(filePath: string, audio: Uint8Array) {
   } catch {
     // Caching is opportunistic; playback should not fail because the cache could not be written.
   }
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
 }

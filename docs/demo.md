@@ -27,6 +27,7 @@ Sound can remain muted. The game still works with text and transcript only.
 ## What To Show
 
 - Five distinct NPC personalities.
+- Animated NPC table states: idle breathing, speaking mouth movement, quiet listening, suspicion pressure, and eliminated stillness.
 - Private human role and redacted hidden information.
 - Detective investigation notebook if the human is Detective.
 - Solo Mafia private objective if the human is Mafia.
@@ -42,4 +43,5 @@ Sound can remain muted. The game still works with text and transcript only.
 - Cast a vote.
 - Complete a human Doctor, Detective, or Mafia night action when assigned.
 - Confirm non-human roles stay hidden until game over unless privately visible.
+- Confirm NPCs fall back to static portraits if a sprite sheet is missing.
 - Confirm `pnpm typecheck` and `pnpm build` pass.

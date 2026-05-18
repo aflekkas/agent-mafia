@@ -64,6 +64,32 @@ const GENDERED_BROWSER_VOICE_NAMES: Record<BrowserVoiceGender, string[]> = {
 };
 
 const browserVoiceCache = new Map<string, SpeechSynthesisVoice | null>();
+const ELEVENLABS_CLIENT_TIMEOUT_MS = 8000;
+const BROWSER_SPEECH_MAX_MS = 12000;
+let activeAudio: HTMLAudioElement | null = null;
+let resolveActiveAudio: (() => void) | null = null;
+let resolveActiveUtterance: (() => void) | null = null;
+let activeFetchController: AbortController | null = null;
+let playbackGeneration = 0;
+
+export function stopActiveVoicePlayback() {
+  playbackGeneration += 1;
+
+  activeFetchController?.abort();
+  activeFetchController = null;
+
+  stopActiveAudioElement();
+
+  resolveActiveAudio?.();
+  resolveActiveAudio = null;
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  resolveActiveUtterance?.();
+  resolveActiveUtterance = null;
+}
 
 export async function speakEntry(
   entry: TranscriptEntry,
@@ -81,6 +107,7 @@ export async function speakEntry(
   }
 
   const speaker = players.find((player) => player.id === entry.speakerId);
+  const generation = playbackGeneration;
 
   if (voiceMode === "elevenlabs") {
     const explicitVoiceId = speaker?.voiceId;
@@ -93,7 +120,7 @@ export async function speakEntry(
     }
 
     try {
-      const response = await fetch("/api/speak", {
+      const response = await fetchWithTimeout("/api/speak", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -101,11 +128,14 @@ export async function speakEntry(
           voiceId: speaker?.voiceId,
           text: entry.text
         })
-      });
+      }, ELEVENLABS_CLIENT_TIMEOUT_MS);
 
       const contentType = response.headers.get("content-type") ?? "";
       if (response.ok && contentType.includes("audio/")) {
         const blob = await response.blob();
+        if (!isCurrentPlayback(generation)) {
+          return;
+        }
         if (cacheKey) {
           elevenLabsAudioCache.set(cacheKey, blob);
         }
@@ -113,12 +143,21 @@ export async function speakEntry(
         setStatus("Played ElevenLabs voice.");
         return;
       }
-    } catch {
+    } catch (error) {
+      if (!isCurrentPlayback(generation)) {
+        return;
+      }
+      if (isAbortError(error)) {
+        setStatus("ElevenLabs took too long; using browser voice.");
+      }
       // Browser speech fallback below.
     }
   }
 
   if ("speechSynthesis" in window) {
+    if (!isCurrentPlayback(generation)) {
+      return;
+    }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(browserSpeechTextFor(entry));
     utterance.rate = browserVoiceRateFor(entry.speakerId, speaker?.browserVoice);
@@ -197,23 +236,96 @@ function browserSpeechTextFor(entry: TranscriptEntry): string {
 async function playAudioBlob(blob: Blob) {
   const url = URL.createObjectURL(blob);
   const audio = new Audio(url);
+  stopActiveAudioElement();
+  resolveActiveAudio?.();
+  resolveActiveAudio = null;
+  activeAudio = audio;
   try {
     await new Promise<void>((resolve, reject) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => reject(new Error("Audio playback failed."));
+      resolveActiveAudio = resolve;
+      audio.onended = () => {
+        if (activeAudio === audio) {
+          activeAudio = null;
+          resolveActiveAudio = null;
+        }
+        resolve();
+      };
+      audio.onerror = () => {
+        if (activeAudio === audio) {
+          activeAudio = null;
+          resolveActiveAudio = null;
+        }
+        reject(new Error("Audio playback failed."));
+      };
       void audio.play().catch(reject);
     });
   } finally {
+    if (activeAudio === audio) {
+      activeAudio = null;
+      resolveActiveAudio = null;
+    }
     URL.revokeObjectURL(url);
   }
 }
 
+function stopActiveAudioElement() {
+  if (!activeAudio) {
+    return;
+  }
+
+  const audio = activeAudio;
+  activeAudio = null;
+  audio.onended = null;
+  audio.onerror = null;
+  audio.pause();
+  audio.removeAttribute("src");
+  audio.load();
+}
+
 async function playBrowserUtterance(utterance: SpeechSynthesisUtterance) {
   await new Promise<void>((resolve) => {
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
+    let timeoutId: number | undefined;
+    const finish = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+      if (resolveActiveUtterance === finish) {
+        resolveActiveUtterance = null;
+      }
+      resolve();
+    };
+    resolveActiveUtterance = finish;
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    timeoutId = window.setTimeout(finish, BROWSER_SPEECH_MAX_MS);
     window.speechSynthesis.speak(utterance);
   });
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  activeFetchController = controller;
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal
+    });
+  } finally {
+    if (activeFetchController === controller) {
+      activeFetchController = null;
+    }
+    window.clearTimeout(timeoutId);
+  }
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function isCurrentPlayback(generation: number) {
+  return generation === playbackGeneration;
 }
 
 function pitchFor(speakerId: SpeakerId, profile?: BrowserVoiceProfile): number {

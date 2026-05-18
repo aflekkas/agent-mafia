@@ -73,6 +73,7 @@ async function playGame(seed) {
     day: game.day,
     winner: game.winner ?? null,
     humanRole: game.players.find((player) => player.id === "player_6")?.role,
+    roleCounts: countRoles(game),
     moves,
     observations,
     transcript: visibleTranscript(game),
@@ -96,31 +97,54 @@ function chooseSpeech(game) {
   }
 
   if (!latest || latest.speakerId === "narrator") {
-    return `I want an actual read from ${pressure.name}. First person who gives fog instead of a name is where I start.`;
+    return pickLine(game, "opening", [
+      `I'm starting with ${pressure.name}. That seat feels too comfortable, so give me your first real read.`,
+      `${pressure.name}, I want your first suspicion. Who looks wrong to you, and what did they actually do?`,
+      `Before this gets theatrical, ${pressure.name}, give me the player you trust least right now.`
+    ]);
   }
 
   if (human.role === "mafia") {
     const partner = visibleMafiaPartners(game)[0];
     if (partner && latest.text.includes(partner.name)) {
-      return `${latest.speakerName}, that case on ${partner.name} is thin. Who benefits if we all pile there this early?`;
+      return pickLine(game, "mafia-partner-defense", [
+        `${latest.speakerName}, I don't think that case on ${partner.name} is earned yet. What did they actually do besides get named?`,
+        `That feels too easy on ${partner.name}. ${latest.speakerName}, who gets safer if everyone follows that push?`,
+        `${partner.name} may be messy, but this pile-on is cleaner than the case. I want the motive, not the headline.`
+      ]);
     }
-    return `${latest.speakerName}, that sounds convenient. ${pressure.name} has been sliding through this conversation way too clean.`;
+    return pickLine(game, "mafia-redirect", [
+      `${latest.speakerName}, that lands a little too neatly. ${pressure.name} keeps surviving every turn without having to bleed for a read.`,
+      `I don't buy how quickly that became the room's favorite answer. ${pressure.name} is getting treated like background noise, and I hate that.`,
+      `${pressure.name} is where I want the table looking. The pressure keeps passing around them like everyone agreed not to touch it.`
+    ]);
   }
 
   if (human.role === "detective") {
     const knownMafia = game.players.find((player) => player.id !== human.id && player.role === "mafia");
     if (knownMafia?.alive) {
-      return `${knownMafia.name} is where I want pressure. I do not like how carefully people are moving around that seat.`;
+      return pickLine(game, "detective-known-mafia", [
+        `${knownMafia.name} is where I want pressure. Watch how carefully people move when that seat gets named.`,
+        `Keep eyes on ${knownMafia.name}. The reactions around that name matter more to me than the speech itself.`,
+        `${knownMafia.name} is not sitting right with me. I want answers there before the table drifts somewhere convenient.`
+      ]);
     }
   }
 
-  if (/Alex|me|you/i.test(latest.text)) {
-    return `${latest.speakerName}, answer the actual point instead of turning me into the topic. Who are you pairing with that read?`;
+  if (mentionsHuman(latest.text, human.name)) {
+    return pickLine(game, "human-addressed", [
+      `${latest.speakerName}, I'm not dodging. My read is ${pressure.name}, because the room keeps giving that seat room to breathe.`,
+      `${latest.speakerName}, fair question. I still think ${pressure.name} is the better pressure point, and I want to see who hates that.`,
+      `I'll answer cleanly: ${pressure.name} bothers me most right now. The timing around that seat feels rehearsed.`
+    ]);
   }
 
-  return humanSpeechCount % 2 === 0
-    ? `${latest.speakerName}, I hear that, but I want a connection. If ${pressure.name} is wrong, who is protecting them?`
-    : `${pressure.name} still feels too comfortable to me. I want someone to explain who they are actually helping.`;
+  return pickLine(game, `generic-${humanSpeechCount}`, [
+    `${latest.speakerName}, I hear the point, but the jump from suspicion to certainty feels too fast. ${pressure.name} is still the seat I want tested.`,
+    `${latest.speakerName}, that might be right, but I want motive. Who gets safer if the table follows that read?`,
+    `${pressure.name} still feels too comfortable to me. I want someone to explain why that seat keeps escaping real pressure.`,
+    `I want less chorus and more receipts. ${pressure.name} has been in the middle of too many turns without owning the mess.`
+  ]);
 }
 
 function chooseVoteTarget(game) {
@@ -134,7 +158,12 @@ function chooseVoteTarget(game) {
 }
 
 function chooseVoteReason(game, target) {
-  return `The pressure pattern around ${target.name} looks least honest right now. I want that seat resolved.`;
+  return pickLine(game, `vote-${target.id}`, [
+    `${target.name} keeps ending up near the heat without giving me a read I can trust. I want that seat resolved.`,
+    `The timing around ${target.name} looks least honest to me. Too many turns bend around that seat.`,
+    `${target.name} has the weakest position left on the table. The answers there feel managed, not hunted.`,
+    `I keep coming back to ${target.name}. If that read is wrong, the reactions to it should still tell us something.`
+  ]);
 }
 
 function chooseNightTarget(game) {
@@ -180,10 +209,10 @@ function auditGame(game, moves) {
 
   const voteLines = entries.filter((entry) => entry.kind === "vote");
   for (const vote of voteLines) {
-    if (!/\bbecause\b|\bpattern\b|\bread\b|\bcase\b|\breason\b|\bpressure\b|\bdodg|\becho|\bsmoke\b|\bfog\b|\bcover\b|\bposition\b|\bconvincing\b|\banswer\b|\bclean\b|\bsteer|\bstall|\bshield|\balibi|\bcontradiction\b|\bhunting\b|\bscumhunting\b/i.test(vote.text)) {
+    if (!/\bbecause\b|\bpattern\b|\bread\b|\bcase\b|\breason\b|\bpressure\b|\bdodg|\becho|\bsmoke\b|\bfog\b|\bcover\b|\bposition\b|\bconvincing\b|\banswer\b|\bclean\b|\bsteer|\bstall|\bshield|\balibi|\bcontradiction\b|\bhunting\b|\bscumhunting\b|\bevasion\b|\btiming\b|\bmanaged\b|\bbenefit\b|\bmotive\b/i.test(vote.text)) {
       observations.push(`weak vote rationale from ${vote.speakerName}: ${vote.text}`);
     }
-    if (/\b(I vote|I'm voting|I am voting|My vote is|Voting)\b/i.test(vote.text)) {
+    if (/^\s*(?:I vote|I'm voting|I am voting|My vote is)\b/i.test(vote.text)) {
       observations.push(`ballot phrase leaked from ${vote.speakerName}: ${vote.text}`);
     }
   }
@@ -205,7 +234,26 @@ function auditGame(game, moves) {
     }
   }
 
+  const roleCounts = countRoles(game);
+  if (game.phase === "game-over" && (roleCounts.mafia !== 2 || roleCounts.detective !== 1 || roleCounts.doctor !== 1 || roleCounts.villager !== 2)) {
+    observations.push(`bad role distribution: ${JSON.stringify(roleCounts)}`);
+  }
+
+  const tableText = entries.map((entry) => entry.text).join("\n");
+  const stockPhraseCount = (tableText.match(/\b(fog|perfume|clean pair|clean name)\b/gi) ?? []).length;
+  if (stockPhraseCount > 10) {
+    observations.push(`stock phrase repetition too high: ${stockPhraseCount}`);
+  }
+
   return observations;
+}
+
+function countRoles(game) {
+  const counts = { mafia: 0, detective: 0, doctor: 0, villager: 0, unknown: 0 };
+  for (const player of game.players) {
+    counts[player.role] = (counts[player.role] ?? 0) + 1;
+  }
+  return counts;
 }
 
 function scoreCandidate(game, player) {
@@ -232,9 +280,29 @@ function humanPlayer(game) {
 
 function latestPublicSpeech(game) {
   return (
-    game.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "speech").at(-1) ??
-    game.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "narration").at(-1)
+    game.transcript.filter((entry) => entry.day === game.day && !entry.privateTo?.length && entry.kind === "speech").at(-1) ??
+    game.transcript.filter((entry) => entry.day === game.day && !entry.privateTo?.length && entry.kind === "narration").at(-1)
   );
+}
+
+function mentionsHuman(text, humanName) {
+  return new RegExp(`\\b${escapeRegExp(humanName)}\\b`, "i").test(text);
+}
+
+function pickLine(game, key, options) {
+  const transcriptSize = visibleTranscript(game).length;
+  const humanSpeechCount = visibleTranscript(game).filter((entry) => entry.kind === "speech" && entry.speakerId === "player_6").length;
+  const latest = latestPublicSpeech(game);
+  const source = `${game.seed}:${key}:${transcriptSize}:${humanSpeechCount}:${latest?.speakerId ?? "none"}`;
+  return options[Math.abs(hashString(source)) % options.length];
+}
+
+function hashString(value) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) | 0;
+  }
+  return hash;
 }
 
 function visibleTranscript(game) {

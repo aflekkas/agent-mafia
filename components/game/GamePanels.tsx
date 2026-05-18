@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Check } from "pixelarticons/react/Check";
 import { Home } from "pixelarticons/react/Home";
 import { Mic } from "pixelarticons/react/Mic";
@@ -12,6 +13,8 @@ import { TableScene3DBackdrop } from "./TableScene3DBackdrop";
 import { ROLE_COPY } from "./constants";
 import { HumanAvatarId } from "./types";
 import { avatarFor, formatPhase, nameFor, nextActorIdFor } from "./utils";
+
+type CharacterVisualState = "idle" | "quiet" | "thinking" | "speaking" | "suspected" | "eliminated";
 
 export function RoleCard({ player, game }: { player: Player; game: GameState }) {
   const mafiaPartners =
@@ -104,8 +107,13 @@ export function TableScene2D({
   const active = busy && thinkingActorId ? thinkingActorId : game.activeSpeakerId;
   const bubble = game.transcript.filter((entry) => !entry.privateTo?.length && ["speech", "narration"].includes(entry.kind)).at(-1);
   const bubbleClassName = bubble ? getSpeechBubbleClassName(bubble) : "";
-  const bubblePortraitSrc = bubble ? portraitSrcForSpeaker(bubble, game, humanAvatar) : undefined;
+  const bubbleFace = bubble ? faceAssetsForSpeaker(bubble, game, humanAvatar) : undefined;
   const showBubble = !!bubble && !busy && !paused;
+  const publicSpeechToday = new Set(
+    game.transcript
+      .filter((entry) => entry.day === game.day && !entry.privateTo?.length && entry.kind === "speech")
+      .map((entry) => entry.speakerId)
+  );
 
   return (
     <section
@@ -133,7 +141,16 @@ export function TableScene2D({
       </div>
       {game.players.map((player) => {
         const portraitSrc = player.id === "player_6" ? avatarFor(humanAvatar).src : player.portraitSrc;
+        const spriteSheetSrc = player.id === "player_6" ? undefined : player.spriteSheetSrc;
         const characterProfile = characterProfileTextFor(player);
+        const visualState = visualStateForPlayer({
+          player,
+          activeId: active,
+          bubble,
+          busy,
+          publicSpeechToday,
+          showBubble
+        });
 
         return (
           <div
@@ -144,9 +161,13 @@ export function TableScene2D({
               player.alive ? "" : "dead"
             } ${active === player.id ? "active" : ""}`}
           >
-            <div className={`portrait-face ${portraitSrc ? "portrait-image-face" : ""}`}>
-              {portraitSrc ? <img src={portraitSrc} alt="" /> : player.name.slice(0, 1)}
-            </div>
+            <CharacterFace
+              className="portrait-face"
+              name={player.name}
+              portraitSrc={portraitSrc}
+              spriteSheetSrc={spriteSheetSrc}
+              visualState={visualState}
+            />
             <strong>{player.name}</strong>
             <span>{player.id === "player_6" ? "you" : player.alive ? suspicionLabel(player.suspicion) : "eliminated"}</span>
             <div className="character-peek" aria-hidden="true">
@@ -159,10 +180,14 @@ export function TableScene2D({
       {showBubble ? (
         <div className={bubbleClassName}>
           <div className="speech-speaker">
-            {bubblePortraitSrc ? (
-              <span className="speech-speaker-portrait" aria-hidden="true">
-                <img src={bubblePortraitSrc} alt="" />
-              </span>
+            {bubbleFace?.portraitSrc || bubbleFace?.spriteSheetSrc ? (
+              <CharacterFace
+                className="speech-speaker-portrait"
+                name={bubble.speakerName}
+                portraitSrc={bubbleFace.portraitSrc}
+                spriteSheetSrc={bubbleFace.spriteSheetSrc}
+                visualState={bubble.kind === "speech" ? "speaking" : "idle"}
+              />
             ) : null}
             <strong>{bubble.speakerName}</strong>
           </div>
@@ -171,6 +196,45 @@ export function TableScene2D({
       ) : null}
       {game.eliminatedThisRound ? <div className="blood-flash" /> : null}
     </section>
+  );
+}
+
+function CharacterFace({
+  className,
+  name,
+  portraitSrc,
+  spriteSheetSrc,
+  visualState,
+  animated = true
+}: {
+  className: string;
+  name: string;
+  portraitSrc?: string;
+  spriteSheetSrc?: string;
+  visualState: CharacterVisualState;
+  animated?: boolean;
+}) {
+  const useSpriteSheet = false;
+  const style =
+    useSpriteSheet && spriteSheetSrc
+      ? ({
+          "--character-sprite-sheet": `url("${spriteSheetSrc}")`
+        } as CSSProperties)
+      : undefined;
+
+  return (
+    <div
+      className={`${className} ${spriteSheetSrc || portraitSrc ? "portrait-image-face" : ""} ${animated ? "" : "static-character-face"}`}
+      data-character-state={visualState}
+    >
+      {useSpriteSheet && spriteSheetSrc ? (
+        <span className={`character-sprite sprite-state-${visualState}`} style={style} aria-hidden="true" />
+      ) : portraitSrc ? (
+        <img src={portraitSrc} alt="" />
+      ) : (
+        name.slice(0, 1)
+      )}
+    </div>
   );
 }
 
@@ -280,9 +344,15 @@ export function GameOverPanel({
   }
 
   return (
-    <section className={`game-over-panel ${humanWon ? "victory" : "defeat"}`} aria-live="polite">
+    <section
+      className={`game-over-panel ${humanWon ? "victory" : "defeat"}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="game-over-title"
+      aria-live="polite"
+    >
       <p className="eyebrow">Game Over</p>
-      <h2>{title}</h2>
+      <h2 id="game-over-title">{title}</h2>
       <p>{detail}</p>
       <div className="game-over-actions">
         <button type="button" onClick={onPlayAgain} data-sfx="start">
@@ -298,31 +368,104 @@ export function GameOverPanel({
   );
 }
 
-export function Transcript({ game }: { game: GameState }) {
+export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar: HumanAvatarId }) {
   const listRef = useRef<HTMLDivElement | null>(null);
+  const previousLengthRef = useRef(0);
+  const previousGameIdRef = useRef(game.id);
+  const [isPinnedToBottom, setIsPinnedToBottom] = useState(true);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const humanVisible = game.transcript.filter((entry) => !entry.privateTo || entry.privateTo.includes("player_6"));
+
+  const scrollToLatest = useCallback(() => {
+    const list = listRef.current;
+    if (!list) {
+      return;
+    }
+
+    list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+    setIsPinnedToBottom(true);
+    setShowJumpToLatest(false);
+  }, []);
 
   useEffect(() => {
     const list = listRef.current;
     if (!list) {
       return;
     }
-    list.scrollTop = list.scrollHeight;
-  }, [humanVisible.length]);
+
+    const hasNewGame = game.id !== previousGameIdRef.current;
+    previousGameIdRef.current = game.id;
+
+    const hasNewEntry = hasNewGame || humanVisible.length > previousLengthRef.current;
+    previousLengthRef.current = humanVisible.length;
+
+    if (!hasNewEntry) {
+      return;
+    }
+
+    if (hasNewGame || isPinnedToBottom || isNearTranscriptBottom(list)) {
+      list.scrollTop = list.scrollHeight;
+      setIsPinnedToBottom(true);
+      setShowJumpToLatest(false);
+      return;
+    }
+
+    setShowJumpToLatest(true);
+  }, [game.id, humanVisible.length, isPinnedToBottom]);
+
+  function handleTranscriptScroll() {
+    const list = listRef.current;
+    if (!list) {
+      return;
+    }
+
+    const isNearBottom = isNearTranscriptBottom(list);
+    setIsPinnedToBottom(isNearBottom);
+
+    if (isNearBottom) {
+      setShowJumpToLatest(false);
+    }
+  }
 
   return (
     <section className="panel transcript-panel">
       <p className="eyebrow">Transcript</p>
-      <div ref={listRef} className="transcript-list">
-        {humanVisible.map((entry) => (
-          <article key={entry.id} className={`line kind-${entry.kind}`}>
-            <strong>{entry.speakerName}</strong>
-            <p>{entry.text}</p>
-          </article>
-        ))}
+      <div ref={listRef} className="transcript-list" onScroll={handleTranscriptScroll}>
+        {humanVisible.map((entry) => {
+          const face = faceAssetsForSpeaker(entry, game, humanAvatar);
+          const showTranscriptFace = entry.speakerId !== "narrator";
+
+          return (
+            <article key={entry.id} className={`line kind-${entry.kind} ${showTranscriptFace ? "" : "line-without-face"}`}>
+              {showTranscriptFace ? (
+                <CharacterFace
+                  className="transcript-face"
+                  name={entry.speakerName}
+                  portraitSrc={face?.portraitSrc}
+                  spriteSheetSrc={face?.spriteSheetSrc}
+                  visualState="idle"
+                  animated={false}
+                />
+              ) : null}
+              <div className="transcript-line-copy">
+                <strong>{entry.speakerName}</strong>
+                <p>{entry.text}</p>
+              </div>
+            </article>
+          );
+        })}
       </div>
+      {showJumpToLatest ? (
+        <button type="button" className="transcript-jump" onClick={scrollToLatest}>
+          Back to bottom
+        </button>
+      ) : null}
     </section>
   );
+}
+
+function isNearTranscriptBottom(list: HTMLDivElement): boolean {
+  return list.scrollHeight - list.scrollTop - list.clientHeight <= 36;
 }
 
 export function VoteBoard({ game }: { game: GameState }) {
@@ -400,14 +543,63 @@ function getSpeechBubbleClassName(entry: TranscriptEntry) {
   return "speech-bubble speaker-bubble";
 }
 
-function portraitSrcForSpeaker(entry: TranscriptEntry, game: GameState, humanAvatar: HumanAvatarId): string | undefined {
+function faceAssetsForSpeaker(
+  entry: TranscriptEntry,
+  game: GameState,
+  humanAvatar: HumanAvatarId
+): { portraitSrc?: string; spriteSheetSrc?: string } | undefined {
   const speaker = game.players.find((player) => player.id === entry.speakerId);
 
   if (!speaker) {
     return undefined;
   }
 
-  return speaker.id === "player_6" ? avatarFor(humanAvatar).src : speaker.portraitSrc;
+  if (speaker.id === "player_6") {
+    return { portraitSrc: avatarFor(humanAvatar).src };
+  }
+
+  return {
+    portraitSrc: speaker.portraitSrc,
+    spriteSheetSrc: speaker.spriteSheetSrc
+  };
+}
+
+function visualStateForPlayer({
+  player,
+  activeId,
+  bubble,
+  busy,
+  publicSpeechToday,
+  showBubble
+}: {
+  player: Player;
+  activeId?: PlayerId | "narrator" | "system";
+  bubble?: TranscriptEntry;
+  busy: boolean;
+  publicSpeechToday: Set<TranscriptEntry["speakerId"]>;
+  showBubble: boolean;
+}): CharacterVisualState {
+  if (!player.alive) {
+    return "eliminated";
+  }
+
+  if (busy && activeId === player.id) {
+    return "thinking";
+  }
+
+  if (showBubble && bubble?.speakerId === player.id && bubble.kind === "speech") {
+    return "speaking";
+  }
+
+  if (player.id !== "player_6" && player.suspicion >= 2) {
+    return "suspected";
+  }
+
+  if (player.id !== "player_6" && !publicSpeechToday.has(player.id)) {
+    return "quiet";
+  }
+
+  return "idle";
 }
 
 function characterProfileTextFor(player: Player): { summary: string; description: string } {

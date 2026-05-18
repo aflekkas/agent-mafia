@@ -7,6 +7,11 @@ type CursorMode = "idle" | "hover" | "pressed" | "disabled";
 const INTERACTIVE_SELECTOR = 'a[href], button, [role="button"], [role="menuitemradio"], [role="option"], summary';
 const TEXT_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
 const DISABLED_SELECTOR = 'button:disabled, [aria-disabled="true"]';
+const SWAY_RESET_MS = 90;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function modeForTarget(target: EventTarget | null): CursorMode {
   if (!(target instanceof Element)) {
@@ -33,16 +38,30 @@ export function CustomCursor() {
   const [visible, setVisible] = useState(false);
   const [mode, setMode] = useState<CursorMode>("idle");
   const [point, setPoint] = useState({ x: 0, y: 0 });
+  const [sway, setSway] = useState({ x: 0, y: 0, rotate: 0 });
   const pressedRef = useRef(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const swayResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const media = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+    function resetSway() {
+      if (swayResetRef.current) {
+        clearTimeout(swayResetRef.current);
+        swayResetRef.current = null;
+      }
+
+      setSway({ x: 0, y: 0, rotate: 0 });
+    }
 
     function syncEnabled() {
       setEnabled(media.matches);
       document.documentElement.classList.toggle("custom-cursor-enabled", media.matches);
       if (!media.matches) {
         setVisible(false);
+        lastPointRef.current = null;
+        resetSway();
       }
     }
 
@@ -56,7 +75,31 @@ export function CustomCursor() {
         return;
       }
 
-      setPoint({ x: event.clientX, y: event.clientY });
+      const nextPoint = { x: event.clientX, y: event.clientY };
+      const lastPoint = lastPointRef.current;
+      lastPointRef.current = nextPoint;
+
+      if (lastPoint) {
+        const dx = nextPoint.x - lastPoint.x;
+        const dy = nextPoint.y - lastPoint.y;
+
+        setSway({
+          x: clamp(dx * 0.07, -3, 3),
+          y: clamp(dy * 0.04, -2, 2),
+          rotate: clamp(dx * 0.38 + dy * 0.08, -8, 8)
+        });
+
+        if (swayResetRef.current) {
+          clearTimeout(swayResetRef.current);
+        }
+
+        swayResetRef.current = setTimeout(() => {
+          swayResetRef.current = null;
+          setSway({ x: 0, y: 0, rotate: 0 });
+        }, SWAY_RESET_MS);
+      }
+
+      setPoint(nextPoint);
       setVisible(true);
       setModeFromTarget(event.target);
     }
@@ -67,7 +110,9 @@ export function CustomCursor() {
       }
 
       pressedRef.current = true;
-      setPoint({ x: event.clientX, y: event.clientY });
+      const nextPoint = { x: event.clientX, y: event.clientY };
+      lastPointRef.current = nextPoint;
+      setPoint(nextPoint);
       setModeFromTarget(event.target);
     }
 
@@ -78,6 +123,8 @@ export function CustomCursor() {
 
     function handlePointerLeave() {
       setVisible(false);
+      lastPointRef.current = null;
+      resetSway();
     }
 
     syncEnabled();
@@ -94,6 +141,10 @@ export function CustomCursor() {
       window.removeEventListener("pointerup", handlePointerUp);
       document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
       document.documentElement.classList.remove("custom-cursor-enabled");
+      if (swayResetRef.current) {
+        clearTimeout(swayResetRef.current);
+        swayResetRef.current = null;
+      }
     };
   }, []);
 
@@ -110,7 +161,10 @@ export function CustomCursor() {
       style={
         {
           "--cursor-x": `${point.x}px`,
-          "--cursor-y": `${point.y}px`
+          "--cursor-y": `${point.y}px`,
+          "--cursor-sway-x": `${sway.x}px`,
+          "--cursor-sway-y": `${sway.y}px`,
+          "--cursor-sway-rotate": `${sway.rotate}deg`
         } as CSSProperties
       }
     >

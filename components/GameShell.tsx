@@ -12,7 +12,7 @@ import { Volume2 } from "pixelarticons/react/Volume2";
 import { CharacterSetup, GameState, HumanRolePreference, PlayerId } from "@/lib/game/types";
 import { DEFAULT_CHARACTER_SETUP, normalizeCharacterSetup } from "@/lib/characters/profiles";
 import { mentionedPlayersInText } from "@/lib/game/speech-analysis";
-import { speakEntry } from "@/components/game/audio";
+import { speakEntry, stopActiveVoicePlayback } from "@/components/game/audio";
 import {
   AMBIENCE_URL,
   AUDIO_MUTED_STORAGE_KEY,
@@ -113,6 +113,7 @@ export function GameShell() {
   const isHome = !game || !human;
   const voicePlaybackEnabled = !audioMuted && voiceMode !== "off";
   const isGameOver = game?.phase === "game-over";
+  const hasHumanPrompt = !!game?.currentPrompt && !!human?.alive && !isGameOver;
   const topbarControlsLocked = !!dialogMode || isGameOver;
 
   useEffect(() => {
@@ -689,8 +690,10 @@ export function GameShell() {
     setAudioMuted((muted) => {
       const nextMuted = !muted;
       window.localStorage.setItem(AUDIO_MUTED_STORAGE_KEY, String(nextMuted));
-      if (nextMuted && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
+      if (nextMuted) {
+        stopActiveVoicePlayback();
+        setAudioPlaybackActive(false);
+        setPlaybackCompleteId(latestPublicEntry?.id ?? null);
       }
       setStatus(nextMuted ? "Sound muted." : "Sound on.");
       return nextMuted;
@@ -698,14 +701,16 @@ export function GameShell() {
   }
 
   function setVoiceMode(mode: VoiceMode) {
+    if (topbarControlsLocked) {
+      return;
+    }
+
     setVoiceModeState(mode);
     window.localStorage.setItem(VOICE_MODE_STORAGE_KEY, mode);
+    stopActiveVoicePlayback();
+    setAudioPlaybackActive(false);
+    setPlaybackCompleteId(latestPublicEntry?.id ?? null);
     if (mode === "off") {
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-      setAudioPlaybackActive(false);
-      setPlaybackCompleteId(latestPublicEntry?.id ?? null);
       setStatus("Voice off. Sound effects stay on.");
       return;
     }
@@ -747,6 +752,10 @@ export function GameShell() {
   }
 
   function requestExit() {
+    if (topbarControlsLocked) {
+      return;
+    }
+
     if (!game) {
       setGame(null);
       return;
@@ -801,6 +810,22 @@ export function GameShell() {
     } catch {
       setStatus("Could not copy transcript.");
     }
+  }
+
+  function openRulesDialog() {
+    if (topbarControlsLocked) {
+      return;
+    }
+
+    setDialogMode("rules");
+  }
+
+  function togglePause() {
+    if (topbarControlsLocked) {
+      return;
+    }
+
+    setPaused((value) => !value);
   }
 
   function clearPrefetchedAdvance() {
@@ -1163,62 +1188,85 @@ export function GameShell() {
       </section>
       {isHome ? null : (
         <section className="topbar">
-          <button type="button" className="title-button" data-sfx="none" onClick={requestExit} title="Return to start">
+          <button
+            type="button"
+            className="title-button"
+            data-sfx="none"
+            onClick={requestExit}
+            disabled={topbarControlsLocked}
+            title="Return to start"
+          >
             <p className="eyebrow">Voice-first social deduction</p>
             <h1>Agent Mafia</h1>
           </button>
           <div className="topbar-actions">
-            <button type="button" className="icon-button" onClick={() => setDialogMode("rules")} aria-label="Show roles" title="Show roles">
-              <InfoBox aria-hidden="true" />
-            </button>
-            <button type="button" className="icon-button" onClick={copyTranscript} aria-label="Copy transcript" title="Copy transcript">
-              <Copy aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className={`icon-button ${paused ? "active" : ""}`}
-              onClick={() => setPaused((value) => !value)}
-              aria-pressed={paused}
-              aria-label={paused ? "Resume game" : "Pause game"}
-              title={paused ? "Resume game" : "Pause game"}
-            >
-              {paused ? <Play aria-hidden="true" /> : <Clock aria-hidden="true" />}
-            </button>
-            <button
-              type="button"
-              className={`autoplay-toggle ${autoHumanEnabled ? "active" : ""}`}
-              onClick={toggleAutoHuman}
-              disabled={topbarControlsLocked}
-              aria-pressed={autoHumanEnabled}
-              aria-label={autoHumanEnabled ? "Turn autoplay off" : "Turn autoplay on"}
-              title={autoHumanEnabled ? "Turn autoplay off" : "Turn autoplay on"}
-            >
-              <Robot aria-hidden="true" />
-              <span>Autoplay {autoHumanEnabled ? "On" : "Off"}</span>
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              onClick={requestExit}
-              disabled={topbarControlsLocked}
-              aria-label="New game"
-              title="New game"
-            >
-              <Reload aria-hidden="true" />
-            </button>
-            <VoiceModeSwitch voiceMode={voiceMode} onChange={setVoiceMode} />
-            <button
-              type="button"
-              className={`mute-button ${audioMuted ? "muted" : ""}`}
-              data-sfx="sound-toggle"
-              onClick={toggleAudioMuted}
-              aria-pressed={audioMuted}
-              aria-label={audioMuted ? "Unmute game sound" : "Mute game sound"}
-              title={audioMuted ? "Unmute game sound" : "Mute game sound"}
-            >
-              {audioMuted ? <Volume aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
-              <span>{audioMuted ? "Sound Off" : "Sound On"}</span>
-            </button>
+            <div className="topbar-icon-actions" role="group" aria-label="Game tools">
+              <button
+                type="button"
+                className="icon-button pixel-tooltip"
+                onClick={openRulesDialog}
+                disabled={topbarControlsLocked}
+                aria-label="Show roles"
+                data-tooltip="Show roles"
+              >
+                <InfoBox aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="icon-button pixel-tooltip"
+                onClick={copyTranscript}
+                aria-label="Copy transcript"
+                data-tooltip="Copy transcript"
+              >
+                <Copy aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`icon-button pixel-tooltip ${paused ? "active" : ""}`}
+                onClick={togglePause}
+                disabled={topbarControlsLocked}
+                aria-pressed={paused}
+                aria-label={paused ? "Resume game" : "Pause game"}
+                data-tooltip={paused ? "Resume game" : "Pause game"}
+              >
+                {paused ? <Play aria-hidden="true" /> : <Clock aria-hidden="true" />}
+              </button>
+              <button
+                type="button"
+                className="icon-button pixel-tooltip"
+                onClick={requestExit}
+                disabled={topbarControlsLocked}
+                aria-label="New game"
+                data-tooltip="New game"
+              >
+                <Reload aria-hidden="true" />
+              </button>
+            </div>
+            <div className="topbar-primary-actions" role="group" aria-label="Game settings">
+              <button
+                type="button"
+                className={`autoplay-toggle ${autoHumanEnabled ? "active" : ""}`}
+                onClick={toggleAutoHuman}
+                disabled={topbarControlsLocked}
+                aria-pressed={autoHumanEnabled}
+                aria-label={autoHumanEnabled ? "Turn autoplay off" : "Turn autoplay on"}
+              >
+                <Robot aria-hidden="true" />
+                <span>Autoplay {autoHumanEnabled ? "On" : "Off"}</span>
+              </button>
+              <VoiceModeSwitch voiceMode={voiceMode} onChange={setVoiceMode} disabled={topbarControlsLocked} />
+              <button
+                type="button"
+                className={`mute-button ${audioMuted ? "muted" : ""}`}
+                data-sfx="sound-toggle"
+                onClick={toggleAudioMuted}
+                aria-pressed={audioMuted}
+                aria-label={audioMuted ? "Unmute game sound" : "Mute game sound"}
+              >
+                {audioMuted ? <Volume aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
+                <span>{audioMuted ? "Sound Off" : "Sound On"}</span>
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -1247,7 +1295,7 @@ export function GameShell() {
             <VoteBoard game={game} />
           </aside>
 
-          <section className="stage-panel">
+          <section className={`stage-panel ${isGameOver ? "game-ended" : ""} ${hasHumanPrompt ? "has-human-prompt" : ""}`}>
             <TableScene2D game={game} busy={busy} paused={paused} humanAvatar={humanAvatar} />
             <HumanPanel
               game={game}
@@ -1264,7 +1312,7 @@ export function GameShell() {
           </section>
 
           <aside className="right-rail">
-            <Transcript game={game} />
+            <Transcript game={game} humanAvatar={humanAvatar} />
           </aside>
         </section>
       )}

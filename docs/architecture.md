@@ -54,6 +54,8 @@ All game responses visible to the browser should go through `redactGameForPlayer
 
 The UI is a 2D CSS table, not a Three.js scene. Human input is text-first. The mic button uses browser speech recognition only to fill the text area.
 
+NPC table faces keep the approved `portraitSrc` as the live visual source and apply deterministic CSS state motion to that portrait. Optional 3x3 sprite sheets from `spriteSheetSrc` can be generated for reuse, but should not replace the clean portrait art unless reviewed. Character visual states are derived from the redacted public `GameState`: idle, quiet, thinking, speaking, suspected, and eliminated. They are not model-owned hidden state and do not change the NPC JSON turn contract.
+
 The main UI shell currently owns several concerns and should be refactored cautiously:
 
 - game actions

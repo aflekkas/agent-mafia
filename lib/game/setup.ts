@@ -62,7 +62,7 @@ const PLAYER_META: Record<PlayerId, Omit<Player, "role" | "alive" | "suspicion" 
   }
 };
 
-const ROLE_BAG: Role[] = ["mafia", "detective", "doctor", "villager", "villager", "villager"];
+const ROLE_BAG: Role[] = ["mafia", "mafia", "detective", "doctor", "villager", "villager"];
 
 export interface CreateGameOptions {
   humanName?: string;
@@ -89,6 +89,7 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
       characterId: profile?.id,
       characterSummary: profile?.summary,
       portraitSrc: profile?.portraitSrc,
+      spriteSheetSrc: profile?.spriteSheetSrc,
       personalityStyle: profile?.style,
       fallbackLines: profile?.fallbackLines,
       voiceId: profile?.voiceId,
@@ -136,7 +137,7 @@ export function createScenarioSeed(name: "scenario-a" | "scenario-b", options: C
   if (name === "scenario-a") {
     return forceRoles(state, {
       don_vito: "mafia",
-      salvatore: "villager",
+      salvatore: "mafia",
       rosa: "detective",
       vincenzo: "doctor",
       carmela: "villager",
@@ -145,7 +146,7 @@ export function createScenarioSeed(name: "scenario-a" | "scenario-b", options: C
   }
 
   return forceRoles(state, {
-    don_vito: "villager",
+    don_vito: "mafia",
     salvatore: "doctor",
     rosa: "villager",
     vincenzo: "detective",

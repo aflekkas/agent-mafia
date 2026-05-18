@@ -37,10 +37,17 @@ Prioritize the playable loop and visible UI over architecture expansion. Avoid l
 - After coherent completed work, commit and push to `origin/main` by default so GitHub stays current.
 - Use pnpm for dependency installation and scripts. Do not use npm, yarn, or Bun unless the user explicitly asks for that specific package manager.
 - Validate with `pnpm typecheck`; run `pnpm build` after route, config, or UI structure changes.
+- Use `pnpm generate:character -- --dry-run ...` before adding a new character profile, then run the same command without `--dry-run` when the brief is correct. Use `pnpm generate:character-states -- --ids=all --concurrency=1` for existing NPC sprite sheets.
 - All browser-visible game state must be redacted through `redactGameForPlayer`.
 - Sanitize every user-entered text path through the shared profanity/sanitization utility at both the UI input boundary and the route/game-state boundary. Use soft censorship that keeps the first and last character visible and replaces the middle with `#`; do not block typing or reject the whole entry just because profanity was entered.
 - Human input is text submitted to game state. Browser speech recognition is only an input helper.
 - Voice playback must always have a text transcript fallback.
+
+## UI Rules
+
+- Use tooltips only for small icon-only controls whose purpose is not visible from the control itself.
+- Do not add hover tooltips to large labeled controls; the visible label should carry the meaning.
+- In the in-game topbar, keep icon-only tool buttons grouped together and keep wide labeled action/settings buttons grouped separately after them.
 
 ## Game Shape
 
@@ -102,3 +109,4 @@ The current model response uses a plain `speech` string.
 - `docs/voice.md` describes current direct TTS and browser fallback.
 - `docs/demo.md` describes the local demo flow.
 - `docs/refactor-notes.md` records cleanup boundaries.
+- `docs/portraits.md` describes portrait, sprite-sheet, and new-character generation.

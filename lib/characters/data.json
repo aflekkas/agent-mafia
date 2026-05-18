@@ -10,6 +10,7 @@
       "Wittgenstein would tell us to stop speaking. Unfortunately, Rosa's panic has already confessed in grammar."
     ],
     "portraitSrc": "/portraits/don-vito.png",
+    "spriteSheetSrc": "/portraits/sprites/don-vito.png",
     "browserVoice": {
       "gender": "masculine",
       "names": [
@@ -35,6 +36,7 @@
       "Rosa is working so hard to look innocent that the innocence is sweating through the dress."
     ],
     "portraitSrc": "/portraits/salvatore.png",
+    "spriteSheetSrc": "/portraits/sprites/salvatore.png",
     "browserVoice": {
       "gender": "masculine",
       "names": [
@@ -60,6 +62,7 @@
       "Carmela's tone changed after night ended. I wrote it down mentally, which is normal and useful."
     ],
     "portraitSrc": "/portraits/rosa.png",
+    "spriteSheetSrc": "/portraits/sprites/rosa.png",
     "browserVoice": {
       "gender": "feminine",
       "names": [
@@ -85,6 +88,7 @@
       "I do not need a theory. I need this table to stop acting like the corpse left politely."
     ],
     "portraitSrc": "/portraits/vincenzo.png",
+    "spriteSheetSrc": "/portraits/sprites/vincenzo.png",
     "browserVoice": {
       "gender": "masculine",
       "names": [
@@ -110,6 +114,7 @@
       "Vincenzo is yelling so much I almost believe him, which is how bad decisions get a parade."
     ],
     "portraitSrc": "/portraits/carmela.png",
+    "spriteSheetSrc": "/portraits/sprites/carmela.png",
     "browserVoice": {
       "gender": "feminine",
       "names": [
@@ -135,6 +140,7 @@
       "Believe in the power of truth, besties: Vincenzo is loud, but Salvatore is sparkling too clean."
     ],
     "portraitSrc": "/portraits/characters/cute-anime-girls.png",
+    "spriteSheetSrc": "/portraits/sprites/cute-anime-girls.png",
     "voiceId": "8kgj5469z1URcH4MB2G4",
     "browserVoice": {
       "gender": "feminine",
@@ -160,6 +166,7 @@
       "Ask again. Slower. Someone here will crack, or I crack the table first."
     ],
     "portraitSrc": "/portraits/characters/german-big-guy.png",
+    "spriteSheetSrc": "/portraits/sprites/german-big-guy.png",
     "voiceId": "pfvZahoGcT3NdpxRuNkg",
     "browserVoice": {
       "gender": "masculine",
@@ -185,6 +192,7 @@
       "I got no theory, just brain smoke, and the smoke is spelling Salvatore, probably."
     ],
     "portraitSrc": "/portraits/characters/american-dumb-bro.png",
+    "spriteSheetSrc": "/portraits/sprites/american-dumb-bro.png",
     "voiceId": "qA5SHJ9UjGlW2QwXWR7w",
     "browserVoice": {
       "gender": "masculine",
@@ -210,6 +218,7 @@
       "Rosa is messy, yes. Carmela is editing herself in real time like a bad press release."
     ],
     "portraitSrc": "/portraits/characters/abrasive-sarah.png",
+    "spriteSheetSrc": "/portraits/sprites/abrasive-sarah.png",
     "voiceId": "emSmWzY0c0xtx5IFMCVv",
     "browserVoice": {
       "gender": "feminine",
@@ -235,6 +244,7 @@
       "This explanation smells like kebab meat left under a tram seat in July."
     ],
     "portraitSrc": "/portraits/characters/turkish-berlin-guy.png",
+    "spriteSheetSrc": "/portraits/sprites/turkish-berlin-guy.png",
     "voiceId": "xROJDAAwVXltxzeQxuFL",
     "browserVoice": {
       "gender": "masculine",
@@ -260,6 +270,7 @@
       "Silence is not innocence. It is discipline, and discipline can hide a body very efficiently."
     ],
     "portraitSrc": "/portraits/characters/stern-eastern-statesman.png",
+    "spriteSheetSrc": "/portraits/sprites/stern-eastern-statesman.png",
     "voiceId": "XjdmlV0OFXfXE6Mg2Sb7",
     "browserVoice": {
       "gender": "masculine",
@@ -285,6 +296,7 @@
       "Silence, underlings. I am being ominously correct, and Salvatore is sweating through the plot."
     ],
     "portraitSrc": "/portraits/characters/goofy-supervillain.png",
+    "spriteSheetSrc": "/portraits/sprites/goofy-supervillain.png",
     "voiceId": "pHD4qotPFeOAuU1YsFjv",
     "browserVoice": {
       "gender": "masculine",
@@ -310,6 +322,7 @@
       "Let us share our feelings, starting with why Salvatore is polished like a tiny friendship coffin."
     ],
     "portraitSrc": "/portraits/characters/pastel-pony.png",
+    "spriteSheetSrc": "/portraits/sprites/pastel-pony.png",
     "voiceId": "XJ2fW4ybq7HouelYYGcL",
     "browserVoice": {
       "gender": "feminine",
@@ -335,6 +348,7 @@
       "I am annoyed because the obvious dodge is still sitting here breathing my air."
     ],
     "portraitSrc": "/portraits/characters/annoyed-male.png",
+    "spriteSheetSrc": "/portraits/sprites/annoyed-male.png",
     "voiceId": "LysucvtFmzi1NVAE0rKp",
     "browserVoice": {
       "gender": "masculine",
@@ -360,6 +374,7 @@
       "I will stand on this read until someone brings a stronger truth to the battlefield."
     ],
     "portraitSrc": "/portraits/characters/clark-anime-hero.png",
+    "spriteSheetSrc": "/portraits/sprites/clark-anime-hero.png",
     "voiceId": "ZcX76PwFSkrkyI78RBTK",
     "browserVoice": {
       "gender": "masculine",
@@ -385,6 +400,7 @@
       "Carmela, keep joking. Nervous laughter still has such a pretty pulse."
     ],
     "portraitSrc": "/portraits/characters/sultry-american-female.png",
+    "spriteSheetSrc": "/portraits/sprites/sultry-american-female.png",
     "voiceId": "TC0Zp7WVFzhA8zpTlRqV",
     "browserVoice": {
       "gender": "feminine",

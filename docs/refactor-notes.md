@@ -8,6 +8,7 @@ This file records the current cleanup direction so future work stays scoped to t
 - In-memory local sessions.
 - Text-first human input.
 - 2D CSS table.
+- Deterministic client-owned character visual states.
 - OpenAI NPC JSON turns.
 - Deterministic fallback turns.
 - Direct ElevenLabs REST TTS.
@@ -33,3 +34,4 @@ This file records the current cleanup direction so future work stays scoped to t
 - Keep one shared speech mention/stance helper.
 - Split large UI code by current behavior boundaries.
 - Keep docs describing the code that exists today.
+- Keep character asset generation scriptable through `generate:character` and `generate:character-states`.

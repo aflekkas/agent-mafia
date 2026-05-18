@@ -51,6 +51,7 @@ export interface Player {
   characterId?: string;
   characterSummary?: string;
   portraitSrc?: string;
+  spriteSheetSrc?: string;
   personalityStyle?: string;
   fallbackLines?: string[];
   voiceId?: string;

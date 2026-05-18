@@ -125,7 +125,15 @@ export function HomeScreen({
   );
 }
 
-export function VoiceModeSwitch({ voiceMode, onChange }: { voiceMode: VoiceMode; onChange: (mode: VoiceMode) => void }) {
+export function VoiceModeSwitch({
+  voiceMode,
+  onChange,
+  disabled = false
+}: {
+  voiceMode: VoiceMode;
+  onChange: (mode: VoiceMode) => void;
+  disabled?: boolean;
+}) {
   const nextMode: VoiceMode = voiceMode === "browser" ? "elevenlabs" : voiceMode === "elevenlabs" ? "off" : "browser";
   const voiceLabel = voiceMode === "elevenlabs" ? "ElevenLabs" : voiceMode === "browser" ? "Browser" : "Off";
 
@@ -134,8 +142,9 @@ export function VoiceModeSwitch({ voiceMode, onChange }: { voiceMode: VoiceMode;
       type="button"
       className={`voice-mode-toggle ${voiceMode}`}
       onClick={() => onChange(nextMode)}
+      disabled={disabled}
       aria-pressed={voiceMode !== "off"}
-      title={`Switch to ${nextMode === "elevenlabs" ? "ElevenLabs" : nextMode === "browser" ? "browser" : "no"} voice`}
+      aria-label={`Switch to ${nextMode === "elevenlabs" ? "ElevenLabs" : nextMode === "browser" ? "browser" : "no"} voice`}
     >
       <AiVoice aria-hidden="true" />
       <span>Voice: {voiceLabel}</span>

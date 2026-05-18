@@ -8,6 +8,7 @@ export interface CharacterProfile {
   style: string;
   fallbackLines: string[];
   portraitSrc: string;
+  spriteSheetSrc?: string;
   voiceId?: string;
   browserVoice: BrowserVoiceProfile;
   imagePrompt: string;
