@@ -6,16 +6,15 @@ System architecture, implementation spine, prep checklist, risks, reference repo
 
 ```
 [Browser — Next.js 15 + Three.js POV scene]
-  ├─ @elevenlabs/react useConversationControls + useConversationStatus (WebRTC, Scribe STT, multi-voice TTS)
+  ├─ @elevenlabs/react useConversationControls + useConversationStatus (WebRTC, multi-voice TTS)
   ├─ Three.js canvas (POV at table, 5 silhouette billboards, candle particle, RenderPixelatedPass)
-  └─ Pixel-art UI overlay (vote buttons, role card, push-to-talk)
-        │ player mic → Scribe STT inside Agent
+  └─ Pixel-art UI overlay (vote buttons, role card, typed speech input)
+        │ typed human input
         ▼
 [ElevenLabs Agent — hosted]
-  ├─ Scribe STT (~150ms)
   ├─ Multi-voice TTS (XML voice tags <NARRATOR>, <DON_VITO>, <SALVATORE>, <ROSA>, <VINCENZO>, <CARMELA>)
   ├─ Turn-taking model
-  ├─ WebRTC transport (echo cancellation, noise suppression)
+  ├─ WebRTC transport for playback
   └─ Custom LLM proxy → POSTs OpenAI-shaped SSE to our backend
         │
         ▼
@@ -30,7 +29,7 @@ System architecture, implementation spine, prep checklist, risks, reference repo
   └─ SFX + Music REST calls at phase transitions
         │
         ▼
-[Single LLM provider — OpenAI gpt-4.1-mini via OpenAI API]
+[Single LLM provider — OpenAI gpt-5.4 via OpenAI API]
    (cheap, fast TTFB, JSON output good, BYO via Custom LLM URL in EL agent dashboard)
 ```
 
@@ -40,7 +39,7 @@ System architecture, implementation spine, prep checklist, risks, reference repo
 - **Bun + Hono** — single binary, websocket-friendly, native SSE via `hono/streaming`
 - **TypeScript** — uniform across frontend/backend, strict mode
 - **SQLite** (`bun:sqlite`) — append-only event log + per-NPC inner-monologue log
-- **Single LLM:** OpenAI gpt-4.1-mini (service-account key, swap to `gpt-4.1-nano` if cost spikes)
+- **Single LLM:** OpenAI gpt-5.4 (service-account key, swap down only if latency or cost becomes the blocker)
 - **Zod** — schema validation for vote integrity (dynamic `z.enum([...alivePlayerNames])` per turn)
 
 ### Frontend
@@ -54,7 +53,6 @@ System architecture, implementation spine, prep checklist, risks, reference repo
 ### Voice (ElevenLabs)
 - **Agents Platform** — single agent session, WebRTC, owns turn-taking
 - **Multi-voice TTS** — `<LABEL>text</LABEL>` per character, 6 voices total (under 10-voice cap)
-- **Scribe STT** — built into Agent, ~150ms latency
 - **Sound Effects** — `POST /v1/sound-generation`, generative gunshot/footsteps/bells
 - **Music** — `POST /v1/music`, atmospheric noir bed loop
 
@@ -63,21 +61,21 @@ System architecture, implementation spine, prep checklist, risks, reference repo
 
 ## Data Flow Per Round (single-player, 6 players)
 
-1. Backend assigns roles randomly: 2 Mafia, 1 Detective, 1 Doctor, 2 Villagers across human + 5 NPCs.
-2. **Setup phase:** Narrator opens scene. Role card flipped privately to human.
+1. Backend assigns roles randomly: 2 Mafia, 1 Detective, 1 Doctor, 2 Villagers across human + 5 NPCs. The Detective privately starts with one confirmed Mafia lead. Mafia privately know each other.
+2. **Setup phase:** Narrator opens scene. Role card flipped privately to human. Public copy must not reveal which Mafia is Detective-known.
 3. **Night phase:**
-   - Backend builds night-mafia briefing for both Mafia (filtered to mafia-channel events). LLM picks kill target. If human is Mafia: UI prompts pick.
-   - Doctor save target chosen. Detective investigation chosen.
+   - First night has no Mafia kill. Doctor and Detective actions can still resolve.
+   - Later nights: Doctor chooses a save before the Mafia kill resolves. Detective investigation chosen. Backend builds night-mafia briefing for both Mafia (filtered to mafia-channel events). LLM picks kill target. If human is Mafia: UI prompts pick.
    - Server tools mutate state. SFX bells + footsteps play via REST.
 4. **Day-discuss phase:**
    - Narrator announces dawn + who died (if anyone).
-   - Turn rotation: `start = (turn-1) % alive.length` per Durafen pattern.
+   - Turn order is randomized per day with a guaranteed first pass for every living player before repeat NPC pressure turns.
    - For each NPC turn: backend builds discussion briefing (filtered public events + own private notes). LLM emits `<NPC_NAME>...</NPC_NAME>` tagged speech. EL TTS routes per voice. Speaker billboard glows (audio-reactive).
-   - Human turn: mic icon glows. Player speaks. Scribe STT → confirm dialog → submit to game state.
+   - Human turn: typed input unlocks. Player submits text directly to game state.
    - 3 turns/player capped. Inner monologues logged to SQLite (hidden during play).
 5. **Day-vote phase:**
    - 30s timer. Each NPC submits vote via Zod-validated structured output (`z.enum([...alivePlayerNames])`).
-   - Human taps portrait or speaks vote. Tally on screen.
+   - Human taps portrait or submits a typed vote intent. Tally on screen.
 6. **Resolve:** Narrator announces verdict. SFX gunshot. Eliminated billboard goes dark.
 7. Loop until win condition.
 
@@ -88,7 +86,7 @@ System architecture, implementation spine, prep checklist, risks, reference repo
 | 1 | **Setup + scaffold** | Bootstrap the runnable app. Bun+Hono server skeleton if needed. Next.js 15 + R3F starter (`pmndrs/react-three-next`). Env vars loaded (OpenAI, ElevenLabs). `@elevenlabs/react` quickstart wired. |
 | 2 | **Game engine v0** | Mafia state machine for 6 players (2/1/1/2). Pure-function reducer, frozen TS types ported from `Queue-Bit-1/wolf` `state.py` + `events.py`. Random role assignment. Phase transitions. Vote tally + tiebreak. Win condition. SQLite event log table. Unit tests. |
 | 3 | **NPC turn loop + Custom LLM SSE** | Hono `streamSSE` `/v1/chat/completions` endpoint (OpenAI-compat). Per-NPC briefing builder (6 phase-specific renderers, Durafen 3-channel log split). LLM call -> emit text with `<NPC_NAME>` voice tags. Server tools webhooks: cast_vote, night_action, eliminate_player, reveal_role. |
-| 4 | **ElevenLabs Agent + multi-voice TTS** | EL agent dashboard: 6 voices configured, custom LLM URL set. `useConversationControls` + `useConversationStatus` in Next.js play multi-voice output. Scribe STT for player input. **Decision gate: voice working?** |
+| 4 | **ElevenLabs Agent + multi-voice TTS** | EL agent dashboard: 6 voices configured, custom LLM URL set. `useConversationControls` + `useConversationStatus` in Next.js play multi-voice output. Human input remains typed. **Decision gate: voice working?** |
 | 5 | **Three.js POV scene** | R3F canvas mounted. 5 sprite billboards (TSL `billboarding()`). Candle particle (`LucaAngioloni/SmokeGL` pattern) + flickering point light. Mouse-pan camera lerp +/-3 degrees. Audio-reactive billboard glow (`THREE.AudioAnalyser` -> uniform). **Decision gate: 3D rendering?** else 2D fallback. |
 | 6 | **SFX + Music + atmospheric polish** | Sound Effects `POST /v1/sound-generation`: gunshot at elim, footsteps + bells at night. Music `POST /v1/music`: noir bed loop. RenderPixelatedPass (pixelSize=5). OutputPass. Phase transition lighting (intensity=0 to disable, never add/remove lights). |
 | 7 | **Pixel-art UI + post-game replay** | shadcn buttons restyled with pixel font (Public Pixel CC0). Custom role card (Mono10 OFL). Inner monologue replay UI (basic timeline reading from SQLite). Phase transition narrator overlay. |
@@ -118,7 +116,7 @@ Solo possible but caps the scope.
 
 ### Account signups
 - [ ] **ElevenLabs** — https://elevenlabs.io. Free tier 10k chars/mo. Validate v3 audio tags + multi-voice tag syntax in playground
-- [x] **OpenAI API** — primary LLM, gpt-4.1-mini. Service-account key in `.env` (`OPENAI_API_KEY`)
+- [x] **OpenAI API** — primary LLM, gpt-5.4. Service-account key in `.env` (`OPENAI_API_KEY`)
 - [ ] **Google AI Studio** — fallback, Gemini 2.5 Flash free tier
 - [ ] **Anthropic console** — fallback LLM, fund $5
 - [ ] **Groq console** — fallback Llama, free tier
@@ -140,8 +138,8 @@ Solo possible but caps the scope.
 - [ ] **Free 3D table + candle assets:** Sketchfab CC0 search
 
 ### Local demo logistics
-- [ ] Equipment: MacBook, USB mic, headphones or speakers, dongles, power cable
-- [ ] Backup: text input mode, browser speech fallback, deterministic scenario seeds
+- [ ] Equipment: MacBook, headphones or speakers, dongles, power cable
+- [ ] Backup: browser speech fallback for playback, deterministic scenario seeds
 - [ ] Demo support: local architecture diagram, one known-good scenario, mute/skip controls
 
 ---
@@ -154,7 +152,7 @@ Solo possible but caps the scope.
 
 ### 2. Custom LLM SSE timeout
 **Risk:** EL Agent expects sub-second first-token TTFB; cold model call can stall.
-**Mitigation:** warm gpt-4.1-mini on app boot (prime with empty-context request), cache common Narrator phrases, send `: keepalive\n\n` SSE comment during long thinking.
+**Mitigation:** cache common Narrator phrases, show a clear thinking state while the model responds, and send `: keepalive\n\n` SSE comment during long thinking in the Custom LLM path.
 
 ### 3. Game state desync
 **Risk:** server tool writes mutate state but EL Agent prompt context drifts.
@@ -164,13 +162,13 @@ Solo possible but caps the scope.
 **Risk:** postprocessing + WebRTC audio = stutter.
 **Mitigation:** `setPixelRatio(1)`, RenderPixelatedPass with high `pixelSize` = fewer pixels, low-poly billboards, capped 30fps, NO bloom.
 
-### 5. STT misrecognition
-**Risk:** Scribe transcribes player speech as nonsense.
-**Mitigation:** show transcript w/ confirm button before submitting. Fallback: text input mode.
+### 5. Human input friction
+**Risk:** typing slows the social loop.
+**Mitigation:** keep the turn box focused, submit affordance obvious, and prompts compact.
 
-### 6. WebRTC mic permissions block
-**Risk:** player can't speak.
-**Mitigation:** dry-run mic flow with several people before sharing the demo. Fallback: text input mode.
+### 6. Audio playback setup block
+**Risk:** voices or sound effects fail on the demo machine.
+**Mitigation:** dry-run playback before sharing the demo. Fallback: browser speech or text transcript.
 
 ### 7. Polish over function
 **Risk:** spend hours 17-22 polishing, never test full flow.
@@ -205,7 +203,7 @@ Solo possible but caps the scope.
 - **Client tools** — https://elevenlabs.io/docs/eleven-agents/customization/tools/client-tools. UI flourishes (candle dim, blood splash).
 - **React SDK** — https://elevenlabs.io/docs/eleven-agents/libraries/react. `useConversationControls` + `useConversationStatus` (newer) or unified `useConversation`.
 - **Quickstart** — `elevenlabs/elevenlabs-examples` repo, `agents/nextjs/quickstart/example/`. Read: `app/api/conversation-token/route.ts` (server-mints WebRTC token), `app/page.tsx` (client wires).
-- **UI components** — `elevenlabs/ui` registry. Components for active speaker (`orb.tsx`, `live-waveform.tsx`), push-to-talk (`voice-button.tsx`, `mic-selector.tsx`), transcript (`transcript-viewer.tsx`), STT (`speech-input.tsx` + `hooks/use-scribe.ts`). Pre-built blocks: `voice-chat-01..03`, `transcriber-01`, `speaker-01`. Install via `npx shadcn add` from registry.
+- **UI components** — `elevenlabs/ui` registry. Components for active speaker (`orb.tsx`, `live-waveform.tsx`) and transcript (`transcript-viewer.tsx`). Avoid push-to-talk, mic selector, STT, and speech-input components. Pre-built blocks: `speaker-01` if useful. Install via `npx shadcn add` from registry.
 - **Types** — https://github.com/elevenlabs/packages — `packages/react/src/conversation/types.ts` for callback signatures.
 
 ## Hono SSE + SQLite
@@ -298,7 +296,7 @@ agent-mafia/
 │       │   ├── NPCBillboard.tsx             # sprite billboard w/ glow uniform
 │       │   ├── Candle.tsx                   # particle + flicker shader
 │       │   ├── PixelationPass.tsx           # RenderPixelatedPass wrapper
-│       │   ├── PushToTalk.tsx               # mic button (uses speech-input.tsx)
+│       │   ├── HumanInput.tsx               # typed human speech input
 │       │   ├── VoteGrid.tsx                 # portrait grid
 │       │   ├── RoleCard.tsx                 # private role reveal
 │       │   ├── NarratorOverlay.tsx          # phase transition text

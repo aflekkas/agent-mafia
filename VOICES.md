@@ -1,14 +1,13 @@
 # Voices (ElevenLabs)
 
-Voice is the runtime. ElevenLabs Agents Platform owns the live conversation; our backend emits multi-voice tagged dialogue via Custom LLM SSE. 5 ElevenLabs products stacked across the loop. Pitch hook: voice load-bearing across input, output, identity, and atmosphere — not bolt-on TTS.
+Voice is the runtime for NPCs and narration. ElevenLabs Agents Platform owns the live conversation playback; our backend emits multi-voice tagged dialogue via Custom LLM SSE. Four ElevenLabs products stack across the loop. Pitch hook: voice load-bearing across output, identity, and atmosphere — not bolt-on TTS. Human input stays typed.
 
-## Stacked Product Strategy (5 products)
+## Stacked Product Strategy (4 products)
 
 | Product | Used for | Why |
 |---|---|---|
-| **Agents Platform** | Single agent session, WebRTC, owns turn-taking + audio I/O | Flagship product engagement. We BYO the LLM. |
+| **Agents Platform** | Single agent session, WebRTC, owns turn-taking + audio playback | Flagship product engagement. We BYO the LLM. |
 | **Multi-voice TTS (v3 Expressive)** | 6 voices in one agent: Narrator + 5 NPCs | XML voice tags route each span to a different voice. Up to 10 voices per agent. |
-| **Scribe STT** | Player speaks during their turn → transcribed to game state | Built into Agent pipeline (~150ms latency). Game pauses for human turn = latency-tolerant. |
 | **Sound Effects** | Generative gunshot, footsteps, candle flicker, distant bells | Tied to game state. Triggered from server-tool callbacks. |
 | **Music** | Atmospheric noir bed loop. Phase-transition mood. | Generative ambient. Adds film-score weight without authoring music. |
 
@@ -174,16 +173,15 @@ Types: https://github.com/elevenlabs/packages/blob/main/packages/react/src/conve
 
 **Returns:**
 - `status` — `'disconnected' | 'connecting' | 'connected'`
-- `mode` — `'speaking' | 'listening'`
-- `isSpeaking`, `isListening`, `isMuted`
+- `mode` — `'speaking' | 'listening'` from the SDK, used only for agent playback state
+- `isSpeaking`, `isMuted`
 - Methods: `startSession({conversationToken})`, `endSession`, `sendUserMessage`, `setMuted`
 
 **Key callbacks:**
 - `onAgentToolRequest` / `onAgentToolResponse` → drive UI flourishes when server tools fire
 - `onAudio` → raw audio frames for billboard glow visualization
 - `onMessage` → transcript updates
-- `onModeChange` → swap UI hints (speaking vs listening)
-- `onInterruption` → handle player cutting in
+- `onModeChange` → swap UI hints for agent playback state
 - `onAudioAlignment` → word-level timing for caption sync
 
 ## Quickstart Pattern (Next.js)
@@ -202,9 +200,8 @@ Source: `elevenlabs/elevenlabs-examples` repo, path `agents/nextjs/quickstart/ex
 **UI components** — pull from `elevenlabs/ui` registry via `npx shadcn add`:
 - `voice-chat-01` block as starting scaffold
 - `orb.tsx`, `live-waveform.tsx` for active speaker
-- `voice-button.tsx`, `mic-selector.tsx` for push-to-talk
 - `transcript-viewer.tsx` for transcript
-- `speech-input.tsx` + `hooks/use-scribe.ts` for STT overlay
+- Avoid `voice-button.tsx`, `mic-selector.tsx`, `speech-input.tsx`, and Scribe hooks. Human input is typed.
 
 ## Sound Effects REST
 
@@ -249,7 +246,6 @@ Generate once at game start, loop client-side. Optional: regenerate per phase fo
 ## Latency Targets
 
 - **TTS TTFB:** <400ms with v3 (sub-200ms with Flash v2.5 fallback)
-- **STT (Scribe):** ~150ms for short utterances
 - **Server tool webhook round-trip:** <500ms (sync blocking via `response_timeout_secs`)
 - **SFX/Music REST generation:** <3s (pre-cache common clips)
 
@@ -262,7 +258,7 @@ Source: https://elevenlabs.io/pricing/agents
 - **$0.080/min flat** (standard tier)
 - **$0.160/min overage**
 - Custom LLM tokens billed **separately** against EL credits (NOT bundled)
-- Demo: ~12 min × $0.08 = ~$1 of agent time + gpt-4.1-mini tokens (~$0.05/demo at typical turn counts)
+- Demo: ~12 min × $0.08 = ~$1 of agent time + OpenAI model tokens billed separately.
 
 ## Verification Checklist
 
@@ -273,14 +269,11 @@ Source: https://elevenlabs.io/pricing/agents
 
 ## Fallback Hierarchy
 
-1. **Primary:** EL Agents Platform + Custom LLM + Multi-voice TTS + Scribe (full Path D)
+1. **Primary:** EL Agents Platform + Custom LLM + Multi-voice TTS
 2. **Fallback A:** Direct multi-voice TTS WebSocket calls bypassing Agents Platform (loses turn-taking + interruption, ships voice)
 3. **Fallback B:** Single-voice TTS with name prefix in transcript ("Don Vito: I think...")
 4. **Fallback C (emergency):** pre-recorded canned audio per persona + text overlay
 
-For STT:
-1. **Primary:** Scribe in Agents pipeline
-2. **Fallback:** Browser Web Speech API (Chrome native)
-3. **Emergency:** human types instead of speaks
+Human input is text-first. Browser speech recognition may be used as a convenience layer to fill the same submitted text box.
 
 Decision gates for TTS and the Custom LLM SSE -> Agent loop live in `BUILD.md`.

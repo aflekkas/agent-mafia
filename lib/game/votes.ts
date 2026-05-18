@@ -6,9 +6,7 @@ import { checkWinCondition } from "./win";
 export function submitVote(state: GameState, voterId: PlayerId, targetId: PlayerId): GameState {
   const legal = legalTargets(state, voterId, "vote");
   const voter = getPlayer(state, voterId);
-  const safeLegal =
-    state.day === 1 && !voter.isHuman && legal.length > 1 ? legal.filter((id) => id !== "player_6") : legal;
-  const finalTargetId = safeLegal.includes(targetId) ? targetId : safeLegal[0] ?? targetId;
+  const finalTargetId = legal.includes(targetId) ? targetId : legal[0] ?? targetId;
 
   if (!legal.includes(finalTargetId)) {
     return {
@@ -68,6 +66,8 @@ export function resolveVote(state: GameState): GameState {
       {
         ...state,
         phase: "night",
+        day: state.day + 1,
+        nightNumber: state.nightNumber + 1,
         votes: [],
         nightActions: {},
         turnOrder: {
@@ -123,6 +123,7 @@ export function resolveVote(state: GameState): GameState {
       ...nextState,
       phase: "night",
       day: nextState.day + 1,
+      nightNumber: nextState.nightNumber + 1,
       nightActions: {},
       turnOrder: {
         discussionQueue: [],

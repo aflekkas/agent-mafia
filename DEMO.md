@@ -6,17 +6,16 @@ This document keeps the demo focused on the personal-project experience: a local
 
 | Goal | Pitch line |
 |---|---|
-| **Voice-first loop** | Voice is the runtime. Agents Platform, Multi-voice TTS, Scribe STT, Server Tools, Sound Effects, and Music all serve the playable round. |
+| **Voiced table loop** | Agents Platform, Multi-voice TTS, Server Tools, Sound Effects, and Music all serve the playable round. Human input stays typed. |
 | **Playable social deduction** | The human plays one round against five voiced AI NPCs and receives a random secret role like anyone else. |
 | **Noir AI theater** | Reality TV with AI suspects: six souls at a candlelit Palermo table, five of them generated, one of them human. |
 
 ### Voice angle
 
-> Voice is load-bearing across input, output, identity, and atmosphere, not bolt-on TTS. The game uses the voice stack as a coherent product:
+> Voice is load-bearing across NPC output, identity, and atmosphere, not bolt-on TTS. The game uses the voice stack as a coherent product:
 >
 > - **Agents Platform** — one agent session owns conversation, WebRTC transport, and turn-taking. The backend is the Custom LLM endpoint.
 > - **Multi-voice TTS (v3 Expressive)** — six distinct voices in one agent via XML tags. Audio tags shift by phase: Mafia `[whispers]` at night, accusations `[indignant]` at vote, Narrator `[grave]` at elimination.
-> - **Scribe STT** — the human plays Mafia by speaking. Their voice is captured, transcribed, and fed into game state.
 > - **Sound Effects** — generative gunshot at elimination, footsteps and bells at night, candle flicker. Tied to game state, never canned.
 > - **Music** — atmospheric noir bed loops between phases.
 >
@@ -28,7 +27,7 @@ This document keeps the demo focused on the personal-project experience: a local
 
 ### Game angle
 
-> Mafia, but you play with five voiced AIs at a candlelit table in Palermo. Each has a distinct voice and personality: Don Vito hedges philosophically, Salvatore smooth-talks, Vincenzo shouts, Carmela snarks, Rosa overshares. You get a random secret role same as anyone else: Mafia, Detective, Doctor, or Villager. You talk by voice, lie by voice, vote by voice. Inner monologues for AIs are logged and replayed at game end so you can watch the deception after the fact.
+> Mafia, but you play with five voiced AIs at a candlelit table in Palermo. Each has a distinct voice and personality: Don Vito hedges philosophically, Salvatore smooth-talks, Vincenzo shouts, Carmela snarks, Rosa overshares. You get a random secret role same as anyone else: Mafia, Detective, Doctor, or Villager. You type your accusations, lie in text, and vote through the table UI. Inner monologues for AIs are logged and replayed at game end so you can watch the deception after the fact.
 
 **Demo emphasis:** the player can complete a short round locally in roughly five minutes. Narrator lines frame phase transitions, the visual table communicates stakes, and speed mode keeps the run moving.
 
@@ -56,12 +55,12 @@ See `BUILD.md` section "Three.js + Pixel UI" for implementation refs.
 
 ## Demo Flow
 
-**Setup:** local laptop, optional external monitor, speakers or headphones, and a USB mic if available.
+**Setup:** local laptop, optional external monitor, and speakers or headphones.
 
 | Time | What happens |
 |---|---|
 | 0:00-0:10 | POV scene is already running. Narrator: `[ominous]` "Six souls at this table..." |
-| 0:10-0:20 | Player sees "You are Player 6. Speak when the mic glows. Game pauses for you." Role card flips privately. |
+| 0:10-0:20 | Player sees their typed turn panel. Role card flips privately. |
 | 0:20-1:00 | Night 1. Player acts if Mafia, Detective, or Doctor. Otherwise sleeps. SFX bells + footsteps. |
 | 1:00-3:00 | Day 1. Agent exchange, one or two player turns, voice-reactive billboards, vote phase, elimination + gunshot SFX. |
 | 3:00-4:30 | Round 2 compressed. Game resolves or reaches a clear stopping point. |
@@ -87,7 +86,7 @@ Target length: 2-3 minutes.
 |---|---|
 | 0:00-0:10 | Cold open: black screen, candle ignites. Don Vito voice `[whispers]` "I am the Mafia tonight. There are five other souls at this table. One of them is you." Title card: AGENT MAFIA. |
 | 0:10-0:30 | Concept: "First-person Mafia in noir Palermo. You play vs 5 AI NPCs by voice. Each has a distinct ElevenLabs voice and personality." Show POV scene. |
-| 0:30-1:30 | Highlight reel: accusations, votes, elimination, Narrator transition, human player turn with Scribe STT subtitle, gunshot SFX, inner-monologue replay. |
+| 0:30-1:30 | Highlight reel: accusations, votes, elimination, Narrator transition, human typed turn, gunshot SFX, inner-monologue replay. |
 | 1:30-2:00 | Tech: one agent + six voices via multi-voice tags, custom LLM SSE, local game state, server tools, SFX/Music. |
 | 2:00-2:30 | Why it matters: "LLMs become characters with voices, identities, secrets, and a seat at the table." |
 | 2:30-3:00 | Close: "Agent Mafia." Demo URL if available. |
@@ -116,7 +115,7 @@ Pure dialogue, no narration:
 - Vincenzo `[shouting]`: "ENOUGH. SOMEONE KILLED ROSA. WHO?"
 - Carmela `[smug]`: "Lol Vincenzo just gave away he's the Detective."
 - Rosa `[confused]`: "Wait, did Vincenzo actually...?"
-- Player 6, Scribe-transcribed subtitle: "I think we vote Salvatore."
+- Player 6 typed line: "I think we vote Salvatore."
 
 ### Payoff (20-30s)
 
@@ -125,8 +124,7 @@ Narrator `[grave]`: "The town has spoken. Salvatore falls." SFX gunshot. Candle 
 ## Local Demo Checklist
 
 - Laptop power and audio output are stable.
-- Mic permission flow has been tested.
-- Text input fallback works.
+- Typed input works.
 - Mute/skip controls work.
 - Scenario seeds load quickly.
 - One complete run works twice in a row.

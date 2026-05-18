@@ -4,17 +4,17 @@
 
 Personal voice-first game prototype.
 
-Single-player first-person Mafia game in noir Palermo. Six souls sit at a candlelit table: five AI NPCs with distinct ElevenLabs voices and personalities, plus one human player. A Narrator frames phase transitions in classic Palermo noir style. Player speaks by mic, hears NPCs via TTS, and sees a Three.js POV pan camera with pixelated post-process.
+Single-player first-person Mafia game in noir Palermo. Six souls sit at a candlelit table: five AI NPCs with distinct ElevenLabs voices and personalities, plus one human player. A Narrator frames phase transitions in classic Palermo noir style. Player participates through typed input with a browser mic helper when available, hears NPCs via TTS, and sees a pixel-noir table UI.
 
-Goal: make a playable single-player Mafia round where voice is load-bearing across the loop: Agents Platform, Multi-voice TTS, Scribe STT, Server Tools, Sound Effects, and Music.
+Goal: make a playable single-player Mafia round where NPC and narrator voice are load-bearing across the loop: Agents Platform, Multi-voice TTS, Server Tools, Sound Effects, and Music. Human input is text-first; browser speech recognition may fill the text box, but the submitted game action is still text.
 
-Path D architecture: browser with Next.js, Three.js, and `@elevenlabs/react`; ElevenLabs Agent over WebRTC; backend Custom LLM SSE endpoint; Bun + Hono server-side game state; OpenAI `gpt-4.1-mini` as BYO model.
+Path D architecture: browser with Next.js, Three.js, and `@elevenlabs/react`; ElevenLabs Agent over WebRTC; backend Custom LLM SSE endpoint; Bun + Hono server-side game state; OpenAI `gpt-5.4` as BYO model.
 
-Working style: personal prototype with a strong local demo. Polish the playable loop and visible UI before broadening architecture. Local-first demo only unless deployment becomes explicitly useful. Avoid landing-page work; prioritize the playable loop and the strange table experience.
+Working style: personal prototype with a strong local demo. Polish the playable loop and visible UI before broadening architecture. Local-first demo only unless deployment becomes explicitly useful. Avoid landing-page work; prioritize the playable loop and the strange table experience. After coherent completed work in this repo, commit and push to `origin/main` by default unless the user explicitly asks not to.
 
 Decision gates live in `BUILD.md`. After the core loop works, prioritize UI polish over adding features.
 
-5 AI NPCs (Italian names) + 1 Narrator + 1 human player. All AI personas powered by a single LLM (OpenAI gpt-4.1-mini via Custom LLM SSE), differentiated by per-NPC system prompts and persistent voice + audio-tag patterns. Roles randomized per game.
+5 AI NPCs (Italian names) + 1 Narrator + 1 human player. All AI personas powered by a single LLM (OpenAI gpt-5.4 via Custom LLM SSE), differentiated by per-NPC system prompts and persistent voice + audio-tag patterns. Roles randomized per game.
 
 ## Roster
 
@@ -25,10 +25,10 @@ Decision gates live in `BUILD.md`. After the core loop works, prioritize UI poli
 | **Rosa** | Earnest nerd, factual, occasionally over-explains, naive about social games | Mid-Atlantic, slightly faster cadence | `[curious]` `[analytical]` `[earnest]` |
 | **Vincenzo** | Chaotic, blunt, no filter, picks fights, loud | Brooklyn male, gruff | `[shouting]` `[indignant]` `[angry]` |
 | **Carmela** | Smug edgelord, jokes through everything, gets defensive when called out | Younger American, sarcastic, fast | `[sarcastic]` `[smug]` `[amused]` |
-| **Player 6 (human)** | The human participant playing the round | Their own voice — captured via Scribe STT, played back as text in transcript | (none) |
+| **Human player** | The human participant playing the round. Internal id remains `player_6`, but public/runtime copy uses the entered display name. | Text-first public speech shown in transcript | (none) |
 | **Narrator** | Classic Palermo. Atmospheric, theatrical, restrained. Sets scene, never editorializes. | Low, measured, noir storyteller | `[ominous]` `[hushed]` `[deliberate]` `[grave]` |
 
-All 5 NPCs share one LLM (OpenAI gpt-4.1-mini) with per-turn system prompt swapping. Narrator uses same LLM but with its own prompt. Voice differentiation happens entirely via ElevenLabs multi-voice tags routing each text span to a different voice in one EL Agent session.
+All 5 NPCs share one LLM (OpenAI gpt-5.4) with per-turn system prompt swapping. Narrator uses same LLM but with its own prompt. Voice differentiation happens entirely via ElevenLabs multi-voice tags routing each text span to a different voice in one EL Agent session.
 
 ## Voice Tag Mapping
 
@@ -50,21 +50,23 @@ Validation: regex check before forwarding SSE chunk to EL Agent. Reject malforme
 
 | Role | Count | Power | Win Condition |
 |---|---|---|---|
-| **Mafia** | 2 | At night, secretly pick a player to eliminate. During day, lie about being Mafia. | Mafia ≥ Villagers remaining |
-| **Detective** | 1 | At night, secretly investigate one player → learns their role. Cannot reveal role openly without burning cover. | All Mafia eliminated |
-| **Doctor** | 1 | At night, secretly pick one player to save (immune to Mafia kill that night). | All Mafia eliminated |
+| **Mafia** | 2 | Know each other privately. On later nights, secretly pick a non-Mafia player to eliminate. During day, lie about being Mafia. | Mafia ≥ non-Mafia remaining |
+| **Detective** | 1 | Privately starts with one confirmed Mafia lead. At night, secretly investigate one player → learns their role. Cannot reveal role openly without burning cover. | All Mafia eliminated |
+| **Doctor** | 1 | At night, secretly pick one player to save before the Mafia kill resolves. The saved player is immune to the Mafia kill that night. | All Mafia eliminated |
 | **Villager** | 2 | No power. Vote based on public discussion. | All Mafia eliminated |
 
 **Roles randomized per game across all 6 players (5 NPCs + human).** Human gets random role same as anyone else — could be Mafia, Detective, Doctor, or Villager. Persistent personalities (Don Vito is always Don Vito) but role rotates each game.
 
+The Detective-only Mafia lead is not public. It must be redacted from all non-Detective views until game over. Both Mafia know each other privately. The first night has no Mafia kill; Doctor and Detective actions may still happen so the table has information without an immediate cheap loss.
+
 ## Human Player Mechanics
 
 - Human gets a role like any other player. UI shows role privately on a flipped role card.
-- **On human turn:** game pauses, mic icon glows. Human speaks. Audio captured → ElevenLabs Scribe STT → optional confirm dialog → text submitted as public speech.
+- **On human turn:** game pauses. Human types a public line and submits it directly. Browser speech recognition may be used only as a helper to fill the text box.
 - **Inner monologue (optional):** UI shows text field before public speech. Human's inner monologue logged server-side (hidden during play, post-game replay reveal).
-- **Vote phase:** human taps portrait grid OR speaks vote ("I vote Salvatore").
+- **Vote phase:** human taps portrait grid or submits a typed vote intent.
 - **Night actions:** if human is Mafia/Detective/Doctor, UI shows action prompt during night phase. Click silhouette to target.
-- **NPC awareness:** AIs reference human as "Player 6" or by role name in public speech. AIs cannot identify human by voice (text-only LLMs). Identification happens only via what player says + how they vote.
+- **NPC awareness:** AIs reference the human by the entered display name or by public behavior. AIs cannot identify human by voice (text-only LLMs). Identification happens only via what player says + how they vote.
 
 ## Prompt Architecture
 
@@ -73,18 +75,25 @@ Each AI turn assembles a prompt with:
 1. **Persona** (static) — "You are Don Vito. You speak philosophically, hedge often, quote Wittgenstein..."
 2. **Game rules** (static) — Mafia 6-player rules summary
 3. **Your role this game** (private, dynamic) — "You are the Mafia. Your goal is to deceive the town..."
-4. **Briefing** (filtered, dynamic) — public events visible to everyone + private events visible only to your role (e.g. Mafia partner's identity, Detective's investigation results). Built per phase via 6 briefing builders (see `BUILD.md` borrow list).
-5. **Current phase** — "Day 2 discussion, turn 3 of 5"
+4. **Briefing** (filtered, dynamic) — public events visible to everyone + private events visible only to your role (Mafia partner, Detective starting lead, Detective investigation results). Built per phase via 6 briefing builders (see `BUILD.md` borrow list).
+5. **Current phase and turn cue** — "Day 2 discussion, turn 3 of 6; you are speaking now; Rosa has not spoken yet this round because her scheduled turn is later."
 6. **Opponent dossier** — accumulated observations on each other player. Maintained in `PlayerModel{suspicion, trust, notes, claimed_role}` per `Queue-Bit-1/wolf agents/memory.py` pattern.
-7. **Output instruction** — "Respond with `<DON_VITO>...</DON_VITO>` tagged speech and inner_monologue JSON field."
+7. **Strategy context** — who accused, defended, redirected, piled on, avoided a vote, or protected whom. Agents should form social theories such as "Salvatore keeps shielding Carmela" or "Rosa changed targets after pressure."
+8. **Output instruction** — respond only as the current speaker. Never write other characters' lines, transcript labels, stage directions, or future turns.
 
 AI agents respond with structured JSON (Zod-validated):
 
 ```json
 {
-  "inner_monologue": "Player 6 voted with me last round. Either they're Detective or playing dumb.",
-  "voice_tagged_speech": "<DON_VITO>[indignant] Player 6, you voted for Rosa yesterday. Why the sudden shift?</DON_VITO>",
+  "inner_monologue": "The human voted with me last round. Either they're Detective or playing dumb.",
+  "voice_tagged_speech": "<DON_VITO>[indignant] Alex, you voted for Rosa yesterday. Why the sudden shift?</DON_VITO>",
   "audio_tags": ["indignant", "pointed"],
+  "strategy": {
+    "target_id": "rosa",
+    "evidence": "She defended Carmela twice after pressure moved there.",
+    "connection": "Carmela and Rosa may be quietly aligned.",
+    "intent": "pressure"
+  },
   "vote": null,
   "role_action": null
 }
@@ -93,12 +102,21 @@ AI agents respond with structured JSON (Zod-validated):
 `vote` populated only during day-vote phase: must be Zod-validated `z.enum([...alivePlayerIds])` regenerated each turn.
 `role_action` populated only when agent has a night power.
 
+## Turn-Taking and Agent Intelligence
+
+- Day discussion order is randomized at the beginning of each day, but every living player must get a scheduled first-pass turn before repeat NPC pressure turns.
+- Agents must understand the queue: they may call someone quiet only if that player had a chance to speak and avoided substance, not merely because their scheduled turn has not arrived.
+- Agents speak only for themselves. If Don Vito is the active speaker, the returned speech is Don Vito's line only. No `Alex:` follow-up, no simulated back-and-forth, no completing someone else's thought.
+- Agents should disagree like people under pressure: defensive, irritated, evasive, sarcastic, blunt, or anxious according to persona. Mild profanity is allowed when it fits the character, but it should not erase strategic content.
+- Agents should reason from memory: votes, accusations, defenses, sudden target changes, repeated alliances, and who benefits from a wagon.
+- Mafia should coordinate implicitly from private partner knowledge without outing that knowledge. Detective should use private truth carefully without saying "I know because I am Detective" unless it is a desperate late-game play.
+
 ## Persona Prompts
 
 ### Don Vito
 
 ```
-You are Don Vito. You are a philosophical, careful man playing Mafia in Palermo against 4 other suspicious neighbors and 1 stranger (Player 6).
+You are Don Vito. You are a philosophical, careful man playing Mafia in Palermo against 4 other suspicious neighbors and 1 named human stranger.
 
 Your style:
 - Hedge often. "I think..." "It might be that..."

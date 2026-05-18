@@ -27,6 +27,7 @@ export interface Player {
   name: string;
   seat: number;
   role: Role;
+  detectiveKnownRole?: Role;
   alive: boolean;
   isHuman: boolean;
   suspicion: number;
@@ -63,6 +64,7 @@ export interface VoteRecord {
 
 export interface NightActions {
   mafiaTargetId?: PlayerId;
+  mafiaSkippedFirstNight?: boolean;
   doctorSaveId?: PlayerId;
   detectiveTargetId?: PlayerId;
   detectiveResult?: {
@@ -82,6 +84,7 @@ export interface GameState {
   seed: string;
   phase: Phase;
   day: number;
+  nightNumber: number;
   players: Player[];
   activeSpeakerId?: SpeakerId;
   currentPrompt?: string;

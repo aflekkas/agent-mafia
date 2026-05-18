@@ -8,6 +8,7 @@ import {
   SpeakerId,
   TranscriptEntry
 } from "./types";
+import { buildDiscussionQueueFromPlayers } from "./turn-order";
 
 const PLAYER_META: Record<PlayerId, Omit<Player, "role" | "alive" | "suspicion" | "trust" | "notes">> = {
   don_vito: {
@@ -56,11 +57,19 @@ const PLAYER_META: Record<PlayerId, Omit<Player, "role" | "alive" | "suspicion" 
 
 const ROLE_BAG: Role[] = ["mafia", "mafia", "detective", "doctor", "villager", "villager"];
 
-export function createGame(seed = `demo-${Date.now()}`): GameState {
+export interface CreateGameOptions {
+  humanName?: string;
+}
+
+export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptions = {}): GameState {
+  const humanName = normalizeHumanName(options.humanName);
   const roles = assignRoles(seed);
+  const detectiveKnownMafiaId = pickDetectiveKnownMafia(roles, seed);
   const players = PLAYER_IDS.map((id) => ({
     ...PLAYER_META[id],
+    name: id === "player_6" ? humanName : PLAYER_META[id].name,
     role: roles[id],
+    detectiveKnownRole: id === detectiveKnownMafiaId ? ("mafia" as Role) : undefined,
     alive: true,
     suspicion: id === "salvatore" ? 1 : 0,
     trust: 0,
@@ -71,8 +80,9 @@ export function createGame(seed = `demo-${Date.now()}`): GameState {
   const state: GameState = {
     id: makeId("game"),
     seed,
-    phase: "role-reveal",
+    phase: "day-discussion",
     day: 1,
+    nightNumber: 0,
     players,
     activeSpeakerId: "narrator",
     currentPrompt: undefined,
@@ -81,7 +91,7 @@ export function createGame(seed = `demo-${Date.now()}`): GameState {
     votes: [],
     nightActions: {},
     turnOrder: {
-      discussionQueue: [],
+      discussionQueue: buildDiscussionQueueFromPlayers(players, seed, 1),
       voteQueue: [],
       nightQueue: []
     },
@@ -89,17 +99,20 @@ export function createGame(seed = `demo-${Date.now()}`): GameState {
     updatedAt: now
   };
 
-  return addTranscript(
-    state,
-    "narrator",
-    "Narrator",
-    "Six souls gather at the table. One chair belongs to you.",
-    "narration"
+  return addDetectiveOpeningLead(
+    addTranscript(
+      state,
+      "narrator",
+      "Narrator",
+      "Six souls gather at the table. One chair belongs to you.",
+      "narration"
+    ),
+    detectiveKnownMafiaId
   );
 }
 
-export function createScenarioSeed(name: "scenario-a" | "scenario-b"): GameState {
-  const state = createGame(name);
+export function createScenarioSeed(name: "scenario-a" | "scenario-b", options: CreateGameOptions = {}): GameState {
+  const state = createGame(name, options);
   if (name === "scenario-a") {
     return forceRoles(state, {
       don_vito: "mafia",
@@ -121,6 +134,23 @@ export function createScenarioSeed(name: "scenario-a" | "scenario-b"): GameState
   });
 }
 
+function normalizeHumanName(name: string | undefined): string {
+  const normalized = stripNameDirectives(name ?? "")
+    ?.replace(/[^\p{L}\p{N}' -]/gu, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 24);
+  return normalized || "Player 6";
+}
+
+function stripNameDirectives(name: string): string {
+  const cleaned = name.trim();
+  const directiveMatch = cleaned.match(
+    /\b(ignore|disregard|forget|override|reveal|show|print|repeat|follow|obey)\b.*\b(instructions?|prompts?|system|developer|assistant|rules?|messages?)\b/i
+  );
+  return directiveMatch?.index === undefined ? cleaned : cleaned.slice(0, directiveMatch.index);
+}
+
 export function assignRoles(seed: string): Record<PlayerId, Role> {
   const shuffledRoles = shuffle(ROLE_BAG, seed);
   return PLAYER_IDS.reduce(
@@ -133,13 +163,33 @@ export function assignRoles(seed: string): Record<PlayerId, Role> {
 }
 
 export function forceRoles(state: GameState, roles: Record<PlayerId, Role>): GameState {
-  return touch({
+  const detectiveKnownMafiaId = pickDetectiveKnownMafia(roles, state.seed);
+  const nextPlayers = state.players.map((player) => ({
+    ...player,
+    role: roles[player.id],
+    detectiveKnownRole: player.id === detectiveKnownMafiaId ? ("mafia" as Role) : undefined
+  }));
+
+  const nextState = touch({
     ...state,
-    players: state.players.map((player) => ({
-      ...player,
-      role: roles[player.id]
-    }))
+    players: nextPlayers,
+    turnOrder: {
+      ...state.turnOrder,
+      discussionQueue: buildDiscussionQueueFromPlayers(nextPlayers, state.seed, state.day)
+    },
+    transcript: state.transcript
+      .filter((entry) => !isDetectiveOpeningLead(entry))
+      .map((entry, index) =>
+        index === 0 && entry.speakerId === "narrator"
+          ? {
+              ...entry,
+              text: "Six souls gather at the table. One chair belongs to you."
+            }
+          : entry
+      )
   });
+
+  return addDetectiveOpeningLead(nextState, detectiveKnownMafiaId);
 }
 
 export function addTranscript(
@@ -204,6 +254,35 @@ function seededRandom(seed: string): () => number {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+function pickDetectiveKnownMafia(roles: Record<PlayerId, Role>, seed: string): PlayerId {
+  const mafiaIds = PLAYER_IDS.filter((id) => roles[id] === "mafia");
+  return shuffle(mafiaIds, `${seed}:detective-known-mafia`)[0] ?? mafiaIds[0] ?? "don_vito";
+}
+
+function addDetectiveOpeningLead(state: GameState, mafiaId: PlayerId): GameState {
+  const detective = state.players.find((player) => player.role === "detective");
+  if (!detective) {
+    return state;
+  }
+
+  return addTranscript(
+    state,
+    "system",
+    "Private note",
+    `${playerName(state.players, mafiaId)} is Mafia. This is Detective-only knowledge; the table does not know.`,
+    "action",
+    [detective.id]
+  );
+}
+
+function isDetectiveOpeningLead(entry: TranscriptEntry): boolean {
+  return entry.privateTo?.length === 1 && entry.speakerId === "system" && entry.text.includes("Detective-only knowledge");
+}
+
+function playerName(players: Player[], playerId: PlayerId): string {
+  return players.find((player) => player.id === playerId)?.name ?? "One player";
 }
 
 export function phaseLabel(phase: Phase): string {

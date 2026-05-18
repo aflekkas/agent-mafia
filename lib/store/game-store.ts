@@ -9,8 +9,11 @@ declare global {
 const games = globalThis.__agentMafiaGames ?? new Map<string, GameState>();
 globalThis.__agentMafiaGames = games;
 
-export function startGame(seed?: string): GameState {
-  const game = seed === "scenario-a" || seed === "scenario-b" ? createScenarioSeed(seed) : createGame(seed);
+export function startGame(seed?: string, humanName?: string): GameState {
+  const game =
+    seed === "scenario-a" || seed === "scenario-b"
+      ? createScenarioSeed(seed, { humanName })
+      : createGame(seed, { humanName });
   games.set(game.id, game);
   return game;
 }

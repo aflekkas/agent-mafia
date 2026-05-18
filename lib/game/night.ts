@@ -1,6 +1,7 @@
 import { GameState, PlayerId } from "./types";
 import { getPlayer, legalTargets } from "./selectors";
 import { addTranscript, touch } from "./setup";
+import { buildDiscussionQueueFromPlayers } from "./turn-order";
 import { checkWinCondition } from "./win";
 
 export function submitNightAction(state: GameState, actorId: PlayerId, targetId: PlayerId): GameState {
@@ -85,7 +86,9 @@ export function resolveNight(state: GameState): GameState {
     );
   }
 
-  if (targetId && targetId !== saveId) {
+  if (state.nightNumber <= 1) {
+    nextState = addTranscript(nextState, "narrator", "Narrator", "The first night passes under old rules. No blade is raised.", "narration");
+  } else if (targetId && targetId !== saveId) {
     const target = getPlayer(state, targetId);
     nextState = addTranscript(
       {
@@ -128,9 +131,10 @@ export function resolveNight(state: GameState): GameState {
       phase: "day-discussion",
       nightActions: {},
       votes: [],
+      eliminatedThisRound: undefined,
       currentPrompt: undefined,
       turnOrder: {
-        discussionQueue: buildDiscussionQueue(nextState),
+        discussionQueue: buildDiscussionQueueFromPlayers(nextState.players, nextState.seed, nextState.day),
         voteQueue: [],
         nightQueue: []
       }
@@ -144,17 +148,4 @@ export function resolveNight(state: GameState): GameState {
 
 function livingDetectives(state: GameState): PlayerId[] {
   return state.players.filter((player) => player.alive && player.role === "detective").map((player) => player.id);
-}
-
-function buildDiscussionQueue(state: GameState): PlayerId[] {
-  const alive = state.players.filter((player) => player.alive).sort((left, right) => left.seat - right.seat);
-  const human = alive.find((player) => player.isHuman);
-  const npcs = alive.filter((player) => !player.isHuman);
-  const firstSpeaker = npcs[0]?.id;
-  const remainingNpcs = npcs.slice(1).map((player) => player.id);
-  const humanId = human?.id;
-  const roundOne = [firstSpeaker, humanId, ...remainingNpcs].filter(Boolean) as PlayerId[];
-  const roundTwo = [...npcs.map((player) => player.id), humanId].filter(Boolean) as PlayerId[];
-  const roundThree = npcs.map((player) => player.id);
-  return [...roundOne, ...roundTwo, ...roundThree];
 }

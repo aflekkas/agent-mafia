@@ -232,16 +232,15 @@ This gives the UI one reliable "continue" button during development and allows a
 
 Always support typed input.
 
-Speech input is an upgrade, not a blocker.
+Speech capture is out of scope. Do not add mic capture, browser speech recognition, Scribe STT, or push-to-talk controls.
 
 Required UI:
 
-- mic-style button or input area
-- text fallback field
+- typed text field
 - submit button
 - visible transcript entry as `Player 6`
 
-If browser speech or Scribe is not ready, the text fallback still makes the game playable.
+Typed input keeps the game playable without any mic permission flow.
 
 ### 6. Voting
 
@@ -548,7 +547,7 @@ A good NPC turn should be one or two sentences.
 
 ### Keep Fallbacks Visible
 
-Every voice action must have text on screen. Every speech input must have text fallback. Every generated action must have a deterministic fallback.
+Every voice action must have text on screen. Every human input must be typed. Every generated action must have a deterministic fallback.
 
 ## Cut List
 
@@ -568,7 +567,7 @@ Keep these at all costs:
 1. Human gets a secret role
 2. Five distinct NPC personalities
 3. NPCs accuse each other
-4. Human can speak or type
+4. Human can type a public line
 5. Vote and elimination happen
 6. At least some character voice plays
 7. The visual surface looks like a game, not a chat app
@@ -588,16 +587,15 @@ Phase 1 is done when:
 - The UI has a noir table, active speaker state, role card, transcript, and voting controls.
 - A deterministic demo seed can be loaded.
 
-At that point, the project is demoable. Phase 2 can then pursue the full Path D upgrade: ElevenLabs Agent, Custom LLM SSE, multi-voice XML routing, Scribe STT, server tools, Three.js POV, and richer replay.
+At that point, the project is demoable. Phase 2 can then pursue the full Path D upgrade: ElevenLabs Agent, Custom LLM SSE, multi-voice XML routing, server tools, Three.js POV, and richer replay.
 
 ## Phase 2 Upgrade Path
 
 After Phase 1 works, upgrade in this order:
 
-1. Replace browser speech/text fallback with ElevenLabs Scribe.
-2. Replace direct TTS with multi-voice XML routing.
-3. Add Custom LLM SSE endpoint for ElevenLabs Agent.
-4. Move game actions into server tools.
+1. Replace direct TTS with multi-voice XML routing.
+2. Add Custom LLM SSE endpoint for ElevenLabs Agent.
+3. Move game actions into server tools.
 5. Split backend into Bun/Hono if the Agent integration needs a dedicated service.
 6. Replace 2D scene with Three.js POV.
 7. Add post-game inner monologue replay.
