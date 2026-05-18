@@ -102,6 +102,10 @@ export async function speakEntry(
     return;
   }
 
+  if (entry.speakerId === "player_6") {
+    return;
+  }
+
   if (voiceMode === "off") {
     return;
   }
