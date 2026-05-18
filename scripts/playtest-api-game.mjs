@@ -106,14 +106,6 @@ function chooseSpeech(game) {
   }
 
   if (human.role === "mafia") {
-    const partner = visibleMafiaPartners(game)[0];
-    if (partner && latest.text.includes(partner.name)) {
-      return pickLine(game, "mafia-partner-defense", [
-        `${latest.speakerName}, I don't think that case on ${partner.name} is earned yet. What did they actually do besides get named?`,
-        `That feels too easy on ${partner.name}. ${latest.speakerName}, who gets safer if everyone follows that push?`,
-        `${partner.name} may be messy, but this pile-on is cleaner than the case. I want the motive, not the headline.`
-      ]);
-    }
     return pickLine(game, "mafia-redirect", [
       `${latest.speakerName}, that lands a little too neatly. ${pressure.name} keeps surviving every turn without having to bleed for a read.`,
       `I don't buy how quickly that became the room's favorite answer. ${pressure.name} is getting treated like background noise, and I hate that.`,
@@ -151,9 +143,7 @@ function chooseSpeech(game) {
 function chooseVoteTarget(game) {
   const human = humanPlayer(game);
   const candidates = game.players.filter((player) => player.alive && player.id !== human.id);
-  const partners = new Set(visibleMafiaPartners(game).map((player) => player.id));
   const ranked = candidates
-    .filter((player) => !partners.has(player.id))
     .sort((left, right) => scoreCandidate(game, right) - scoreCandidate(game, left) || left.seat - right.seat);
   return ranked[0] ?? candidates[0];
 }
@@ -173,12 +163,7 @@ function chooseNightTarget(game) {
   const others = living.filter((player) => player.id !== human.id);
 
   if (game.currentPrompt === "human-night-mafia") {
-    const partners = new Set(visibleMafiaPartners(game).map((player) => player.id));
-    return (
-      others
-        .filter((player) => !partners.has(player.id))
-        .sort((left, right) => scoreCandidate(game, right) - scoreCandidate(game, left) || left.seat - right.seat)[0] ?? others[0]
-    );
+    return others.sort((left, right) => scoreCandidate(game, right) - scoreCandidate(game, left) || left.seat - right.seat)[0] ?? others[0];
   }
 
   if (game.currentPrompt === "human-night-detective") {
@@ -236,7 +221,7 @@ function auditGame(game, moves) {
   }
 
   const roleCounts = countRoles(game);
-  if (game.phase === "game-over" && (roleCounts.mafia !== 2 || roleCounts.detective !== 1 || roleCounts.doctor !== 1 || roleCounts.villager !== 2)) {
+  if (game.phase === "game-over" && (roleCounts.mafia !== 1 || roleCounts.detective !== 1 || roleCounts.doctor !== 1 || roleCounts.villager !== 3)) {
     observations.push(`bad role distribution: ${JSON.stringify(roleCounts)}`);
   }
 
@@ -252,19 +237,15 @@ function auditGame(game, moves) {
 function auditPrivateNotes(game) {
   const observations = [];
   const human = humanPlayer(game);
-  const roleCounts = countRoles(game);
   const privateNotes = game.transcript.filter((entry) => entry.privateTo?.includes(human.id));
 
-  if (roleCounts.mafia === 2 && human.role === "mafia") {
-    const partnerNote = privateNotes.find((entry) => /Your Mafia partner is/i.test(entry.text));
-    if (!partnerNote) {
-      observations.push("human Mafia private note did not name the Mafia partner");
-    }
+  if (human.role === "mafia" && !privateNotes.some((entry) => /You are the only Mafia/i.test(entry.text))) {
+    observations.push("human Mafia private note did not state solo Mafia status");
   }
 
   for (const entry of privateNotes) {
-    if (/You are the only Mafia/i.test(entry.text) && roleCounts.mafia === 2) {
-      observations.push(`stale solo-Mafia private note: ${entry.text}`);
+    if (/Mafia partner|partner is|protect your partner|coordinate through public behavior|partnership/i.test(entry.text)) {
+      observations.push(`stale Mafia partner private note: ${entry.text}`);
     }
     if (/\bplayer_[0-9]+\b/i.test(entry.text)) {
       observations.push(`private note leaked storage id: ${entry.text}`);
@@ -293,11 +274,6 @@ function scoreCandidate(game, player) {
 function rankedVisiblePlayers(game) {
   const human = humanPlayer(game);
   return game.players.filter((player) => player.alive && player.id !== human.id).sort((left, right) => scoreCandidate(game, right) - scoreCandidate(game, left));
-}
-
-function visibleMafiaPartners(game) {
-  const human = humanPlayer(game);
-  return human.role === "mafia" ? game.players.filter((player) => player.id !== human.id && player.role === "mafia") : [];
 }
 
 function humanPlayer(game) {
