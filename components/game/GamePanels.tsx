@@ -476,8 +476,28 @@ function isNearTranscriptBottom(list: HTMLDivElement): boolean {
 }
 
 function formatTranscriptMeta(entry: TranscriptEntry): string {
-  const visibility = entry.privateTo?.length ? "Private" : "Public";
-  return `${visibility} / Day ${entry.day} / ${formatPhase(entry.phase)} / ${formatTranscriptKind(entry.kind)}`;
+  const parts = [`Day ${entry.day}`, formatTranscriptPhase(entry.phase)];
+  if (entry.privateTo?.length) {
+    parts.unshift("Private");
+  }
+  if (entry.kind === "action" || entry.kind === "system" || entry.kind === "vote") {
+    parts.push(formatTranscriptKind(entry.kind));
+  }
+  return parts.join(" / ");
+}
+
+function formatTranscriptPhase(phase: TranscriptEntry["phase"]): string {
+  switch (phase) {
+    case "day-discussion":
+      return "Discuss";
+    case "day-vote":
+      return "Vote";
+    case "game-over":
+      return "End";
+    case "night":
+    default:
+      return "Night";
+  }
 }
 
 function formatTranscriptKind(kind: TranscriptEntry["kind"]): string {
