@@ -168,12 +168,14 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   const { track, disposeAll } = createDisposableTracker();
   const root = new THREE.Group();
   const activeGroup = new THREE.Group();
+  const candleGroup = new THREE.Group();
   const nightOverlay = new THREE.Group();
   const smokePuffs: import("three").Mesh[] = [];
   const seatGlows = new Map<number, import("three").Mesh<import("three").BufferGeometry, import("three").MeshBasicMaterial>>();
   const seatShadows = new Map<number, import("three").Mesh<import("three").BufferGeometry, import("three").MeshBasicMaterial>>();
 
   scene.add(root);
+  root.scale.set(1.16, 1.12, 1);
 
   const feltMaterial = track(new THREE.MeshBasicMaterial({ color: 0x120d0a, transparent: true, opacity: 0.96 }));
   const tableEdgeMaterial = track(new THREE.MeshBasicMaterial({ color: 0x3b2415, transparent: true, opacity: 0.9 }));
@@ -181,17 +183,56 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
     new THREE.MeshBasicMaterial({
       color: 0xd3a34c,
       transparent: true,
-      opacity: 0.13,
+      opacity: 0.08,
       depthWrite: false,
       blending: THREE.AdditiveBlending
     })
   );
+  const lightPoolMaterial = track(
+    new THREE.MeshBasicMaterial({
+      color: 0xe0a44a,
+      transparent: true,
+      opacity: 0.08,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    })
+  );
+  const lightHotspotMaterial = track(
+    new THREE.MeshBasicMaterial({
+      color: 0xffd67a,
+      transparent: true,
+      opacity: 0.14,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    })
+  );
+  const candleShadowMaterial = track(new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.34, depthWrite: false }));
   const candleMaterial = track(new THREE.MeshBasicMaterial({ color: 0xd38a38, transparent: true, opacity: 0.92 }));
+  const candleTopMaterial = track(new THREE.MeshBasicMaterial({ color: 0xf2d48a, transparent: true, opacity: 0.9 }));
+  const wickMaterial = track(new THREE.MeshBasicMaterial({ color: 0x1a0d08, transparent: true, opacity: 0.92 }));
+  const flameHaloMaterial = track(
+    new THREE.MeshBasicMaterial({
+      color: 0xff8b31,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    })
+  );
   const flameMaterial = track(
     new THREE.MeshBasicMaterial({
       color: 0xffd36b,
       transparent: true,
       opacity: 0.88,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    })
+  );
+  const flameCoreMaterial = track(
+    new THREE.MeshBasicMaterial({
+      color: 0xfff0a6,
+      transparent: true,
+      opacity: 0.94,
       depthWrite: false,
       blending: THREE.AdditiveBlending
     })
@@ -202,7 +243,7 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
     new THREE.MeshBasicMaterial({
       color: 0xd3a34c,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.08,
       depthWrite: false,
       blending: THREE.AdditiveBlending
     })
@@ -211,7 +252,7 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
     new THREE.MeshBasicMaterial({
       color: 0xf4c56c,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.1,
       depthWrite: false,
       blending: THREE.AdditiveBlending
     })
@@ -237,19 +278,61 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   root.add(felt);
 
   const innerGlow = new THREE.Mesh(track(new THREE.CircleGeometry(1, 48)), innerGlowMaterial);
-  innerGlow.scale.set(2.7, 1.45, 1);
+  innerGlow.scale.set(2.25, 1.12, 1);
   root.add(innerGlow);
 
-  const candle = new THREE.Mesh(track(new THREE.BoxGeometry(0.22, 0.62, 0.01)), candleMaterial);
-  candle.position.set(0, -0.08, 0.1);
-  root.add(candle);
+  const lightPool = new THREE.Mesh(track(new THREE.CircleGeometry(1, 40)), lightPoolMaterial);
+  lightPool.position.set(0, 0.02, 0.12);
+  lightPool.scale.set(0.62, 0.24, 1);
+  lightPool.renderOrder = 2;
+  candleGroup.add(lightPool);
 
-  const flame = new THREE.Mesh(track(createDiamondGeometry(THREE, 0.24, 0.38)), flameMaterial);
-  flame.position.set(0, 0.37, 0.2);
-  root.add(flame);
+  const lightHotspot = new THREE.Mesh(track(new THREE.CircleGeometry(1, 28)), lightHotspotMaterial);
+  lightHotspot.position.set(0, 0.06, 0.13);
+  lightHotspot.scale.set(0.18, 0.08, 1);
+  lightHotspot.renderOrder = 3;
+  candleGroup.add(lightHotspot);
 
-  const activeGlow = new THREE.Mesh(track(new THREE.CircleGeometry(0.82, 32)), activeMaterial);
-  activeGlow.scale.set(1.35, 0.72, 1);
+  const candleShadow = new THREE.Mesh(track(new THREE.BoxGeometry(0.34, 0.08, 0.01)), candleShadowMaterial);
+  candleShadow.position.set(0.06, -0.12, 0.15);
+  candleShadow.rotation.z = -0.08;
+  candleShadow.renderOrder = 4;
+  candleGroup.add(candleShadow);
+
+  const candle = new THREE.Mesh(track(new THREE.BoxGeometry(0.2, 0.18, 0.01)), candleMaterial);
+  candle.position.set(0, 0.02, 0.18);
+  candle.renderOrder = 5;
+  candleGroup.add(candle);
+
+  const candleTop = new THREE.Mesh(track(new THREE.BoxGeometry(0.24, 0.06, 0.01)), candleTopMaterial);
+  candleTop.position.set(0, 0.12, 0.19);
+  candleTop.renderOrder = 6;
+  candleGroup.add(candleTop);
+
+  const wick = new THREE.Mesh(track(new THREE.BoxGeometry(0.026, 0.08, 0.01)), wickMaterial);
+  wick.position.set(0, 0.19, 0.21);
+  wick.renderOrder = 7;
+  candleGroup.add(wick);
+
+  const flameHalo = new THREE.Mesh(track(createDiamondGeometry(THREE, 0.22, 0.34)), flameHaloMaterial);
+  flameHalo.position.set(0, 0.27, 0.22);
+  flameHalo.renderOrder = 8;
+  candleGroup.add(flameHalo);
+
+  const flame = new THREE.Mesh(track(createDiamondGeometry(THREE, 0.15, 0.26)), flameMaterial);
+  flame.position.set(0, 0.26, 0.23);
+  flame.renderOrder = 9;
+  candleGroup.add(flame);
+
+  const flameCore = new THREE.Mesh(track(createDiamondGeometry(THREE, 0.07, 0.14)), flameCoreMaterial);
+  flameCore.position.set(0, 0.26, 0.24);
+  flameCore.renderOrder = 10;
+  candleGroup.add(flameCore);
+
+  root.add(candleGroup);
+
+  const activeGlow = new THREE.Mesh(track(new THREE.RingGeometry(0.56, 0.66, 32)), activeMaterial);
+  activeGlow.scale.set(1.2, 0.66, 1);
   activeGroup.add(activeGlow);
 
   const rippleA = new THREE.Mesh(track(new THREE.RingGeometry(0.48, 0.56, 36)), rippleMaterial);
@@ -273,15 +356,16 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
     const glow = new THREE.Mesh(track(new THREE.CircleGeometry(0.62, 24)), seatGlowMaterial.clone());
     track(glow.material);
     glow.position.set(x * 0.88, y * 0.82, 0.15);
-    glow.scale.set(1.4, 0.68, 1);
+    glow.scale.set(0.92, 0.42, 1);
     root.add(glow);
     seatGlows.set(seat, glow);
   });
 
   for (let index = 0; index < 6; index += 1) {
-    const puff = new THREE.Mesh(track(new THREE.CircleGeometry(0.22 + index * 0.025, 16)), smokeMaterial.clone());
+    const puff = new THREE.Mesh(track(new THREE.CircleGeometry(0.18 + index * 0.024, 16)), smokeMaterial.clone());
     track(puff.material);
-    puff.position.set((index - 2.5) * 0.12, 0.8 + index * 0.14, 0.3);
+    puff.position.set((index - 2.5) * 0.1, 0.58 + index * 0.14, 0.3);
+    puff.renderOrder = 11;
     root.add(puff);
     smokePuffs.push(puff);
   }
@@ -292,13 +376,24 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
 
   const tick = (elapsed: number, state: BackdropState) => {
     const activeSeat = state.players.find((player) => player.id === state.activeSpeakerId)?.seat;
-    const busyPulse = state.busy ? 0.08 : 0.035;
+    const busyPulse = state.busy ? 0.025 : 0.012;
     const pausedMultiplier = state.paused ? 0 : 1;
 
-    innerGlow.material.opacity = state.phase === "night" ? 0.08 : 0.13;
+    const flicker = Math.sin(elapsed * 6.4) * 0.5 + Math.sin(elapsed * 11.8 + 0.8) * 0.25;
+    const lightPulse = flicker * pausedMultiplier;
+
+    innerGlow.material.opacity = state.phase === "night" ? 0.065 : 0.08;
     nightMaterial.opacity = state.phase === "night" ? 0.22 : 0;
-    flame.scale.setScalar(1 + Math.sin(elapsed * 6.4) * 0.08 * pausedMultiplier);
-    flame.material.opacity = 0.76 + Math.sin(elapsed * 7.2) * 0.08 * pausedMultiplier;
+    lightPool.scale.set(0.62 + lightPulse * 0.032, 0.24 + lightPulse * 0.012, 1);
+    lightPool.material.opacity = (state.phase === "night" ? 0.085 : 0.065) + lightPulse * 0.014;
+    lightHotspot.scale.set(0.18 + lightPulse * 0.01, 0.08 + lightPulse * 0.005, 1);
+    lightHotspot.material.opacity = (state.phase === "night" ? 0.16 : 0.12) + lightPulse * 0.018;
+    flameHalo.scale.set(1 + lightPulse * 0.09, 1 + lightPulse * 0.12, 1);
+    flameHalo.material.opacity = (state.phase === "night" ? 0.28 : 0.22) + lightPulse * 0.045;
+    flame.scale.set(1 + lightPulse * 0.05, 1 + lightPulse * 0.1, 1);
+    flame.material.opacity = 0.78 + lightPulse * 0.1;
+    flameCore.scale.set(1 + lightPulse * 0.03, 1 + lightPulse * 0.07, 1);
+    flameCore.material.opacity = 0.88 + lightPulse * 0.08;
 
     state.players.forEach((player) => {
       const glow = seatGlows.get(player.seat);
@@ -308,7 +403,7 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
       }
 
       const isActive = player.seat === activeSeat;
-      glow.material.opacity = player.alive ? (isActive ? 0.26 + Math.sin(elapsed * 4.1) * busyPulse : 0.08) : 0.025;
+      glow.material.opacity = player.alive ? (isActive ? 0.09 + Math.sin(elapsed * 4.1) * busyPulse : 0.035) : 0.015;
       shadow.material.opacity = player.alive ? 0.84 : deadSeatMaterial.opacity;
       shadow.material.color.setHex(player.alive ? 0x070504 : 0x050404);
     });
@@ -319,17 +414,17 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
       const [x, y] = SEAT_COORDS[activeSeat] ?? [0, 0];
       activeGroup.visible = true;
       activeGroup.position.set(x * 0.78, y * 0.72, 0.28);
-      activeGroup.scale.setScalar(1 + Math.sin(elapsed * 3.2) * (state.busy ? 0.07 : 0.035) * pausedMultiplier);
-      activeGlow.material.opacity = 0.22 + Math.sin(elapsed * 4.4) * 0.06 * pausedMultiplier;
-      rippleA.material.opacity = 0.12 + Math.sin(elapsed * 5.4) * 0.06 * pausedMultiplier;
-      rippleB.material.opacity = 0.08 + Math.sin(elapsed * 4.2 + 1.4) * 0.05 * pausedMultiplier;
+      activeGroup.scale.setScalar(1 + Math.sin(elapsed * 3.2) * (state.busy ? 0.045 : 0.022) * pausedMultiplier);
+      activeGlow.material.opacity = 0.09 + Math.sin(elapsed * 4.4) * 0.025 * pausedMultiplier;
+      rippleA.material.opacity = 0.08 + Math.sin(elapsed * 5.4) * 0.035 * pausedMultiplier;
+      rippleB.material.opacity = 0.055 + Math.sin(elapsed * 4.2 + 1.4) * 0.025 * pausedMultiplier;
     }
 
     smokePuffs.forEach((puff, index) => {
-      puff.position.y = 0.75 + index * 0.14 + Math.sin(elapsed * 0.8 + index) * 0.04 * pausedMultiplier;
-      puff.position.x = (index - 2.5) * 0.12 + Math.sin(elapsed * 0.55 + index * 0.7) * 0.05 * pausedMultiplier;
+      puff.position.y = 0.58 + index * 0.14 + Math.sin(elapsed * 0.8 + index) * 0.035 * pausedMultiplier;
+      puff.position.x = (index - 2.5) * 0.1 + Math.sin(elapsed * 0.55 + index * 0.7) * 0.04 * pausedMultiplier;
       const material = Array.isArray(puff.material) ? puff.material[0] : puff.material;
-      material.opacity = state.phase === "night" ? 0.11 : 0.075;
+      material.opacity = state.phase === "night" ? 0.08 : 0.052;
     });
   };
 
