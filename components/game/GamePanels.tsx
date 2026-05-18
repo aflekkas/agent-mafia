@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ComponentType, CSSProperties, SVGProps } from "react";
+import { ArrowDown } from "pixelarticons/react/ArrowDown";
 import { Check } from "pixelarticons/react/Check";
 import { Clock } from "pixelarticons/react/Clock";
 import { EyeOff } from "pixelarticons/react/EyeOff";
@@ -419,6 +420,7 @@ export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar
   const listRef = useRef<HTMLDivElement | null>(null);
   const previousLengthRef = useRef(0);
   const previousGameIdRef = useRef(game.id);
+  const programmaticScrollRef = useRef(false);
   const [isPinnedToBottom, setIsPinnedToBottom] = useState(true);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const humanVisible = game.transcript.filter((entry) => !entry.privateTo || entry.privateTo.includes("player_6"));
@@ -429,6 +431,7 @@ export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar
       return;
     }
 
+    programmaticScrollRef.current = true;
     list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
     setIsPinnedToBottom(true);
     setShowJumpToLatest(false);
@@ -469,9 +472,14 @@ export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar
     const isNearBottom = isNearTranscriptBottom(list);
     setIsPinnedToBottom(isNearBottom);
 
-    if (isNearBottom) {
-      setShowJumpToLatest(false);
+    if (programmaticScrollRef.current) {
+      if (isNearBottom) {
+        programmaticScrollRef.current = false;
+      }
+      return;
     }
+
+    setShowJumpToLatest(!isNearBottom);
   }
 
   return (
@@ -506,8 +514,14 @@ export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar
         })}
       </div>
       {showJumpToLatest ? (
-        <button type="button" className="transcript-jump" onClick={scrollToLatest}>
-          Back to bottom
+        <button
+          type="button"
+          className="transcript-jump pixel-tooltip"
+          aria-label="Back to bottom"
+          data-tooltip="Back to bottom"
+          onClick={scrollToLatest}
+        >
+          <ArrowDown aria-hidden="true" />
         </button>
       ) : null}
     </section>
