@@ -243,7 +243,8 @@ export function addTranscript(
   kind: TranscriptEntry["kind"] = "speech",
   privateTo?: PlayerId[]
 ): GameState {
-  const sanitized = sanitizeTextForTranscript(text);
+  const displayText = replacePlayerIdsWithNames(state, text);
+  const sanitized = sanitizeTextForTranscript(displayText);
   const entry: TranscriptEntry = {
     id: makeId("entry"),
     day: state.day,
@@ -252,7 +253,7 @@ export function addTranscript(
     speakerName,
     text: sanitized.text,
     kind,
-    moderation: moderationForTranscript(state, speakerId, kind, text, sanitized.profanityCount),
+    moderation: moderationForTranscript(state, speakerId, kind, displayText, sanitized.profanityCount),
     privateTo,
     createdAt: Date.now()
   };
@@ -275,6 +276,7 @@ export function addActionLog(
   state: GameState,
   entry: Omit<ActionLogEntry, "id" | "day" | "phase" | "createdAt">
 ): GameState {
+  const detail = replacePlayerIdsWithNames(state, entry.detail);
   return touch({
     ...state,
     actionLog: [
@@ -284,10 +286,22 @@ export function addActionLog(
         day: state.day,
         phase: state.phase,
         createdAt: Date.now(),
-        ...entry
+        ...entry,
+        detail
       }
     ]
   });
+}
+
+function replacePlayerIdsWithNames(state: GameState, text: string): string {
+  return state.players
+    .map((player) => [player.id, player.name] as const)
+    .sort(([left], [right]) => right.length - left.length)
+    .reduce((current, [id, name]) => current.replace(new RegExp(`\\b${escapeRegExp(id)}\\b`, "g"), name), text);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function makeId(prefix: string): string {

@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "generate:characters": "node scripts/generate-character-portraits.mjs",
+    "playtest:api": "node scripts/playtest-api-game.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

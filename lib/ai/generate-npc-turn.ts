@@ -149,11 +149,10 @@ function normalizeTurn(
 ): NpcTurn {
   const legalVoteTargets = legalTargets(state, player.id, "vote");
   const legalRoleTargets = roleActionTargets(state, player);
-  const vote = parsed.vote && isPlayerId(parsed.vote) && legalVoteTargets.includes(parsed.vote) ? parsed.vote : null;
-  const roleAction =
-    parsed.role_action && isPlayerId(parsed.role_action) && legalRoleTargets.includes(parsed.role_action)
-      ? parsed.role_action
-      : null;
+  const parsedVote = parsed.vote ? playerIdFromModelValue(state, parsed.vote) : null;
+  const parsedRoleAction = parsed.role_action ? playerIdFromModelValue(state, parsed.role_action) : null;
+  const vote = parsedVote && legalVoteTargets.includes(parsedVote) ? parsedVote : null;
+  const roleAction = parsedRoleAction && legalRoleTargets.includes(parsedRoleAction) ? parsedRoleAction : null;
   const speech = forceSelfReferencesToFirstPerson(
     player,
     repairMisaddressedReply(state, player, cleanSingleSpeakerSpeech(state, parsed.speech.trim()))
@@ -212,12 +211,12 @@ function fallbackVoteLine(state: GameState, player: Player, targetId: PlayerId):
   const target = getPlayer(state, targetId);
   const note = target.notes.at(-1);
   if (note) {
-    return `I vote for ${target.name}. The pattern on them is the clearest thing at the table: ${note}`;
+    return `The pattern on ${target.name} is the clearest thing at the table: ${note}`;
   }
   if (player.role === "mafia" && target.role !== "mafia") {
-    return `I vote for ${target.name}. This keeps the heat away from the wrong people and gives the table a clean name to test.`;
+    return `This keeps the heat away from the wrong people and gives the table a clean name to test.`;
   }
-  return `I vote for ${target.name}. I do not love this read, but they have the least convincing position right now.`;
+  return `I do not love this read, but ${target.name} has the least convincing position right now.`;
 }
 
 function chooseFallbackTarget(state: GameState, targets: PlayerId[], actorId: PlayerId): PlayerId | null {
@@ -239,6 +238,20 @@ function chooseFallbackTarget(state: GameState, targets: PlayerId[], actorId: Pl
 
 function isPlayerId(value: string): value is PlayerId {
   return PLAYER_IDS.includes(value as PlayerId);
+}
+
+function playerIdFromModelValue(state: GameState, value: string): PlayerId | null {
+  const normalized = normalizeModelTarget(value);
+  const directId = PLAYER_IDS.find((id) => normalizeModelTarget(id) === normalized);
+  if (directId) {
+    return directId;
+  }
+
+  return state.players.find((candidate) => normalizeModelTarget(candidate.name) === normalized)?.id ?? null;
+}
+
+function normalizeModelTarget(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
 function cleanSingleSpeakerSpeech(state: GameState, speech: string): string {

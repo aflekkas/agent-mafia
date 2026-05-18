@@ -56,7 +56,7 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "- Refer to who did what: 'Rosa backed Alex', 'Carmela dodged Don Vito', 'Salvatore voted Vincenzo'.",
     "- Sound like a tense person at a table. You may be angry, petty, scared, smug, impatient, or defensive.",
     "- Mild profanity is allowed when it fits the character. No slurs. Do not become cartoonishly vulgar.",
-    "- If the latest human line is obscene, chaotic, self-incriminating, or useless, react like a real irritated player. Call it out directly before returning to strategy.",
+    "- If the latest line is obscene, chaotic, self-incriminating, or useless, react like a real irritated player. Call it out directly before returning to strategy.",
     "- Use contractions, fragments, interruptions, and imperfect phrasing. Avoid polished debate-club summaries.",
     "- Keep public speech compact: 1-2 short sentences, usually under 30 words total.",
     "- Use plain punctuation. Avoid long dash-heavy clauses that make speech boxes awkward.",
@@ -64,9 +64,11 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "- Private knowledge is private. Mafia may know their partner; Detective may know one Mafia lead. Do not say how you know.",
     `- First-person words like "I", "me", and "my" always mean ${player.name}, never the person you are responding to.`,
     `- The speech field is ONLY ${player.name}'s own spoken line. Never write another person's line, cue, transcript label, or completion.`,
+    `- In speech, use display names only: ${state.players.map((candidate) => candidate.name).join(", ")}. Do not speak or invent storage ids.`,
     "- Do not write 'Don:', 'Alex:', 'Narrator:', or any other speaker-label format. If addressing someone, use a comma: 'Don, listen...'",
     "- Do not invent what another player says next. You may quote actual prior public words only if they appear in the transcript.",
     "- Never reveal hidden roles unless the public transcript already revealed them.",
+    "- In vote phase, do not start speech with 'I vote', 'I'm voting', 'my vote is', or another ballot phrase. The game announces the ballot. You write only the reason.",
     "- Do not use phrases like 'as an AI', 'NPC', 'the transcript', 'the game state', 'we need facts not riddles', or 'according to the evidence'.",
     "Output only valid JSON. No markdown.",
     "",
@@ -76,13 +78,13 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     `Legal role-action targets: ${targetList(state, legalRoleActionTargets)}`,
     "",
     "Return JSON with this exact shape:",
-    '{ "strategy": { "target_id": "player id or null", "evidence": "actual public evidence or private reason", "connection": "relationship/pairing/read you are testing", "intent": "reaction wanted" }, "inner_monologue": "private thought", "speech": "your own spoken line only", "vote": null, "role_action": null }',
-    "For day-vote, set vote to a player id from the legal vote targets.",
-    "For day-vote, speech must be the reason for your own vote. It will be logged publicly and included in future context.",
+    '{ "strategy": { "target_id": "target name or null", "evidence": "actual public evidence or private reason", "connection": "relationship/pairing/read you are testing", "intent": "reaction wanted" }, "inner_monologue": "private thought", "speech": "your own spoken line only", "vote": null, "role_action": null }',
+    "For day-vote, set vote to the exact target name from the legal vote targets.",
+    "For day-vote, speech must be only the reason for your own vote, not the ballot announcement. It will be logged publicly and included in future context.",
     "For day-vote, current ballots are secret until the vote resolves. Do not react to another player's same-phase vote target or vote reason.",
-    "For night action, set role_action to a player id from the legal role-action targets.",
+    "For night action, set role_action to the exact target name from the legal role-action targets.",
     "For day-discussion, vote and role_action must be null.",
-    `Valid player ids: ${state.players.map((candidate) => candidate.id).join(", ")}`
+    `Valid target names: ${state.players.map((candidate) => candidate.name).join(", ")}`
   ].join("\n");
 }
 
@@ -245,7 +247,7 @@ function phaseInstruction(state: GameState, player: Player): string {
   }
 
   if (state.phase === "day-vote") {
-    return "Vote phase: choose the best elimination target, then justify it in one sharp public line. Your speech must explain this exact vote target from your own perspective.";
+    return "Vote phase: choose the best elimination target, then justify it in one sharp public line. Your speech must explain this exact vote target from your own perspective without saying a ballot phrase like 'I vote'.";
   }
 
   return "Discussion phase: make the table move. Ask one pointed question, answer an accusation, or build a case.";
@@ -271,10 +273,14 @@ function latestPublicInstruction(state: GameState, viewer: Player): string {
   const namesViewer = viewerWasNamed
     ? "This includes you. You may answer directly if it helps."
     : `This does not include you. You were not accused or addressed by this line. Do not say "why am I", "I'm defensive", "you accused me", or answer as if you were named.`;
+  const chaosInstruction = /mafia|kill|destroy|fuck|shit|ass|crack|bend|puh|useless|provocative/i.test(latestPublic.text)
+    ? "The latest line is socially disruptive. Before returning to your case, acknowledge it like a real irritated player would, unless you are currently casting a secret ballot."
+    : "No special disruption in the latest line.";
 
   return [
     `Latest public moment: ${latestPublic.speakerName} said "${latestPublic.text}"${transcriptToneNote(latestPublic)}`,
     `Latest line names or addresses: ${names}. You are ${viewer.name}. ${namesViewer}`,
+    chaosInstruction,
     `If that line challenges someone else, do not answer in first person as if you are them. You may demand that ${names} answer, agree with pressure on ${names}, or redirect from your own perspective.`,
     "React to the latest public moment only if it helps your agenda. Otherwise make a better move."
   ].join("\n");
@@ -288,7 +294,7 @@ function mentionedPlayerNames(state: GameState, text: string): string[] {
 }
 
 function targetList(state: GameState, ids: PlayerId[]): string {
-  return ids.length ? ids.map((id) => `${id} (${nameFor(state, id)})`).join(", ") : "none";
+  return ids.length ? ids.map((id) => nameFor(state, id)).join(", ") : "none";
 }
 
 function nameFor(state: GameState, id: PlayerId): string {
