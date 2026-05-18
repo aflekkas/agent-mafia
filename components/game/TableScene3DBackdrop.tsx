@@ -27,6 +27,8 @@ const SEAT_COORDS: Record<number, [number, number]> = {
   5: [0, -2.72]
 };
 
+type TablePropSlot = [number, number, number];
+
 export function TableScene3DBackdrop(props: BackdropState) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const stateRef = useRef(props);
@@ -98,7 +100,7 @@ export function TableScene3DBackdrop(props: BackdropState) {
           THREE,
           mount,
           className: "table-3d-canvas",
-          pixelScale: 3.5
+          pixelScale: 3
         });
         renderer = pixelRenderer.renderer;
         resizeRenderer = pixelRenderer.resize;
@@ -168,9 +170,8 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   const { track, disposeAll } = createDisposableTracker();
   const root = new THREE.Group();
   const activeGroup = new THREE.Group();
-  const candleGroup = new THREE.Group();
+  const propGroup = new THREE.Group();
   const nightOverlay = new THREE.Group();
-  const smokePuffs: import("three").Mesh[] = [];
   const seatGlows = new Map<number, import("three").Mesh<import("three").BufferGeometry, import("three").MeshBasicMaterial>>();
   const seatShadows = new Map<number, import("three").Mesh<import("three").BufferGeometry, import("three").MeshBasicMaterial>>();
 
@@ -188,55 +189,17 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
       blending: THREE.AdditiveBlending
     })
   );
-  const lightPoolMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xe0a44a,
-      transparent: true,
-      opacity: 0.08,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
-  const lightHotspotMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xffd67a,
-      transparent: true,
-      opacity: 0.14,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
-  const candleShadowMaterial = track(new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.34, depthWrite: false }));
-  const candleMaterial = track(new THREE.MeshBasicMaterial({ color: 0xd38a38, transparent: true, opacity: 0.92 }));
-  const candleTopMaterial = track(new THREE.MeshBasicMaterial({ color: 0xf2d48a, transparent: true, opacity: 0.9 }));
-  const wickMaterial = track(new THREE.MeshBasicMaterial({ color: 0x1a0d08, transparent: true, opacity: 0.92 }));
-  const flameHaloMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xff8b31,
-      transparent: true,
-      opacity: 0.22,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
-  const flameMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xffd36b,
-      transparent: true,
-      opacity: 0.88,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
-  const flameCoreMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xfff0a6,
-      transparent: true,
-      opacity: 0.94,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
+  const propShadowMaterial = track(new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.38, depthWrite: false }));
+  const cardMaterial = track(new THREE.MeshBasicMaterial({ color: 0xd8cab4, transparent: true, opacity: 0.86, depthWrite: false }));
+  const cardBackMaterial = track(new THREE.MeshBasicMaterial({ color: 0x3d1718, transparent: true, opacity: 0.9, depthWrite: false }));
+  const cardRedMaterial = track(new THREE.MeshBasicMaterial({ color: 0x7d1b1f, transparent: true, opacity: 0.86, depthWrite: false }));
+  const cardBlackMaterial = track(new THREE.MeshBasicMaterial({ color: 0x15100d, transparent: true, opacity: 0.82, depthWrite: false }));
+  const chipMaterial = track(new THREE.MeshBasicMaterial({ color: 0xa47738, transparent: true, opacity: 0.72, depthWrite: false }));
+  const chipAccentMaterial = track(new THREE.MeshBasicMaterial({ color: 0xead09a, transparent: true, opacity: 0.46, depthWrite: false }));
+  const plateMaterial = track(new THREE.MeshBasicMaterial({ color: 0x6f5b42, transparent: true, opacity: 0.42, depthWrite: false }));
+  const breadMaterial = track(new THREE.MeshBasicMaterial({ color: 0xb57938, transparent: true, opacity: 0.7, depthWrite: false }));
+  const oliveMaterial = track(new THREE.MeshBasicMaterial({ color: 0x2f3a1f, transparent: true, opacity: 0.72, depthWrite: false }));
+  const glassMaterial = track(new THREE.MeshBasicMaterial({ color: 0x9eb0a6, transparent: true, opacity: 0.24, depthWrite: false }));
   const chairMaterial = track(new THREE.MeshBasicMaterial({ color: 0x070504, transparent: true, opacity: 0.84 }));
   const deadSeatMaterial = track(new THREE.MeshBasicMaterial({ color: 0x050404, transparent: true, opacity: 0.58 }));
   const seatGlowMaterial = track(
@@ -266,7 +229,6 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
       blending: THREE.AdditiveBlending
     })
   );
-  const smokeMaterial = track(new THREE.MeshBasicMaterial({ color: 0x8c8172, transparent: true, opacity: 0.08, depthWrite: false }));
   const nightMaterial = track(new THREE.MeshBasicMaterial({ color: 0x07111a, transparent: true, opacity: 0.0, depthWrite: false }));
 
   const tableBase = new THREE.Mesh(track(new THREE.CircleGeometry(1, 72)), tableEdgeMaterial);
@@ -281,55 +243,97 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   innerGlow.scale.set(2.25, 1.12, 1);
   root.add(innerGlow);
 
-  const lightPool = new THREE.Mesh(track(new THREE.CircleGeometry(1, 40)), lightPoolMaterial);
-  lightPool.position.set(0, 0.02, 0.12);
-  lightPool.scale.set(0.62, 0.24, 1);
-  lightPool.renderOrder = 2;
-  candleGroup.add(lightPool);
+  const addBox = (
+    group: import("three").Group,
+    width: number,
+    height: number,
+    material: import("three").MeshBasicMaterial,
+    x: number,
+    y: number,
+    z: number,
+    rotation = 0
+  ) => {
+    const mesh = new THREE.Mesh(track(new THREE.BoxGeometry(width, height, 0.01)), material);
+    mesh.position.set(x, y, z);
+    mesh.rotation.z = rotation;
+    mesh.renderOrder = Math.round(z * 100);
+    group.add(mesh);
+    return mesh;
+  };
 
-  const lightHotspot = new THREE.Mesh(track(new THREE.CircleGeometry(1, 28)), lightHotspotMaterial);
-  lightHotspot.position.set(0, 0.06, 0.13);
-  lightHotspot.scale.set(0.18, 0.08, 1);
-  lightHotspot.renderOrder = 3;
-  candleGroup.add(lightHotspot);
+  const addCircle = (
+    group: import("three").Group,
+    radius: number,
+    material: import("three").MeshBasicMaterial,
+    x: number,
+    y: number,
+    z: number,
+    scaleX = 1,
+    scaleY = 1
+  ) => {
+    const mesh = new THREE.Mesh(track(new THREE.CircleGeometry(radius, 18)), material);
+    mesh.position.set(x, y, z);
+    mesh.scale.set(scaleX, scaleY, 1);
+    mesh.renderOrder = Math.round(z * 100);
+    group.add(mesh);
+    return mesh;
+  };
 
-  const candleShadow = new THREE.Mesh(track(new THREE.BoxGeometry(0.34, 0.08, 0.01)), candleShadowMaterial);
-  candleShadow.position.set(0.06, -0.12, 0.15);
-  candleShadow.rotation.z = -0.08;
-  candleShadow.renderOrder = 4;
-  candleGroup.add(candleShadow);
+  const addCard = (x: number, y: number, rotation: number, faceUp: boolean) => {
+    addBox(propGroup, 0.48, 0.68, propShadowMaterial, x + 0.05, y - 0.05, 0.16, rotation);
+    addBox(propGroup, 0.42, 0.6, faceUp ? cardMaterial : cardBackMaterial, x, y, 0.18, rotation);
 
-  const candle = new THREE.Mesh(track(new THREE.BoxGeometry(0.2, 0.18, 0.01)), candleMaterial);
-  candle.position.set(0, 0.02, 0.18);
-  candle.renderOrder = 5;
-  candleGroup.add(candle);
+    if (faceUp) {
+      const pipMaterial = Math.random() > 0.5 ? cardRedMaterial : cardBlackMaterial;
+      addCircle(propGroup, 0.032, pipMaterial, x - Math.sin(rotation) * 0.14 - Math.cos(rotation) * 0.1, y + Math.cos(rotation) * 0.14 - Math.sin(rotation) * 0.1, 0.2);
+      addCircle(propGroup, 0.032, pipMaterial, x + Math.sin(rotation) * 0.14 + Math.cos(rotation) * 0.1, y - Math.cos(rotation) * 0.14 + Math.sin(rotation) * 0.1, 0.2);
+    } else {
+      addBox(propGroup, 0.23, 0.36, cardRedMaterial, x, y, 0.2, rotation);
+    }
+  };
 
-  const candleTop = new THREE.Mesh(track(new THREE.BoxGeometry(0.24, 0.06, 0.01)), candleTopMaterial);
-  candleTop.position.set(0, 0.12, 0.19);
-  candleTop.renderOrder = 6;
-  candleGroup.add(candleTop);
+  const addChipStack = (x: number, y: number, count: number) => {
+    for (let index = 0; index < count; index += 1) {
+      const offset = index * 0.035;
+      addCircle(propGroup, 0.13, chipMaterial, x + offset, y + offset * 0.45, 0.18 + index * 0.004, 1, 0.72);
+      addCircle(propGroup, 0.07, chipAccentMaterial, x + offset, y + offset * 0.45, 0.19 + index * 0.004, 1, 0.72);
+    }
+  };
 
-  const wick = new THREE.Mesh(track(new THREE.BoxGeometry(0.026, 0.08, 0.01)), wickMaterial);
-  wick.position.set(0, 0.19, 0.21);
-  wick.renderOrder = 7;
-  candleGroup.add(wick);
+  const addPlate = (x: number, y: number, rotation: number) => {
+    addCircle(propGroup, 0.34, plateMaterial, x, y, 0.17, 1.28, 0.68);
+    addBox(propGroup, 0.38, 0.13, breadMaterial, x - 0.04, y + 0.02, 0.19, rotation);
+    addCircle(propGroup, 0.055, oliveMaterial, x + 0.18, y - 0.06, 0.2, 1, 0.8);
+    addCircle(propGroup, 0.05, oliveMaterial, x + 0.04, y - 0.08, 0.2, 1, 0.8);
+  };
 
-  const flameHalo = new THREE.Mesh(track(createDiamondGeometry(THREE, 0.22, 0.34)), flameHaloMaterial);
-  flameHalo.position.set(0, 0.27, 0.22);
-  flameHalo.renderOrder = 8;
-  candleGroup.add(flameHalo);
+  const addGlass = (x: number, y: number, rotation: number) => {
+    addBox(propGroup, 0.18, 0.28, glassMaterial, x, y, 0.19, rotation);
+    addCircle(propGroup, 0.09, glassMaterial, x, y + 0.13, 0.2, 1, 0.45);
+  };
 
-  const flame = new THREE.Mesh(track(createDiamondGeometry(THREE, 0.15, 0.26)), flameMaterial);
-  flame.position.set(0, 0.26, 0.23);
-  flame.renderOrder = 9;
-  candleGroup.add(flame);
+  const shuffledSlots = shuffle<TablePropSlot>([
+    [-1.95, 0.78, -0.34],
+    [-1.32, -0.82, 0.28],
+    [-0.42, 0.72, -0.08],
+    [0.72, -0.7, -0.22],
+    [1.38, 0.58, 0.36],
+    [2.08, -0.34, -0.18],
+    [-2.28, -0.24, 0.2]
+  ]);
 
-  const flameCore = new THREE.Mesh(track(createDiamondGeometry(THREE, 0.07, 0.14)), flameCoreMaterial);
-  flameCore.position.set(0, 0.26, 0.24);
-  flameCore.renderOrder = 10;
-  candleGroup.add(flameCore);
+  shuffledSlots.slice(0, 4).forEach(([x, y, rotation], index) => {
+    addCard(x, y, rotation, index % 3 !== 0);
+  });
+  shuffledSlots.slice(4, 6).forEach(([x, y], index) => {
+    addChipStack(x, y, 2 + index);
+  });
+  const [plateX, plateY, plateRotation] = shuffledSlots[6] ?? [1.84, -0.72, 0.2];
+  addPlate(plateX, plateY, plateRotation);
+  addGlass(-0.08, -0.48, -0.08);
+  addGlass(1.02, 0.18, 0.22);
 
-  root.add(candleGroup);
+  root.add(propGroup);
 
   const activeGlow = new THREE.Mesh(track(new THREE.RingGeometry(0.56, 0.66, 32)), activeMaterial);
   activeGlow.scale.set(1.2, 0.66, 1);
@@ -361,39 +365,16 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
     seatGlows.set(seat, glow);
   });
 
-  for (let index = 0; index < 6; index += 1) {
-    const puff = new THREE.Mesh(track(new THREE.CircleGeometry(0.18 + index * 0.024, 16)), smokeMaterial.clone());
-    track(puff.material);
-    puff.position.set((index - 2.5) * 0.1, 0.58 + index * 0.14, 0.3);
-    puff.renderOrder = 11;
-    root.add(puff);
-    smokePuffs.push(puff);
-  }
-
   const nightPlane = new THREE.Mesh(track(new THREE.PlaneGeometry(10, 10)), nightMaterial);
   nightOverlay.add(nightPlane);
   root.add(nightOverlay);
 
-  const tick = (elapsed: number, state: BackdropState) => {
+  const tick = (_elapsed: number, state: BackdropState) => {
     const activeSeat = state.players.find((player) => player.id === state.activeSpeakerId)?.seat;
-    const busyPulse = state.busy ? 0.025 : 0.012;
-    const pausedMultiplier = state.paused ? 0 : 1;
+    const isNight = state.phase === "night";
 
-    const flicker = Math.sin(elapsed * 6.4) * 0.5 + Math.sin(elapsed * 11.8 + 0.8) * 0.25;
-    const lightPulse = flicker * pausedMultiplier;
-
-    innerGlow.material.opacity = state.phase === "night" ? 0.065 : 0.08;
-    nightMaterial.opacity = state.phase === "night" ? 0.22 : 0;
-    lightPool.scale.set(0.62 + lightPulse * 0.032, 0.24 + lightPulse * 0.012, 1);
-    lightPool.material.opacity = (state.phase === "night" ? 0.085 : 0.065) + lightPulse * 0.014;
-    lightHotspot.scale.set(0.18 + lightPulse * 0.01, 0.08 + lightPulse * 0.005, 1);
-    lightHotspot.material.opacity = (state.phase === "night" ? 0.16 : 0.12) + lightPulse * 0.018;
-    flameHalo.scale.set(1 + lightPulse * 0.09, 1 + lightPulse * 0.12, 1);
-    flameHalo.material.opacity = (state.phase === "night" ? 0.28 : 0.22) + lightPulse * 0.045;
-    flame.scale.set(1 + lightPulse * 0.05, 1 + lightPulse * 0.1, 1);
-    flame.material.opacity = 0.78 + lightPulse * 0.1;
-    flameCore.scale.set(1 + lightPulse * 0.03, 1 + lightPulse * 0.07, 1);
-    flameCore.material.opacity = 0.88 + lightPulse * 0.08;
+    innerGlow.material.opacity = isNight ? 0.065 : 0.08;
+    nightMaterial.opacity = isNight ? 0.22 : 0;
 
     state.players.forEach((player) => {
       const glow = seatGlows.get(player.seat);
@@ -403,7 +384,7 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
       }
 
       const isActive = player.seat === activeSeat;
-      glow.material.opacity = player.alive ? (isActive ? 0.09 + Math.sin(elapsed * 4.1) * busyPulse : 0.035) : 0.015;
+      glow.material.opacity = player.alive ? (isActive ? 0.09 : 0.035) : 0.015;
       shadow.material.opacity = player.alive ? 0.84 : deadSeatMaterial.opacity;
       shadow.material.color.setHex(player.alive ? 0x070504 : 0x050404);
     });
@@ -414,18 +395,11 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
       const [x, y] = SEAT_COORDS[activeSeat] ?? [0, 0];
       activeGroup.visible = true;
       activeGroup.position.set(x * 0.78, y * 0.72, 0.28);
-      activeGroup.scale.setScalar(1 + Math.sin(elapsed * 3.2) * (state.busy ? 0.045 : 0.022) * pausedMultiplier);
-      activeGlow.material.opacity = 0.09 + Math.sin(elapsed * 4.4) * 0.025 * pausedMultiplier;
-      rippleA.material.opacity = 0.08 + Math.sin(elapsed * 5.4) * 0.035 * pausedMultiplier;
-      rippleB.material.opacity = 0.055 + Math.sin(elapsed * 4.2 + 1.4) * 0.025 * pausedMultiplier;
+      activeGroup.scale.setScalar(state.busy ? 1.035 : 1);
+      activeGlow.material.opacity = state.busy ? 0.1 : 0.085;
+      rippleA.material.opacity = state.busy ? 0.085 : 0.07;
+      rippleB.material.opacity = state.busy ? 0.065 : 0.05;
     }
-
-    smokePuffs.forEach((puff, index) => {
-      puff.position.y = 0.58 + index * 0.14 + Math.sin(elapsed * 0.8 + index) * 0.035 * pausedMultiplier;
-      puff.position.x = (index - 2.5) * 0.1 + Math.sin(elapsed * 0.55 + index * 0.7) * 0.04 * pausedMultiplier;
-      const material = Array.isArray(puff.material) ? puff.material[0] : puff.material;
-      material.opacity = state.phase === "night" ? 0.08 : 0.052;
-    });
   };
 
   return {
@@ -437,12 +411,11 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   };
 }
 
-function createDiamondGeometry(THREE: typeof import("three"), width: number, height: number) {
-  const shape = new THREE.Shape();
-  shape.moveTo(0, height / 2);
-  shape.lineTo(width / 2, 0);
-  shape.lineTo(0, -height / 2);
-  shape.lineTo(-width / 2, 0);
-  shape.lineTo(0, height / 2);
-  return new THREE.ShapeGeometry(shape);
+function shuffle<T>(items: T[]) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }
