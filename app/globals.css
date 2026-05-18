@@ -1352,12 +1352,6 @@ html.custom-cursor-enabled [contenteditable="true"] {
   gap: 4px;
 }
 
-.portrait-owner {
-  color: var(--gold) !important;
-  font-size: 0.7rem !important;
-  letter-spacing: 0 !important;
-}
-
 .portrait-state {
   max-width: 100%;
   display: inline-grid;

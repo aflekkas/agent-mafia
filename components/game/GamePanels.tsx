@@ -174,10 +174,9 @@ export function TableScene2D({
             />
             <strong>{player.name}</strong>
             <div className="portrait-meta">
-              {player.id === "player_6" ? <span className="portrait-owner">the user</span> : null}
               <PlayerStateLabel
                 visualState={visualState}
-                label={player.id === "player_6" ? `the user's state: ${visualStateLabel(visualState)}` : seatStateLabel(player, visualState)}
+                label={player.id === "player_6" ? visualStateLabel(visualState) : seatStateLabel(player, visualState)}
               />
             </div>
             <div className="character-peek" aria-hidden="true">
