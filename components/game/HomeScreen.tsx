@@ -135,7 +135,11 @@ export function VoiceModeSwitch({
   disabled?: boolean;
 }) {
   const nextMode: VoiceMode = voiceMode === "browser" ? "elevenlabs" : voiceMode === "elevenlabs" ? "off" : "browser";
-  const voiceLabel = voiceMode === "elevenlabs" ? "ElevenLabs" : voiceMode === "browser" ? "Browser" : "Off";
+  const voiceLabels: Record<VoiceMode, string> = {
+    browser: "Built-In",
+    elevenlabs: "API",
+    off: "Off"
+  };
 
   return (
     <button
@@ -144,10 +148,10 @@ export function VoiceModeSwitch({
       onClick={() => onChange(nextMode)}
       disabled={disabled}
       aria-pressed={voiceMode !== "off"}
-      aria-label={`Switch to ${nextMode === "elevenlabs" ? "ElevenLabs" : nextMode === "browser" ? "browser" : "no"} voice`}
+      aria-label={`Switch to ${voiceLabels[nextMode].toLowerCase()} voice`}
     >
       <AiVoice aria-hidden="true" />
-      <span>Voice: {voiceLabel}</span>
+      <span>Voice: {voiceLabels[voiceMode]}</span>
     </button>
   );
 }

@@ -37,7 +37,7 @@ import { CustomCursor } from "@/components/game/CustomCursor";
 import { HomeScreen, VoiceModeSwitch } from "@/components/game/HomeScreen";
 import { HomeTownBackground } from "@/components/game/HomeTownBackground";
 import { GameOverPanel, HumanPanel, PhasePanel, RoleCard, TableScene2D, Transcript, VoteBoard } from "@/components/game/GamePanels";
-import { BrowserSpeechRecognition, BrowserSpeechWindow, DialogMode, HumanAvatarId, VoiceMode } from "@/components/game/types";
+import { DialogMode, HumanAvatarId, VoiceMode } from "@/components/game/types";
 import {
   ambienceLoopBounds,
   ambienceVolumeFor,
@@ -52,7 +52,7 @@ import {
 
 const MOBILE_LOCKOUT_QUERY = "(max-width: 760px), ((hover: none) and (pointer: coarse) and (max-width: 920px))";
 
-export function GameShell() {
+export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolean }) {
   const [game, setGame] = useState<GameState | null>(null);
   const [busy, setBusy] = useState(false);
   const [humanText, setHumanText] = useState("");
@@ -88,11 +88,10 @@ export function GameShell() {
   const latestAccusationCueRef = useRef<string | null>(null);
   const decisionAudioContextRef = useRef<AudioContext | null>(null);
   const ambienceFadeRef = useRef<number | null>(null);
-  const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
-  const speechBaseTextRef = useRef("");
-  const speechFinalTextRef = useRef("");
-  const speechDictatedTextRef = useRef("");
-  const speechStartRequestIdRef = useRef(0);
+  const micRecorderRef = useRef<MediaRecorder | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const micChunksRef = useRef<Blob[]>([]);
+  const micStartRequestIdRef = useRef(0);
   const autoHumanPromptRef = useRef<string | null>(null);
   const prefetchedAdvanceRef = useRef<{ sourceGameId: string; sourceUpdatedAt: number; game: GameState } | null>(null);
   const prefetchingAdvanceRef = useRef<{ sourceGameId: string; sourceUpdatedAt: number; promise: Promise<GameState> } | null>(null);
@@ -133,7 +132,7 @@ export function GameShell() {
     clearPrefetchedAdvance();
     setPaused(true);
     setStatus("Screen too small. Resize to continue.");
-    speechRecognitionRef.current?.abort();
+    cancelMicCapture();
     setListening(false);
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -195,7 +194,7 @@ export function GameShell() {
       void ambienceAudioContextRef.current?.close();
       uiClick.pause();
       uiStart.pause();
-      speechRecognitionRef.current?.abort();
+      cancelMicCapture();
       void decisionAudioContextRef.current?.close();
     };
   }, []);
@@ -487,20 +486,22 @@ export function GameShell() {
     setHumanText(sanitizeHumanTextDraft(text));
   }
 
+  function appendHumanText(text: string) {
+    setHumanText((current) => sanitizeHumanTextDraft(joinDictationText(current, text)));
+  }
+
   async function startListening() {
     if (!canPlayOnCurrentViewport()) {
       return;
     }
 
-    if (listening) {
-      stopListening("Stopped listening.");
+    if (!micInputEnabled) {
+      setStatus("Mic input is disabled for this local run.");
       return;
     }
 
-    const speechWindow = window as BrowserSpeechWindow;
-    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-    if (!Recognition) {
-      setStatus("Voice dictation is not supported in this browser. Use Chrome or Edge, or type your line.");
+    if (listening) {
+      stopListening("Transcribing your line.");
       return;
     }
 
@@ -514,101 +515,127 @@ export function GameShell() {
       return;
     }
 
-    speechRecognitionRef.current?.abort();
-    speechBaseTextRef.current = humanText.trim();
-    speechFinalTextRef.current = "";
-    speechDictatedTextRef.current = "";
-    const requestId = speechStartRequestIdRef.current + 1;
-    speechStartRequestIdRef.current = requestId;
+    if (typeof MediaRecorder === "undefined") {
+      setStatus("This browser cannot record mic audio here. Type your line instead.");
+      return;
+    }
 
-    const recognition = new Recognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    recognition.onaudiostart = () => {
-      setListening(true);
-      setStatus("Mic is on. Speak now.");
-    };
-    recognition.onspeechstart = () => {
-      setStatus("Listening to your line.");
-    };
-    recognition.onresult = (event) => {
-      let finalText = "";
-      let interimText = "";
-
-      for (let index = 0; index < event.results.length; index += 1) {
-        const result = event.results[index];
-        const transcript = result?.[0]?.transcript?.trim();
-        if (!transcript) {
-          continue;
-        }
-        if (result.isFinal) {
-          finalText = joinDictationText(finalText, transcript);
-        } else {
-          interimText = joinDictationText(interimText, transcript);
-        }
-      }
-
-      speechFinalTextRef.current = finalText;
-      const dictatedText = joinDictationText(speechFinalTextRef.current, interimText);
-      speechDictatedTextRef.current = dictatedText;
-      const nextText = joinDictationText(speechBaseTextRef.current, dictatedText);
-      updateHumanText(nextText);
-      setStatus(dictatedText ? "Dictation captured. You can edit before submitting." : "Listening.");
-    };
-    recognition.onerror = (event) => {
-      setListening(false);
-      setStatus(micErrorMessage(event.error));
-    };
-    recognition.onend = () => {
-      speechRecognitionRef.current = null;
-      setListening(false);
-      if (speechDictatedTextRef.current) {
-        setStatus("Dictation ready. Edit it or submit your speech.");
-      }
-    };
-    recognition.onnomatch = () => {
-      setStatus("I could not make out the words. Try again or type your line.");
-    };
+    cancelMicCapture();
+    const requestId = micStartRequestIdRef.current + 1;
+    micStartRequestIdRef.current = requestId;
 
     try {
-      speechRecognitionRef.current = recognition;
       setListening(true);
       setStatus("Requesting microphone access.");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => track.stop());
-      if (speechStartRequestIdRef.current !== requestId || speechRecognitionRef.current !== recognition) {
-        recognition.abort();
+      if (micStartRequestIdRef.current !== requestId) {
+        stream.getTracks().forEach((track) => track.stop());
         return;
       }
-      setStatus("Mic permission granted. Starting dictation.");
-      recognition.start();
+
+      const mimeType = preferredMicMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+
+      micStreamRef.current = stream;
+      micRecorderRef.current = recorder;
+      micChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          micChunksRef.current.push(event.data);
+        }
+      };
+      recorder.onerror = () => {
+        micStartRequestIdRef.current += 1;
+        stopMicCapture();
+        setListening(false);
+        setBusy(false);
+        setStatus("Mic capture failed. Type your line instead.");
+      };
+      recorder.onstop = () => {
+        const chunks = micChunksRef.current;
+        const recordedType = recorder.mimeType || mimeType || chunks[0]?.type || "audio/webm";
+
+        stopMicCapture();
+        setListening(false);
+
+        if (micStartRequestIdRef.current !== requestId) {
+          return;
+        }
+        if (!chunks.length) {
+          setStatus("No speech was recorded. Try the mic again or type your line.");
+          return;
+        }
+
+        void transcribeMicAudio(chunks, recordedType);
+      };
+
+      recorder.start();
+      setStatus("Mic is on. Speak now, then stop to transcribe.");
     } catch (error) {
-      if (speechRecognitionRef.current === recognition) {
-        speechRecognitionRef.current = null;
-      }
+      stopMicCapture();
       setListening(false);
       setStatus(micStartErrorMessage(error));
     }
   }
 
   function stopListening(message: string) {
-    speechStartRequestIdRef.current += 1;
-    const recognition = speechRecognitionRef.current;
-    speechRecognitionRef.current = null;
-    if (recognition) {
+    const recorder = micRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
       try {
-        recognition.stop();
+        recorder.stop();
       } catch {
-        try {
-          recognition.abort();
-        } catch {
-          // The browser may throw if recognition has not fully started yet.
-        }
+        cancelMicCapture();
+        setListening(false);
       }
+    } else {
+      cancelMicCapture();
+      setListening(false);
     }
-    setListening(false);
     setStatus(message);
+  }
+
+  async function transcribeMicAudio(chunks: Blob[], mimeType: string) {
+    setBusy(true);
+    setStatus("Transcribing with OpenAI Whisper.");
+
+    try {
+      const audio = new Blob(chunks, { type: mimeType });
+      const formData = new FormData();
+      formData.append("audio", audio, micFileNameForMimeType(mimeType));
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData
+      });
+      const data = (await response.json().catch(() => null)) as { text?: string; error?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(data?.error ?? `Transcription failed with ${response.status}.`);
+      }
+      if (!data?.text) {
+        setStatus("No speech was heard. Try the mic again or type your line.");
+        return;
+      }
+
+      appendHumanText(data.text);
+      setStatus("Dictation ready. Edit it or submit your speech.");
+    } catch (error) {
+      setStatus(errorMessage(error, "Whisper transcription failed. Type your line instead."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function stopMicCapture() {
+    micRecorderRef.current = null;
+    micStreamRef.current?.getTracks().forEach((track) => track.stop());
+    micStreamRef.current = null;
+    micChunksRef.current = [];
+  }
+
+  function cancelMicCapture() {
+    micStartRequestIdRef.current += 1;
+    stopMicCapture();
   }
 
   async function submitVote(targetId: PlayerId) {
@@ -665,7 +692,7 @@ export function GameShell() {
     }
 
     clearPrefetchedAdvance();
-    speechRecognitionRef.current?.abort();
+    stopMicCapture();
     setListening(false);
     setBusy(true);
     setStatus("Autoplay choosing your move.");
@@ -1303,6 +1330,7 @@ export function GameShell() {
               setHumanText={updateHumanText}
               busy={busy}
               listening={listening}
+              micInputEnabled={micInputEnabled}
               onSubmitSpeech={submitSpeech}
               onStartListening={startListening}
               onSubmitVote={submitVote}
@@ -1402,25 +1430,6 @@ function isHumanPrompt(prompt: string | undefined): boolean {
   return !!prompt?.startsWith("human-");
 }
 
-function micErrorMessage(error: string | undefined): string {
-  if (error === "not-allowed" || error === "service-not-allowed") {
-    return "Mic permission was blocked. Allow microphone access in the browser, then try again.";
-  }
-  if (error === "audio-capture") {
-    return "No microphone was found. Connect or select a mic, then try again.";
-  }
-  if (error === "no-speech") {
-    return "No speech was heard. Try the mic again or type your line.";
-  }
-  if (error === "network") {
-    return "The browser speech service is unavailable. Try again, or type your line.";
-  }
-  if (error === "aborted") {
-    return "Mic dictation stopped.";
-  }
-  return "Mic capture failed. Type your line instead.";
-}
-
 function micStartErrorMessage(error: unknown): string {
   if (error instanceof DOMException) {
     if (error.name === "NotAllowedError" || error.name === "SecurityError") {
@@ -1435,4 +1444,20 @@ function micStartErrorMessage(error: unknown): string {
   }
 
   return errorMessage(error, "Mic capture failed. Type your line instead.");
+}
+
+function preferredMicMimeType(): string | undefined {
+  const options = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/mpeg"];
+
+  return options.find((option) => MediaRecorder.isTypeSupported(option));
+}
+
+function micFileNameForMimeType(mimeType: string): string {
+  if (mimeType.includes("mp4")) {
+    return "speech.mp4";
+  }
+  if (mimeType.includes("mpeg")) {
+    return "speech.mp3";
+  }
+  return "speech.webm";
 }

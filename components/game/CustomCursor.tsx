@@ -8,6 +8,7 @@ const INTERACTIVE_SELECTOR = 'a[href], button, [role="button"], [role="menuitemr
 const TEXT_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
 const DISABLED_SELECTOR = 'button:disabled, [aria-disabled="true"]';
 const SWAY_RESET_MS = 90;
+const MIN_SWAY_DISTANCE = 0.5;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -82,12 +83,19 @@ export function CustomCursor() {
       if (lastPoint) {
         const dx = nextPoint.x - lastPoint.x;
         const dy = nextPoint.y - lastPoint.y;
+        const distance = Math.hypot(dx, dy);
 
-        setSway({
-          x: clamp(dx * 0.07, -3, 3),
-          y: clamp(dy * 0.04, -2, 2),
-          rotate: clamp(dx * 0.38 + dy * 0.08, -8, 8)
-        });
+        if (distance > MIN_SWAY_DISTANCE) {
+          const directionX = dx / distance;
+          const directionY = dy / distance;
+          const strength = clamp(distance / 22, 0.35, 1);
+
+          setSway({
+            x: directionX * (2 + strength * 3),
+            y: directionY * (1.25 + strength * 2.75),
+            rotate: clamp(directionX * 8 + directionY * 4, -11, 11)
+          });
+        }
 
         if (swayResetRef.current) {
           clearTimeout(swayResetRef.current);

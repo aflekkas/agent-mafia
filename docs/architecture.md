@@ -8,7 +8,7 @@ Agent Mafia is a single Next.js app. Keep it that way unless the user explicitly
 Browser
   GameShell UI
   typed human input
-  optional browser speech recognition helper
+  optional browser mic recording helper
   optional browser speech synthesis fallback
   local ambience/UI sounds
 
@@ -17,11 +17,13 @@ Next.js route handlers
   /api/game/[gameId]
   /api/game/[gameId]/action
   /api/speak
+  /api/transcribe
 
 Server modules
   in-memory game store
   game state machine
   OpenAI NPC turn generation
+  OpenAI Whisper transcription
   ElevenLabs REST TTS proxy
 ```
 
@@ -47,12 +49,13 @@ The intended active API surface is:
 - `GET /api/game/[gameId]` - fetch redacted game state.
 - `POST /api/game/[gameId]/action` - advance, submit speech, vote, or submit a night action.
 - `POST /api/speak` - optional ElevenLabs REST TTS.
+- `POST /api/transcribe` - optional OpenAI Whisper transcription for the Use Mic helper.
 
 All game responses visible to the browser should go through `redactGameForPlayer`.
 
 ## UI Contract
 
-The UI is a 2D CSS table, not a Three.js scene. Human input is text-first. The mic button uses browser speech recognition only to fill the text area.
+The UI is a 2D CSS table, not a Three.js scene. Human input is text-first. The mic button records browser audio and uses `/api/transcribe` with OpenAI Whisper only to fill the text area.
 
 NPC table faces keep the approved `portraitSrc` as the live visual source and apply deterministic CSS state motion to that portrait. Optional 3x3 sprite sheets from `spriteSheetSrc` can be generated for reuse, but should not replace the clean portrait art unless reviewed. Character visual states are derived from the redacted public `GameState`: idle, quiet, thinking, speaking, suspected, and eliminated. They are not model-owned hidden state and do not change the NPC JSON turn contract.
 

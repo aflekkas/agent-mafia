@@ -244,6 +244,7 @@ export function HumanPanel({
   setHumanText,
   busy,
   listening,
+  micInputEnabled,
   onSubmitSpeech,
   onStartListening,
   onSubmitVote,
@@ -254,6 +255,7 @@ export function HumanPanel({
   setHumanText: (text: string) => void;
   busy: boolean;
   listening: boolean;
+  micInputEnabled: boolean;
   onSubmitSpeech: () => void;
   onStartListening: () => void;
   onSubmitVote: (targetId: PlayerId) => void;
@@ -281,16 +283,18 @@ export function HumanPanel({
           rows={4}
         />
         <div className="speech-actions">
-          <button
-            onClick={onStartListening}
-            disabled={busy}
-            className={listening ? "listening" : ""}
-            aria-pressed={listening}
-            title={listening ? "Stop microphone dictation" : "Start microphone dictation"}
-          >
-            <Mic aria-hidden="true" />
-            {listening ? "Stop Mic" : "Use Mic"}
-          </button>
+          {micInputEnabled ? (
+            <button
+              onClick={onStartListening}
+              disabled={busy}
+              className={listening ? "listening" : ""}
+              aria-pressed={listening}
+              title={listening ? "Stop microphone recording" : "Record microphone audio for Whisper transcription"}
+            >
+              <Mic aria-hidden="true" />
+              {listening ? "Stop Mic" : "Use Mic"}
+            </button>
+          ) : null}
           <button onClick={onSubmitSpeech} disabled={busy || !humanText.trim()}>
             <Check aria-hidden="true" />
             Submit Speech
@@ -448,9 +452,12 @@ export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar
                 />
               ) : null}
               <div className="transcript-line-copy">
-                <strong>{entry.speakerName}</strong>
-                <p>{entry.text}</p>
+                <div className="transcript-line-meta">
+                  <strong>{entry.speakerName}</strong>
+                  <span>{formatTranscriptMeta(entry)}</span>
+                </div>
               </div>
+              <p className="transcript-entry-text">{entry.text}</p>
             </article>
           );
         })}
@@ -466,6 +473,27 @@ export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar
 
 function isNearTranscriptBottom(list: HTMLDivElement): boolean {
   return list.scrollHeight - list.scrollTop - list.clientHeight <= 36;
+}
+
+function formatTranscriptMeta(entry: TranscriptEntry): string {
+  const visibility = entry.privateTo?.length ? "Private" : "Public";
+  return `${visibility} / Day ${entry.day} / ${formatPhase(entry.phase)} / ${formatTranscriptKind(entry.kind)}`;
+}
+
+function formatTranscriptKind(kind: TranscriptEntry["kind"]): string {
+  switch (kind) {
+    case "action":
+      return "Action";
+    case "narration":
+      return "Narration";
+    case "system":
+      return "System";
+    case "vote":
+      return "Vote";
+    case "speech":
+    default:
+      return "Speech";
+  }
 }
 
 export function VoteBoard({ game }: { game: GameState }) {

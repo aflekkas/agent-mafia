@@ -23,6 +23,9 @@ OPENAI_API_MODE=responses
 OPENAI_REASONING_EFFORT=low
 OPENAI_MAX_OUTPUT_TOKENS=900
 OPENAI_TEMPERATURE=0.62
+OPENAI_TRANSCRIPTION_MODEL=whisper-1
+MIC_INPUT_ENABLED=true
+MIC_INPUT_MAX_AUDIO_BYTES=26214400
 
 ELEVENLABS_API_KEY=
 ELEVENLABS_TTS_MODEL=eleven_flash_v2_5
@@ -41,9 +44,9 @@ Only NPCs and the narrator need ElevenLabs voice IDs. Human speech is submitted 
 
 ## Human Dictation
 
-The Use Mic button is a browser speech-recognition helper only. It requests microphone permission with `getUserMedia`, starts the browser `SpeechRecognition`/`webkitSpeechRecognition` API, and writes recognized words into the human text box. The player can edit the text before submitting.
+The Use Mic button records browser microphone audio with `MediaRecorder`, posts the audio to `/api/transcribe`, and the route transcribes it through OpenAI with `OPENAI_TRANSCRIPTION_MODEL` defaulting to `whisper-1`. The returned text is sanitized and written into the human text box. The player can edit the text before submitting.
 
-Dictation requires a supported browser and a secure context such as `localhost` or HTTPS. If permission is blocked, no microphone is available, no speech is heard, or the browser speech service is unavailable, the UI reports that status and the player can keep typing.
+Dictation requires `OPENAI_API_KEY`, a supported browser, and a secure context such as `localhost` or HTTPS. Set `MIC_INPUT_ENABLED=false` to hide the Use Mic button and disable `/api/transcribe`. If permission is blocked, no microphone is available, no speech is heard, or OpenAI transcription fails, the UI reports that status and the player can keep typing.
 
 ## Sound Effects
 
@@ -71,6 +74,7 @@ By default cache files are written under `.agent-mafia-cache/tts`, which is igno
 - Missing ElevenLabs key or speaker voice ID: return JSON fallback and use browser speech.
 - Oversized text: return JSON fallback and use browser speech.
 - ElevenLabs request failure: return JSON fallback and use browser speech.
+- Missing OpenAI key for mic transcription: keep text input usable and report the missing key.
 - Missing OpenAI key: NPCs use deterministic persona fallback lines and legal fallback actions.
 
 ## NPC Model

@@ -13,7 +13,7 @@ No hosted account is required. Clone the repo, add your own OpenAI key for gener
 - Hidden roles, solo Mafia deception, Detective investigations, Doctor saves, day discussion, voting, eliminations, and win checks.
 - OpenAI-powered NPC turns with deterministic fallback turns when no API key is configured.
 - Optional direct ElevenLabs REST TTS, plus browser speech synthesis fallback and a text transcript for every spoken line.
-- Text-first human input, with an optional browser mic helper that fills the text box.
+- Text-first human input, with an optional OpenAI Whisper mic helper that fills the text box.
 - Pixel noir 2D table UI with animated character state portraits, role cards, vote board, transcript, and local debug logs.
 
 ## Screenshots
@@ -58,6 +58,9 @@ OPENAI_API_MODE=responses
 OPENAI_REASONING_EFFORT=low
 OPENAI_MAX_OUTPUT_TOKENS=900
 OPENAI_TEMPERATURE=0.62
+OPENAI_TRANSCRIPTION_MODEL=whisper-1
+MIC_INPUT_ENABLED=true
+MIC_INPUT_MAX_AUDIO_BYTES=26214400
 OPENAI_CHARACTER_MODEL=
 OPENAI_IMAGE_MODEL=
 OPENAI_IMAGE_QUALITY=low
@@ -84,6 +87,9 @@ Important details:
 - `OPENAI_REASONING_EFFORT=low|medium|high` controls reasoning depth for compatible models.
 - `OPENAI_MAX_OUTPUT_TOKENS` includes reasoning tokens for reasoning models.
 - `OPENAI_TEMPERATURE` is only used by the chat fallback path.
+- `OPENAI_TRANSCRIPTION_MODEL` defaults to `whisper-1` for the Use Mic helper.
+- `MIC_INPUT_ENABLED=false` hides the Use Mic button and disables `/api/transcribe`.
+- `MIC_INPUT_MAX_AUDIO_BYTES` caps the uploaded browser recording before transcription.
 - `OPENAI_CHARACTER_MODEL`, `OPENAI_IMAGE_MODEL`, and `OPENAI_IMAGE_QUALITY` optionally override the character generation scripts.
 - `ELEVENLABS_API_KEY` and the per-speaker `ELEVENLABS_VOICE_*` IDs enable direct REST TTS.
 - If ElevenLabs is not configured, the game falls back to browser speech synthesis and always keeps the transcript visible.

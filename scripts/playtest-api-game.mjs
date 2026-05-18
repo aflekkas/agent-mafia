@@ -209,7 +209,7 @@ function auditGame(game, moves) {
 
   const voteLines = entries.filter((entry) => entry.kind === "vote");
   for (const vote of voteLines) {
-    if (!/\bbecause\b|\bpattern\b|\bread\b|\bcase\b|\breason\b|\bpressure\b|\bdodg|\becho|\bsmoke\b|\bfog\b|\bcover\b|\bposition\b|\bconvincing\b|\banswer\b|\bclean\b|\bsteer|\bstall|\bshield|\balibi|\bcontradiction\b|\bhunting\b|\bscumhunting\b|\bevasion\b|\btiming\b|\bmanaged\b|\bbenefit\b|\bmotive\b/i.test(vote.text)) {
+    if (!/\bbecause\b|\bpattern\b|\bread\b|\bcase\b|\breason\b|\bpressure\b|\bdodg|\becho|\bsmoke\b|\bfog\b|\bcover\b|\bposition\b|\bconvincing\b|\banswer\b|\bclean\b|\bsteer|\bstall|\bshield|\balibi|\bcontradiction\b|\bhunting\b|\bscumhunting\b|\bevasion\b|\btiming\b|\bmanaged\b|\bbenefit\b|\bmotive\b|\bexposed\b|\buntouchable\b|\buseful\b|\brunning the room\b/i.test(vote.text)) {
       observations.push(`weak vote rationale from ${vote.speakerName}: ${vote.text}`);
     }
     if (/^\s*(?:I vote|I'm voting|I am voting|My vote is)\b/i.test(vote.text)) {
