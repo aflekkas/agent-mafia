@@ -84,10 +84,15 @@ export function TableScene2D({
   const active = busy && thinkingActorId ? thinkingActorId : game.activeSpeakerId;
   const bubble = game.transcript.filter((entry) => !entry.privateTo?.length && ["speech", "narration"].includes(entry.kind)).at(-1);
   const bubbleClassName = bubble ? getSpeechBubbleClassName(bubble) : "";
+  const bubblePortraitSrc = bubble ? portraitSrcForSpeaker(bubble, game, humanAvatar) : undefined;
   const showBubble = !!bubble && !busy && !paused;
 
   return (
-    <section className={`table-scene phase-${game.phase} ${busy ? "scene-thinking" : ""} ${paused ? "scene-paused" : ""}`}>
+    <section
+      className={`table-scene phase-${game.phase} ${busy ? "scene-thinking" : ""} ${paused ? "scene-paused" : ""} ${
+        showBubble ? "has-speech-bubble" : ""
+      }`}
+    >
       <div className="table-vignette" />
       <div className="table-core">
         <div className="candle">
@@ -115,7 +120,14 @@ export function TableScene2D({
       })}
       {showBubble ? (
         <div className={bubbleClassName}>
-          <strong>{bubble.speakerName}</strong>
+          <div className="speech-speaker">
+            {bubblePortraitSrc ? (
+              <span className="speech-speaker-portrait" aria-hidden="true">
+                <img src={bubblePortraitSrc} alt="" />
+              </span>
+            ) : null}
+            <strong>{bubble.speakerName}</strong>
+          </div>
           <p>{bubble.text}</p>
         </div>
       ) : null}
@@ -334,6 +346,16 @@ function getSpeechBubbleClassName(entry: TranscriptEntry) {
   }
 
   return "speech-bubble speaker-bubble";
+}
+
+function portraitSrcForSpeaker(entry: TranscriptEntry, game: GameState, humanAvatar: HumanAvatarId): string | undefined {
+  const speaker = game.players.find((player) => player.id === entry.speakerId);
+
+  if (!speaker) {
+    return undefined;
+  }
+
+  return speaker.id === "player_6" ? avatarFor(humanAvatar).src : speaker.portraitSrc;
 }
 
 function suspicionLabel(score: number): string {
