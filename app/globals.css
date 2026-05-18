@@ -788,10 +788,17 @@ html.custom-cursor-enabled [contenteditable="true"] {
 }
 
 .stage-panel {
+  --human-prompt-panel-space: clamp(196px, 31dvh, 340px);
   grid-template-rows: minmax(0, 1fr);
   position: relative;
   z-index: 1;
   overflow: visible;
+  padding-bottom: 0;
+  transition: padding-bottom 260ms cubic-bezier(0.22, 0.8, 0.22, 1);
+}
+
+.stage-panel.has-human-prompt {
+  padding-bottom: var(--human-prompt-panel-space);
 }
 
 .stage-panel:hover,
@@ -963,7 +970,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
   isolation: isolate;
   border-color: transparent;
   box-shadow: none;
-  transition: transform 220ms steps(5, end);
+  transition: transform 260ms cubic-bezier(0.22, 0.8, 0.22, 1);
   background:
     linear-gradient(#0b0b0b 2px, transparent 2px),
     linear-gradient(90deg, #0b0b0b 2px, transparent 2px),
@@ -972,7 +979,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
 }
 
 .stage-panel.has-human-prompt .table-scene {
-  transform: translate3d(0, -clamp(34px, 5dvh, 68px), 0);
+  transform: translate3d(0, -clamp(18px, 3dvh, 42px), 0);
 }
 
 .table-scene:hover,
@@ -1548,14 +1555,14 @@ html.custom-cursor-enabled [contenteditable="true"] {
   right: 0;
   bottom: clamp(8px, 1.2dvh, 16px);
   z-index: 50;
-  max-height: min(42dvh, 320px);
+  max-height: calc(var(--human-prompt-panel-space) - clamp(8px, 1.2dvh, 16px));
   overflow: auto;
   opacity: 0;
   pointer-events: none;
   transform: translate3d(0, calc(100% + 18px), 0);
   transition:
     opacity 160ms linear,
-    transform 220ms steps(5, end),
+    transform 260ms cubic-bezier(0.22, 0.8, 0.22, 1),
     visibility 0ms linear 220ms;
   visibility: hidden;
 }
@@ -1566,7 +1573,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
   transform: translate3d(0, 0, 0);
   transition:
     opacity 160ms linear,
-    transform 220ms steps(5, end);
+    transform 260ms cubic-bezier(0.22, 0.8, 0.22, 1);
   visibility: visible;
 }
 
