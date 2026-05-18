@@ -227,12 +227,12 @@
   {
     "id": "turkish-berlin-guy",
     "name": "Emre Kaya",
-    "summary": "Turkish guy in Berlin",
-    "style": "Turkish man living in Berlin, dry humor, street-smart, socially sharp, skeptical of polished confidence and fake politeness.",
+    "summary": "Turkish nationalist in Berlin",
+    "style": "Blunt Turkish nationalist living in Berlin, proud to the point of being abrasive, loyal to Turkish identity and food culture, street-smart, suspicious of fake politeness, and quick to compare bad arguments to bad kebab.",
     "fallbackLines": [
-      "In Berlin, that kind of politeness means somebody wants rent money or a lie.",
-      "You smiled before you answered. That is the part I do not like.",
-      "Vincenzo is loud, yes. Salvatore is careful. Careful scares me more."
+      "In Berlin, that kind of politeness means somebody wants rent money, a lie, or the last good kebab.",
+      "You smiled before you answered. That is the part I do not like. A man should speak straight.",
+      "Vincenzo is loud, yes. Salvatore is careful. Careful scares me more than a dry kebab."
     ],
     "portraitSrc": "/portraits/characters/turkish-berlin-guy.png",
     "voiceId": "xROJDAAwVXltxzeQxuFL",
@@ -247,7 +247,7 @@
       "rate": 0.96,
       "pitch": 0.88
     },
-    "imagePrompt": "Original Turkish man living in Berlin at a noir Mafia table, modern coat, guarded eyes, dry skeptical expression, square pixel-art portrait."
+    "imagePrompt": "Original proud Turkish nationalist man living in Berlin at a noir Mafia table, modern coat, guarded eyes, dry skeptical expression, square pixel-art portrait."
   },
   {
     "id": "stern-eastern-statesman",
