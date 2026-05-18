@@ -6,16 +6,22 @@ export function redactGameForPlayer(state: GameState, viewerId: PlayerId = "play
   const viewerCanSeeMafia = viewer?.role === "mafia";
   const viewerCanSeeDetectiveLead = viewer?.role === "detective";
   const viewerCanSeeDetectiveResult = viewer?.role === "detective";
-  const visibleTranscript = state.transcript.filter((entry) => !entry.privateTo?.length || entry.privateTo.includes(viewerId));
+  const hideActiveVotes = !revealAll && state.phase === "day-vote" && state.currentPrompt === "human-vote";
+  const visibleTranscript = state.transcript.filter(
+    (entry) =>
+      (!entry.privateTo?.length || entry.privateTo.includes(viewerId)) &&
+      !(hideActiveVotes && entry.day === state.day && entry.kind === "vote")
+  );
   const visibleActionLog =
     revealAll
       ? state.actionLog
       : (state.actionLog ?? []).filter(
           (entry) =>
-            entry.actorId === viewerId ||
-            entry.action === "vote" ||
-            (viewerCanSeeMafia && entry.action === "mafia-kill") ||
-            (viewerCanSeeDetectiveResult && entry.action === "detective-investigate")
+            !(hideActiveVotes && entry.day === state.day && entry.action === "vote") &&
+            (entry.actorId === viewerId ||
+              entry.action === "vote" ||
+              (viewerCanSeeMafia && entry.action === "mafia-kill") ||
+              (viewerCanSeeDetectiveResult && entry.action === "detective-investigate"))
         );
 
   return {
@@ -47,6 +53,7 @@ export function redactGameForPlayer(state: GameState, viewerId: PlayerId = "play
     transcript: visibleTranscript,
     innerMonologues: state.phase === "game-over" ? state.innerMonologues : [],
     actionLog: visibleActionLog,
+    votes: hideActiveVotes ? [] : state.votes,
     nightActions:
       state.phase === "game-over"
         ? state.nightActions

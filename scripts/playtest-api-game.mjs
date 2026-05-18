@@ -134,7 +134,7 @@ function chooseVoteTarget(game) {
 }
 
 function chooseVoteReason(game, target) {
-  return `${target.name} has the least honest pressure pattern right now. I want that seat resolved.`;
+  return `The pressure pattern around ${target.name} looks least honest right now. I want that seat resolved.`;
 }
 
 function chooseNightTarget(game) {
@@ -180,7 +180,7 @@ function auditGame(game, moves) {
 
   const voteLines = entries.filter((entry) => entry.kind === "vote");
   for (const vote of voteLines) {
-    if (!/\bbecause\b|\bpattern\b|\bread\b|\bcase\b|\breason\b|\bpressure\b|\bdodg|\becho|\bsmoke\b|\bfog\b|\bcover\b|\bposition\b|\bconvincing\b|\banswer\b|\bclean\b/i.test(vote.text)) {
+    if (!/\bbecause\b|\bpattern\b|\bread\b|\bcase\b|\breason\b|\bpressure\b|\bdodg|\becho|\bsmoke\b|\bfog\b|\bcover\b|\bposition\b|\bconvincing\b|\banswer\b|\bclean\b|\bsteer|\bstall|\bshield|\balibi|\bcontradiction\b|\bhunting\b|\bscumhunting\b/i.test(vote.text)) {
       observations.push(`weak vote rationale from ${vote.speakerName}: ${vote.text}`);
     }
     if (/\b(I vote|I'm voting|I am voting|My vote is|Voting)\b.+\b(I vote|I'm voting|I am voting|My vote is|Voting)\b/i.test(vote.text)) {
@@ -231,7 +231,10 @@ function humanPlayer(game) {
 }
 
 function latestPublicSpeech(game) {
-  return visibleTranscript(game).filter((entry) => entry.kind === "speech" || entry.kind === "narration").at(-1);
+  return (
+    game.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "speech").at(-1) ??
+    game.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "narration").at(-1)
+  );
 }
 
 function visibleTranscript(game) {

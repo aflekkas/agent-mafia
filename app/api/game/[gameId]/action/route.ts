@@ -24,12 +24,18 @@ export async function POST(request: Request, context: { params: Promise<{ gameId
   }
 
   if (body.type === "speech") {
+    if (game.currentPrompt !== "human-speech" || game.phase !== "day-discussion") {
+      return NextResponse.json({ error: "It is not your speech turn." }, { status: 409 });
+    }
     const next = submitHumanSpeech(game, typeof body.text === "string" ? body.text : "");
     saveGame(next);
     return NextResponse.json({ game: redactGameForPlayer(next) });
   }
 
   if (body.type === "vote") {
+    if (game.currentPrompt !== "human-vote" || game.phase !== "day-vote") {
+      return NextResponse.json({ error: "It is not your vote turn." }, { status: 409 });
+    }
     if (!isPlayerId(body.targetId)) {
       return NextResponse.json({ error: "Invalid vote target." }, { status: 400 });
     }
@@ -39,6 +45,9 @@ export async function POST(request: Request, context: { params: Promise<{ gameId
   }
 
   if (body.type === "night") {
+    if (!game.currentPrompt?.startsWith("human-night") || game.phase !== "night") {
+      return NextResponse.json({ error: "It is not your night action." }, { status: 409 });
+    }
     if (!isPlayerId(body.targetId)) {
       return NextResponse.json({ error: "Invalid night target." }, { status: 400 });
     }

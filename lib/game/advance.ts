@@ -269,7 +269,8 @@ async function advanceDiscussion(state: GameState): Promise<GameState> {
 }
 
 function buildVoteQueue(state: GameState): PlayerId[] {
-  return buildVoteQueueFromPlayers(alivePlayers(state), state.seed, state.day);
+  const queue = buildVoteQueueFromPlayers(alivePlayers(state), state.seed, state.day);
+  return queue.includes("player_6") ? ["player_6", ...queue.filter((id) => id !== "player_6")] : queue;
 }
 
 async function advanceVote(state: GameState): Promise<GameState> {
