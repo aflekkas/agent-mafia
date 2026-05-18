@@ -150,9 +150,6 @@ html.custom-cursor-enabled [contenteditable="true"] {
   position: fixed;
   left: 0;
   top: 0;
-  --cursor-sway-x: 0px;
-  --cursor-sway-y: 0px;
-  --cursor-sway-rotate: 0deg;
   z-index: 1000;
   width: var(--custom-cursor-size);
   height: var(--custom-cursor-size);
@@ -195,33 +192,33 @@ html.custom-cursor-enabled [contenteditable="true"] {
 @keyframes knife-idle {
   0%,
   100% {
-    transform: translate(var(--cursor-sway-x), var(--cursor-sway-y)) rotate(var(--cursor-sway-rotate));
+    transform: translate(0, 0) rotate(0deg);
   }
 
   50% {
-    transform: translate(calc(var(--cursor-sway-x) + 1px), var(--cursor-sway-y)) rotate(calc(var(--cursor-sway-rotate) - 2deg));
+    transform: translate(1px, 0) rotate(-2deg);
   }
 }
 
 @keyframes knife-hover {
   0%,
   100% {
-    transform: translate(var(--cursor-sway-x), var(--cursor-sway-y)) rotate(var(--cursor-sway-rotate));
+    transform: translate(0, 0) rotate(0deg);
   }
 
   50% {
-    transform: translate(calc(var(--cursor-sway-x) + 2px), calc(var(--cursor-sway-y) + 2px)) rotate(calc(var(--cursor-sway-rotate) - 4deg));
+    transform: translate(2px, 2px) rotate(-4deg);
   }
 }
 
 @keyframes knife-press {
   0%,
   100% {
-    transform: translate(var(--cursor-sway-x), var(--cursor-sway-y)) rotate(var(--cursor-sway-rotate)) scale(1);
+    transform: translate(0, 0) rotate(0deg) scale(1);
   }
 
   50% {
-    transform: translate(calc(var(--cursor-sway-x) + 5px), calc(var(--cursor-sway-y) + 5px)) rotate(calc(var(--cursor-sway-rotate) - 8deg)) scale(0.95);
+    transform: translate(5px, 5px) rotate(-8deg) scale(0.95);
   }
 }
 

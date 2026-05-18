@@ -7,12 +7,6 @@ type CursorMode = "idle" | "hover" | "pressed" | "disabled";
 const INTERACTIVE_SELECTOR = 'a[href], button, [role="button"], [role="menuitemradio"], [role="option"], summary';
 const TEXT_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
 const DISABLED_SELECTOR = 'button:disabled, [aria-disabled="true"]';
-const SWAY_RESET_MS = 90;
-const MIN_SWAY_DISTANCE = 0.5;
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function modeForTarget(target: EventTarget | null): CursorMode {
   if (!(target instanceof Element)) {
@@ -39,30 +33,16 @@ export function CustomCursor() {
   const [visible, setVisible] = useState(false);
   const [mode, setMode] = useState<CursorMode>("idle");
   const [point, setPoint] = useState({ x: 0, y: 0 });
-  const [sway, setSway] = useState({ x: 0, y: 0, rotate: 0 });
   const pressedRef = useRef(false);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
-  const swayResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const media = window.matchMedia("(hover: hover) and (pointer: fine)");
-
-    function resetSway() {
-      if (swayResetRef.current) {
-        clearTimeout(swayResetRef.current);
-        swayResetRef.current = null;
-      }
-
-      setSway({ x: 0, y: 0, rotate: 0 });
-    }
 
     function syncEnabled() {
       setEnabled(media.matches);
       document.documentElement.classList.toggle("custom-cursor-enabled", media.matches);
       if (!media.matches) {
         setVisible(false);
-        lastPointRef.current = null;
-        resetSway();
       }
     }
 
@@ -76,38 +56,7 @@ export function CustomCursor() {
         return;
       }
 
-      const nextPoint = { x: event.clientX, y: event.clientY };
-      const lastPoint = lastPointRef.current;
-      lastPointRef.current = nextPoint;
-
-      if (lastPoint) {
-        const dx = nextPoint.x - lastPoint.x;
-        const dy = nextPoint.y - lastPoint.y;
-        const distance = Math.hypot(dx, dy);
-
-        if (distance > MIN_SWAY_DISTANCE) {
-          const directionX = dx / distance;
-          const directionY = dy / distance;
-          const strength = clamp(distance / 22, 0.35, 1);
-
-          setSway({
-            x: directionX * (2 + strength * 3),
-            y: directionY * (1.25 + strength * 2.75),
-            rotate: clamp(directionX * 8 + directionY * 4, -11, 11)
-          });
-        }
-
-        if (swayResetRef.current) {
-          clearTimeout(swayResetRef.current);
-        }
-
-        swayResetRef.current = setTimeout(() => {
-          swayResetRef.current = null;
-          setSway({ x: 0, y: 0, rotate: 0 });
-        }, SWAY_RESET_MS);
-      }
-
-      setPoint(nextPoint);
+      setPoint({ x: event.clientX, y: event.clientY });
       setVisible(true);
       setModeFromTarget(event.target);
     }
@@ -118,9 +67,7 @@ export function CustomCursor() {
       }
 
       pressedRef.current = true;
-      const nextPoint = { x: event.clientX, y: event.clientY };
-      lastPointRef.current = nextPoint;
-      setPoint(nextPoint);
+      setPoint({ x: event.clientX, y: event.clientY });
       setModeFromTarget(event.target);
     }
 
@@ -131,8 +78,6 @@ export function CustomCursor() {
 
     function handlePointerLeave() {
       setVisible(false);
-      lastPointRef.current = null;
-      resetSway();
     }
 
     syncEnabled();
@@ -149,10 +94,6 @@ export function CustomCursor() {
       window.removeEventListener("pointerup", handlePointerUp);
       document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
       document.documentElement.classList.remove("custom-cursor-enabled");
-      if (swayResetRef.current) {
-        clearTimeout(swayResetRef.current);
-        swayResetRef.current = null;
-      }
     };
   }, []);
 
@@ -169,10 +110,7 @@ export function CustomCursor() {
       style={
         {
           "--cursor-x": `${point.x}px`,
-          "--cursor-y": `${point.y}px`,
-          "--cursor-sway-x": `${sway.x}px`,
-          "--cursor-sway-y": `${sway.y}px`,
-          "--cursor-sway-rotate": `${sway.rotate}deg`
+          "--cursor-y": `${point.y}px`
         } as CSSProperties
       }
     >
