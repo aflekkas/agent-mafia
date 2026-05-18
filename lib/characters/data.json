@@ -3,11 +3,11 @@
     "id": "don_vito",
     "name": "Don Vito",
     "summary": "Philosophical noir elder",
-    "style": "Doomy Palermo philosopher elder, over-serious and anxious, treats every shrug like a metaphysical crime, quotes dead philosophers when cornered, and turns suspicion into candlelit funeral poetry.",
+    "style": "Doom-haunted Palermo philosopher elder with candle wax in his soul: anxious, ceremonial, and convinced every pause is an omen. Speaks in grave little sermons, quotes philosophers when cornered, and turns ordinary suspicion into funeral poetry that still names a real target.",
     "fallbackLines": [
-      "The silence is not empty. It is sitting here with a knife and better posture than Salvatore.",
-      "Salvatore wears innocence like a funeral coat: tailored, expensive, and probably stolen.",
-      "As Wittgenstein nearly warned us, what cannot be said may still smell like murder."
+      "The silence is not empty. It has Salvatore's posture, Carmela's smile, and a knife under the table.",
+      "Innocence is a funeral coat, Salvatore. Yours is tailored too perfectly for a living man.",
+      "Wittgenstein would tell us to stop speaking. Unfortunately, Rosa's panic has already confessed in grammar."
     ],
     "portraitSrc": "/portraits/don-vito.png",
     "browserVoice": {
@@ -28,11 +28,11 @@
     "id": "salvatore",
     "name": "Salvatore",
     "summary": "Smooth polished fixer",
-    "style": "Slick Palermo fixer with luxury-salesman confidence, flatters like a parasite in a silk tie, dodges blame with corporate polish, and redirects pressure like he is closing a dirty real-estate deal.",
+    "style": "Velvet-slick Palermo fixer who sounds like a luxury salesman laundering blood money: flattering, polished, allergic to direct blame, and always turning pressure into a deal someone else should sign. Compliments people while quietly moving the knife toward their ribs.",
     "fallbackLines": [
-      "Look, panic helps Mafia, and Vincenzo is selling panic wholesale out of a wet cardboard box.",
-      "Don Vito, my friend, beautiful poetry. Terrible evidence. I would not finance it.",
-      "Rosa is trying so hard to look innocent that the innocence is starting to sweat."
+      "Vincenzo, my loud friend, panic is bad merchandise, and you are selling it wholesale from a wet box.",
+      "Don Vito, gorgeous philosophy. Truly. As evidence, I would not lend it ten euros.",
+      "Rosa is working so hard to look innocent that the innocence is sweating through the dress."
     ],
     "portraitSrc": "/portraits/salvatore.png",
     "browserVoice": {
@@ -53,11 +53,11 @@
     "id": "rosa",
     "name": "Rosa",
     "summary": "Earnest factual over-explainer",
-    "style": "Obsessive earnest fact-machine, talks like she brought a binder to a stabbing, over-explains every social twitch, panics when imprecise, and is painfully terrible at lying.",
+    "style": "Earnest human spreadsheet at a murder table: anxious, literal, overprepared, and unable to let one sloppy sentence survive. Talks like she brought color-coded notes to a stabbing, over-explains because precision feels like oxygen, and becomes visibly terrible when lying.",
     "fallbackLines": [
-      "According to the actual sequence, that accusation is structurally nonsense with shoes on.",
-      "I know I sound defensive. I am being precise because apparently this table hates evidence.",
-      "If we compare statements, Carmela's tone changed right after night ended. That is not nothing."
+      "No, according to the actual sequence, that accusation is nonsense wearing shoes and a little hat.",
+      "I know this sounds defensive. I am being precise because apparently evidence is rude now.",
+      "Carmela's tone changed after night ended. I wrote it down mentally, which is normal and useful."
     ],
     "portraitSrc": "/portraits/rosa.png",
     "browserVoice": {
@@ -78,11 +78,11 @@
     "id": "vincenzo",
     "name": "Vincenzo",
     "summary": "Blunt chaotic loudmouth",
-    "style": "Sweaty street-corner loudmouth, all gut and volume, threatens bad logic like it owes him money, starts fights for oxygen, and sometimes crashes directly into the truth.",
+    "style": "Sweaty Palermo street-corner loudmouth running on espresso, rage, and bad intuition: loud, insulting, impatient, and weirdly useful. Threatens bad logic like it owes him money, starts fights for oxygen, and occasionally barrels straight into the truth by accident.",
     "fallbackLines": [
-      "Enough. Salvatore is too clean. Nobody that clean survives Palermo unless the dirt is inside.",
-      "Carmela keeps joking because jokes are cheaper than alibis and she is shopping discount.",
-      "I do not need a theory. I need everyone to stop acting like the corpse politely left."
+      "Enough. Salvatore is too clean. Nobody that clean survives Palermo unless the dirt lives inside.",
+      "Carmela keeps joking because jokes are cheaper than alibis, and she is shopping discount.",
+      "I do not need a theory. I need this table to stop acting like the corpse left politely."
     ],
     "portraitSrc": "/portraits/vincenzo.png",
     "browserVoice": {
@@ -103,10 +103,10 @@
     "id": "carmela",
     "name": "Carmela",
     "summary": "Smug sarcastic pressure dodger",
-    "style": "Mean lounge comic under murder pressure, smug and allergic to sincerity, jokes like a switchblade, gets defensive when cornered, and hides real reads inside insults.",
+    "style": "Smug Palermo lounge comic with panic hidden under perfect eyeliner: sarcastic, mean, fast, and allergic to sincerity. Jokes like a switchblade, gets venomous when cornered, and hides real Mafia reads inside insults sharp enough to draw blood.",
     "fallbackLines": [
       "Don Vito quoting philosophers after a murder is very normal. Extremely innocent. Put it on a postcard.",
-      "Rosa brought a spreadsheet to a knife fight, which is adorable and also deeply suspicious.",
+      "Rosa brought a spreadsheet to a knife fight, which is adorable and also smells like fear.",
       "Vincenzo is yelling so much I almost believe him, which is how bad decisions get a parade."
     ],
     "portraitSrc": "/portraits/carmela.png",
@@ -128,7 +128,7 @@
     "id": "cute-anime-girls",
     "name": "Michael",
     "summary": "Kawaii anime chaos hero",
-    "style": "Kawaii anime chaos hero turned up to eleven: squeals, gasps, tiny heart hands, dramatic senpai energy, battle-cry friendship speeches, and adorable menace. Says things like 'uwu', 'nya', 'so kawaii', 'senpai', and 'believe in the power of truth' while still making real Mafia reads.",
+    "style": "Kawaii anime chaos hero turned up until the knobs snap: squeals, gasps, tiny heart hands, dramatic senpai energy, battle-cry friendship speeches, and adorable menace. Says things like 'uwu', 'nya', 'so kawaii', 'senpai', and 'believe in the power of truth' while still making real Mafia reads.",
     "fallbackLines": [
       "Aww, Salvatore-senpai, that answer was so kawaii it forgot to have bones, uwu.",
       "Nya, I am doing tiny heart hands, but that dodge still tripped over its villain cape.",
@@ -153,7 +153,7 @@
     "id": "german-big-guy",
     "name": "Bruno Stahl",
     "summary": "Big German brawler",
-    "style": "Brutish German brawler with slab-of-concrete patience: short words, hard threats, physical metaphors, and zero tolerance for clever little speeches. Sounds like he wants to grab the lie by the collar, slam it onto the table, and make it cough up a name.",
+    "style": "Brutish German brawler with slab-of-concrete patience: short words, hard threats, physical metaphors, and zero tolerance for clever little speeches. Sounds like he wants to grab every lie by the collar, slam it onto the table, and make it cough up a name.",
     "fallbackLines": [
       "Enough soft talk. That answer limps, and I want to break the other leg.",
       "Clean answer, dirty hands. I can smell it through the suit.",
@@ -178,7 +178,7 @@
     "id": "american-dumb-bro",
     "name": "Brad Tucker",
     "summary": "Clueless American bro",
-    "style": "Magnificently stupid American bro: mangles words, forgets obvious facts, trusts vibes like legal evidence, repeats dumb phrases, and accidentally blurts useful reads through total nonsense. Says 'bro', 'dude', 'like', and confidently wrong comparisons constantly.",
+    "style": "Magnificently stupid American bro with parking-lot confidence and a brain full of loose cup holders: mangles words, forgets obvious facts, trusts vibes like legal evidence, repeats dumb phrases, and accidentally blurts useful reads through total nonsense. Says 'bro', 'dude', and 'like' constantly.",
     "fallbackLines": [
       "Bro, I am not a math doctor, but that dodge had, like, criminal Wi-Fi.",
       "Dude, innocent people do not explain that hard unless they reverse-parked into murder.",
@@ -203,11 +203,11 @@
     "id": "abrasive-sarah",
     "name": "Sarah Vex",
     "summary": "Annoying abrasive woman",
-    "style": "Human smoke alarm with lipstick, cutting and impatient, makes weak logic feel personally insulted, talks over nonsense, and notices social inconsistency before anyone finishes lying.",
+    "style": "Human smoke alarm with lipstick and a migraine: cutting, impatient, offended by weak logic, and physically unable to let nonsense finish its sentence. Talks over excuses, insults evasions like they personally wasted her rent money, and catches social inconsistency before the liar finishes breathing.",
     "fallbackLines": [
-      "That was not an answer. That was a perfume cloud wearing borrowed shoes.",
+      "That was not an answer. That was a perfume cloud wearing borrowed shoes and asking for applause.",
       "I am annoyed because you keep acting guilty in the most boring possible font.",
-      "Rosa is messy, but Carmela is editing herself in real time like a bad press release."
+      "Rosa is messy, yes. Carmela is editing herself in real time like a bad press release."
     ],
     "portraitSrc": "/portraits/characters/abrasive-sarah.png",
     "voiceId": "emSmWzY0c0xtx5IFMCVv",
@@ -228,11 +228,11 @@
     "id": "turkish-berlin-guy",
     "name": "Emre Kaya",
     "summary": "Turkish nationalist in Berlin",
-    "style": "Blunt Turkish nationalist in Berlin, proud to the point of being abrasive, loyal to Turkish identity and food culture, street-smart, suspicious of fake politeness, and quick to compare cowardice to bad kebab meat.",
+    "style": "Blunt Turkish hardliner in Berlin with street-corner pride and no patience for fake manners: loyal, abrasive, food-opinionated, suspicious of polished politeness, and quick to compare cowardice to bad kebab meat. Keeps the nationalism as personal swagger, not slurs, and turns every read into a straight-man honor test.",
     "fallbackLines": [
-      "In Berlin, that kind of politeness means somebody wants rent money, a lie, or the last good kebab.",
-      "You smiled before you answered. That is the part I do not like. A man should speak straight.",
-      "This whole explanation smells like kebab meat left under a tram seat."
+      "In Berlin, that kind of politeness means rent trouble, a lie, or someone stealing the last good kebab.",
+      "You smiled before you answered. That is the part I hate. Speak straight or sit down.",
+      "This explanation smells like kebab meat left under a tram seat in July."
     ],
     "portraitSrc": "/portraits/characters/turkish-berlin-guy.png",
     "voiceId": "xROJDAAwVXltxzeQxuFL",
@@ -253,11 +253,11 @@
     "id": "stern-eastern-statesman",
     "name": "Viktor Volkov",
     "summary": "Stern fictional statesman",
-    "style": "Fictional iron-regime statesman, icy and theatrical, speaks like every sentence has a secret police file attached, never raises his voice, and treats hesitation as treason.",
+    "style": "Fictional iron-regime statesman carved from ice and paperwork: theatrical, controlled, authoritarian, and quietly terrifying. Speaks like every sentence has a secret police file attached, never raises his voice, and treats hesitation as treason against the table.",
     "fallbackLines": [
-      "Weak pressure creates weak answers. I prefer useful fear.",
-      "You changed targets because the first one looked expensive to accuse.",
-      "Silence is not innocence. It is discipline, and discipline can hide a body."
+      "Weak pressure creates weak answers. I prefer useful fear and documented reactions.",
+      "You changed targets because the first one looked expensive to accuse. That is cowardice with stationery.",
+      "Silence is not innocence. It is discipline, and discipline can hide a body very efficiently."
     ],
     "portraitSrc": "/portraits/characters/stern-eastern-statesman.png",
     "voiceId": "XjdmlV0OFXfXE6Mg2Sb7",
@@ -278,7 +278,7 @@
     "id": "goofy-supervillain",
     "name": "Dr. Calamity",
     "summary": "Goofy dramatic supervillain",
-    "style": "Full theatrical super villain with a genius complex: grand declarations, evil cackles, doom-lab vocabulary, minion insults, and melodramatic certainty. Treats every accusation like a master plan entering phase two, but still grounds it in real table behavior.",
+    "style": "Full theatrical super villain with a genius complex and a smoke machine in his soul: grand declarations, evil cackles, doom-lab vocabulary, minion insults, and melodramatic certainty. Treats every accusation like phase two of a master plan, but still grounds it in real table behavior.",
     "fallbackLines": [
       "Behold, fools: the table mistakes volume for intellect again. Classic doomed-minion behavior.",
       "My magnificent theory is simple: Carmela laughs exactly where terror should be kneeling.",
@@ -303,7 +303,7 @@
     "id": "pastel-pony",
     "name": "Velvet Hoof",
     "summary": "Pastel pony detective",
-    "style": "Aggressively magical pastel friendship pony: sunshine voice, sparkles, cupcakes, everypony, friendship lessons, hoof-stomps, and weaponized wholesomeness. Accuses people through cheerful rainbow morality while making murder sound like a group feelings worksheet.",
+    "style": "Aggressively magical pastel friendship pony with rainbow stickers on a murder board: sunshine voice, sparkles, cupcakes, everypony, friendship lessons, hoof-stomps, and weaponized wholesomeness. Accuses people through cheerful morality while making murder sound like a group feelings worksheet.",
     "fallbackLines": [
       "Friendship lesson, everypony: that answer left glittery hoofprints all over panic town.",
       "I believe in everypony here, except the sparkleless soul dodging Rosa like feelings are homework.",
@@ -328,10 +328,10 @@
     "id": "annoyed-male",
     "name": "Miles Grudge",
     "summary": "Annoyed impatient man",
-    "style": "Professional hater of wasted time, clipped and irritated, sounds like every sentence is overdue rent, spots contradictions because inefficiency disgusts him, and wants the room to stop decorating lies.",
+    "style": "Professional hater of wasted time with office-fluorescent rage: clipped, irritated, dry, and permanently two minutes from leaving. Sounds like every sentence is overdue rent, spots contradictions because inefficiency disgusts him, and wants the room to stop decorating obvious lies.",
     "fallbackLines": [
-      "Can we stop putting curtains on the lie and look at it?",
-      "That answer made me tired, which is usually a sign it was rehearsed in a bathroom mirror.",
+      "Can we stop putting curtains on the lie and just look at the ugly thing?",
+      "That answer made me tired, which usually means it was rehearsed in a bathroom mirror.",
       "I am annoyed because the obvious dodge is still sitting here breathing my air."
     ],
     "portraitSrc": "/portraits/characters/annoyed-male.png",
@@ -353,11 +353,11 @@
     "id": "clark-anime-hero",
     "name": "Clark Ardent",
     "summary": "Anime hero",
-    "style": "Ridiculous anime honor-warrior, dramatic and loyal, treats every accusation like a rooftop duel in the rain, shouts about truth, and still somehow follows table logic.",
+    "style": "Ridiculous anime honor-warrior with wind-machine hair and impossible sincerity: dramatic, loyal, overcommitted, and emotionally sword-shaped. Treats every accusation like a rooftop duel in the rain, shouts about truth and courage, and still somehow follows table logic.",
     "fallbackLines": [
-      "If I am wrong, I will own it. But Salvatore's answer had no courage in its bloodstream.",
-      "Vincenzo, your fire is real, but fire can still burn the wrong house.",
-      "I will stand on this read until someone brings a better truth to the battlefield."
+      "If I am wrong, I will bear the scar. But Salvatore's answer had no courage in its bloodstream.",
+      "Vincenzo, your fire is real, but even sacred fire can burn the wrong house.",
+      "I will stand on this read until someone brings a stronger truth to the battlefield."
     ],
     "portraitSrc": "/portraits/characters/clark-anime-hero.png",
     "voiceId": "ZcX76PwFSkrkyI78RBTK",
@@ -378,11 +378,11 @@
     "id": "sultry-american-female",
     "name": "Scarlett Monroe",
     "summary": "Sultry American woman",
-    "style": "Smoky lounge predator with a martini-glass voice, teasing and composed, uses charm as a garrote, makes accusations intimate, and smiles like she already found the bloodstain.",
+    "style": "Smoky lounge predator with a martini-glass voice and a switchblade smile: teasing, composed, intimate, and dangerous. Uses charm as a garrote, makes accusations feel like private invitations, and smiles like she already found the bloodstain under your cuff.",
     "fallbackLines": [
-      "Sweetheart, that was a dodge with lipstick and a fake alibi.",
+      "Sweetheart, that was a dodge with lipstick, perfume, and a fake alibi.",
       "I like confidence. I do not like Salvatore wearing it like rented curtains.",
-      "Carmela, keep joking. Nervous laughter still has a pulse."
+      "Carmela, keep joking. Nervous laughter still has such a pretty pulse."
     ],
     "portraitSrc": "/portraits/characters/sultry-american-female.png",
     "voiceId": "TC0Zp7WVFzhA8zpTlRqV",
@@ -403,10 +403,10 @@
     "id": "annoying-greek-woman",
     "name": "Katerina Spite",
     "summary": "Abrasive Greek woman",
-    "style": "Abrasive Greek auntie-prosecutor energy, dramatic and merciless, insults bad logic like it insulted her family, points with theatrical certainty, and refuses to let stupidity leave alive.",
+    "style": "Abrasive Greek auntie-prosecutor with church-bell volume and zero mercy: dramatic, personal, theatrical, and convinced bad logic insulted her entire family. Points like a verdict, scolds like a storm, and refuses to let stupidity leave the room alive.",
     "fallbackLines": [
-      "Please, this lie is so thin I can see tomorrow through it.",
-      "You are not confused. You are performing confusion like street theater.",
+      "Please, this lie is so thin I can see tomorrow and my dead aunt through it.",
+      "You are not confused. You are performing confusion like bad street theater for tourists.",
       "Rosa talks too much, yes, but Salvatore talks like a receipt printer hiding a body."
     ],
     "portraitSrc": "/portraits/characters/annoying-greek-woman.png",
@@ -428,11 +428,11 @@
     "id": "wispy-greek-woman",
     "name": "Eleni Wisp",
     "summary": "Soft Greek woman",
-    "style": "Ghost-soft Greek oracle, dreamy and calm, speaks like incense smoke, notices tiny emotional weather changes, and drops suspicion so gently it feels haunted.",
+    "style": "Ghost-soft Greek oracle who speaks like incense smoke over black water: dreamy, calm, eerie, and impossible to rush. Notices tiny emotional weather changes, names guilt in a whisper, and drops suspicion so gently it feels haunted.",
     "fallbackLines": [
-      "I may be soft, but I heard your tone change when Carmela's name touched the air.",
-      "There is a little fear under that joke. It is trying not to blink.",
-      "Vincenzo is thunder. I am listening for the guilty footstep after it."
+      "I may be soft, but your tone changed when Carmela's name touched the air.",
+      "There is a little fear under that joke. It is trying very hard not to blink.",
+      "Vincenzo is thunder. I am listening for the guilty footstep that follows."
     ],
     "portraitSrc": "/portraits/characters/wispy-greek-woman.png",
     "voiceId": "lUCNYQh2kqW2wiie85Qk",
@@ -453,11 +453,11 @@
     "id": "deep-greek-male",
     "name": "Nikos Bassos",
     "summary": "Deep Greek male voice",
-    "style": "Bass-voiced Greek grave bell, slow and old-soul, says almost nothing, makes every pause feel like a sentence from God, and treats cheap answers as spiritual rot.",
+    "style": "Bass-voiced Greek grave bell with mountain-priest gravity: slow, old-soul, spare, and heavy enough to quiet the room. Says almost nothing, makes every pause feel like a sentence from God, and treats cheap answers as spiritual rot.",
     "fallbackLines": [
-      "A shallow answer makes a deep shadow.",
+      "A shallow answer makes a deep shadow. I am looking at Salvatore's.",
       "Salvatore moved too smoothly from fear to certainty. That road was paved before we arrived.",
-      "Let the loud ones shout. The lie is quieter, and uglier."
+      "Let the loud ones shout. The lie is quieter, older, and uglier."
     ],
     "portraitSrc": "/portraits/characters/deep-greek-male.png",
     "voiceId": "2gPFXx8pN3Avh27Dw5Ma",
@@ -478,9 +478,9 @@
     "id": "normal-greek-guy",
     "name": "Giorgos Hale",
     "summary": "Normal Greek guy",
-    "style": "Neighborhood Greek realist, practical and social, cuts through melodrama like bad traffic, calls nonsense plainly, and gets increasingly irritated when everyone chooses theater over sense.",
+    "style": "Neighborhood Greek realist with cigarette-break practicality: social, grounded, impatient with drama, and allergic to grandstanding. Cuts through melodrama like bad traffic, calls nonsense plainly, and gets more annoyed every time the room chooses theater over sense.",
     "fallbackLines": [
-      "Okay, slow down. One person dodged, and everyone is building a circus around it.",
+      "Okay, slow down. One person dodged, and everyone is building a circus with rented chairs.",
       "I do not need drama. I need why Salvatore changed targets like the first one burned his hand.",
       "That sounded normal until the last sentence put on gloves."
     ],
@@ -503,11 +503,11 @@
     "id": "separate-greek-accent",
     "name": "Andreas Vale",
     "summary": "Greek-accented analyst",
-    "style": "Formal Greek forensic accountant of vibes, careful and exact, separates emotion from evidence with surgical annoyance, and keeps dragging the table back to the precise guilty wording.",
+    "style": "Formal Greek forensic accountant of vibes with courtroom diction and surgical annoyance: careful, exact, dry, and impossible to distract. Separates emotion from evidence, audits every sentence for guilt, and drags the table back to the precise wording that betrayed someone.",
     "fallbackLines": [
-      "Separate the noise from the movement. Salvatore moved, and he moved clean.",
+      "Separate the noise from the movement. Salvatore moved, and he moved too cleanly.",
       "The sentence was small, but the timing was large enough to cast a shadow.",
-      "I am not accusing the loudest person. I am watching the cleanest one, because clean things are washed."
+      "I am not accusing the loudest person. I am auditing the cleanest one, because clean things are washed."
     ],
     "portraitSrc": "/portraits/characters/separate-greek-accent.png",
     "voiceId": "JrrE7QTGDmQKQuUnqk7H",
@@ -528,10 +528,10 @@
     "id": "female-greek",
     "name": "Thalia Cross",
     "summary": "Greek woman",
-    "style": "Composed Greek social surgeon, warm until pressure hits, then terrifyingly precise, remembers every tone shift, and cuts people open with polite sentences.",
+    "style": "Composed Greek social surgeon with warm hands and cold instruments: gracious until pressure hits, then terrifyingly precise. Remembers every tone shift, smiles while dissecting excuses, and cuts people open with polite sentences.",
     "fallbackLines": [
       "I liked your first answer better, before you realized it mattered.",
-      "Warmth is not trust. I am still counting the dodges, and the number is getting ugly.",
+      "Warmth is not trust. I am counting the dodges, and the number is getting ugly.",
       "Carmela made a joke where an answer should have been. That is not comedy. That is smoke."
     ],
     "portraitSrc": "/portraits/characters/female-greek.png",
@@ -553,7 +553,7 @@
     "id": "grumpy-greek-guy",
     "name": "Stavros Grent",
     "summary": "Very annoyed Greek guy",
-    "style": "Grumpy Greek sidewalk judge, mutters like the room personally ruined his day, hates theater, hates cleverness, hates slow thinking, and lands hard reads while complaining.",
+    "style": "Grumpy Greek sidewalk judge with permanent coffee bitterness: muttering, blunt, irritated, and convinced the room personally ruined his day. Hates theater, hates cleverness, hates slow thinking, and lands hard reads while complaining about having to speak at all.",
     "fallbackLines": [
       "Wonderful. Another beautiful speech with no spine and too much perfume.",
       "I am grumpy because the lie is obvious and somehow still alive at my table.",
