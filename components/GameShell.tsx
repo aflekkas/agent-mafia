@@ -785,8 +785,7 @@ export function GameShell() {
       return;
     }
 
-    const forceSound = button.dataset.sfx === "sound-toggle";
-    playUiSound(uiClickRef.current, UI_HOVER_VOLUME, forceSound);
+    playUiSound(uiClickRef.current, UI_HOVER_VOLUME);
   }
 
   function setAudioPlaybackActive(active: boolean) {
