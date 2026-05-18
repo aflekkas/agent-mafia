@@ -67,7 +67,6 @@ export function HomeScreen({
               title="Choose your portrait"
             >
               <img src={avatarFor(humanAvatar).src} alt="" />
-              <span>{avatarFor(humanAvatar).label}</span>
             </button>
             {avatarPickerOpen ? (
               <div className="avatar-popover" role="menu" aria-label="Choose your portrait">
@@ -77,12 +76,12 @@ export function HomeScreen({
                     type="button"
                     role="menuitemradio"
                     aria-checked={humanAvatar === avatar.id}
+                    aria-label={avatar.label}
                     className={`avatar-popover-option ${humanAvatar === avatar.id ? "selected" : ""}`}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => onHumanAvatarChange(avatar.id)}
                   >
                     <img src={avatar.src} alt="" />
-                    <span>{avatar.label}</span>
                   </button>
                 ))}
               </div>

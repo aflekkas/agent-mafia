@@ -26,7 +26,8 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
   const target = getPlayer(state, finalTargetId);
   const text = voter.isHuman
     ? `votes for ${target.name}.`
-    : formatNpcVoteText(target.name, rationaleText) ?? `votes for ${target.name}. ${voteRationale(voter.name, target.name, target.suspicion)}`;
+    : formatNpcVoteText(target.name, rationaleText) ??
+      `I vote for ${target.name}. ${voteRationale(voter.name, target.name, target.suspicion)}`;
 
   return addTranscript(
     {
@@ -47,11 +48,23 @@ function formatNpcVoteText(targetName: string, rationaleText: string | undefined
     return undefined;
   }
 
-  if (new RegExp(`^votes?\\s+for\\s+${escapeRegExp(targetName)}\\b`, "i").test(trimmed)) {
-    return trimmed;
+  const target = escapeRegExp(targetName);
+  const thirdPersonVote = new RegExp(`^votes?\\s+(?:for\\s+)?${target}\\b`, "i");
+  if (thirdPersonVote.test(trimmed)) {
+    return trimmed.replace(thirdPersonVote, `I vote for ${targetName}`);
   }
 
-  return `votes for ${targetName}. ${trimmed}`;
+  const firstPersonVote = new RegExp(`^i\\s+vote\\s+(?:for\\s+)?${target}\\b`, "i");
+  if (firstPersonVote.test(trimmed)) {
+    return trimmed.replace(firstPersonVote, `I vote for ${targetName}`);
+  }
+
+  const firstPersonVoting = new RegExp(`^i(?:'m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b`, "i");
+  if (firstPersonVoting.test(trimmed)) {
+    return trimmed.replace(firstPersonVoting, `I vote for ${targetName}`);
+  }
+
+  return `I vote for ${targetName}. ${trimmed}`;
 }
 
 function voteRationale(voterName: string, targetName: string, suspicion: number): string {

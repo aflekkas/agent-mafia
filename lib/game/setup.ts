@@ -100,7 +100,7 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
     updatedAt: now
   };
 
-  return addDetectiveOpeningLead(
+  return addOpeningPrivateKnowledge(
     addTranscript(
       state,
       "narrator",
@@ -179,7 +179,7 @@ export function forceRoles(state: GameState, roles: Record<PlayerId, Role>): Gam
       discussionQueue: buildDiscussionQueueFromPlayers(nextPlayers, state.seed, state.day)
     },
     transcript: state.transcript
-      .filter((entry) => !isDetectiveOpeningLead(entry))
+      .filter((entry) => !isOpeningPrivateKnowledge(entry))
       .map((entry, index) =>
         index === 0 && entry.speakerId === "narrator"
           ? {
@@ -190,7 +190,7 @@ export function forceRoles(state: GameState, roles: Record<PlayerId, Role>): Gam
       )
   });
 
-  return addDetectiveOpeningLead(nextState, detectiveKnownMafiaId);
+  return addOpeningPrivateKnowledge(nextState, detectiveKnownMafiaId);
 }
 
 export function addTranscript(
@@ -236,6 +236,10 @@ function pickDetectiveKnownMafia(roles: Record<PlayerId, Role>, seed: string): P
   return shuffle(mafiaIds, `${seed}:detective-known-mafia`)[0] ?? mafiaIds[0] ?? "don_vito";
 }
 
+function addOpeningPrivateKnowledge(state: GameState, detectiveKnownMafiaId: PlayerId): GameState {
+  return addMafiaOpeningPartners(addDetectiveOpeningLead(state, detectiveKnownMafiaId));
+}
+
 function addDetectiveOpeningLead(state: GameState, mafiaId: PlayerId): GameState {
   const detective = state.players.find((player) => player.role === "detective");
   if (!detective) {
@@ -252,8 +256,27 @@ function addDetectiveOpeningLead(state: GameState, mafiaId: PlayerId): GameState
   );
 }
 
-function isDetectiveOpeningLead(entry: TranscriptEntry): boolean {
-  return entry.privateTo?.length === 1 && entry.speakerId === "system" && entry.text.includes("Detective-only knowledge");
+function addMafiaOpeningPartners(state: GameState): GameState {
+  const mafiaPlayers = state.players.filter((player) => player.role === "mafia");
+  return mafiaPlayers.reduce((nextState, mafia) => {
+    const partners = mafiaPlayers.filter((partner) => partner.id !== mafia.id).map((partner) => partner.name);
+    return addTranscript(
+      nextState,
+      "system",
+      "Private note",
+      `Your Mafia partner is ${partners.join(", ") || "no one"}. Defend them subtly, redirect heat when useful, and coordinate through public behavior without exposing the partnership.`,
+      "action",
+      [mafia.id]
+    );
+  }, state);
+}
+
+function isOpeningPrivateKnowledge(entry: TranscriptEntry): boolean {
+  return (
+    entry.privateTo?.length === 1 &&
+    entry.speakerId === "system" &&
+    (entry.text.includes("Detective-only knowledge") || entry.text.includes("Your Mafia partner is"))
+  );
 }
 
 function playerName(players: Player[], playerId: PlayerId): string {

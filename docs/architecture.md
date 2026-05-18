@@ -34,6 +34,7 @@ Server modules
 Important mechanics:
 
 - Roles are assigned in `lib/game/setup.ts`.
+- Mafia partner knowledge is private. Human Mafia see their partner on the role card and in a private note; NPC Mafia receive the same fact in private prompt context.
 - The public client view is redacted in `lib/game/redact.ts`.
 - Phase progression lives in `lib/game/advance.ts`, with night and vote resolution split into `night.ts` and `votes.ts`.
 - Discussion order is generated in `lib/game/turn-order.ts`.

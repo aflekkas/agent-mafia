@@ -15,7 +15,11 @@ Voice in the current app is direct TTS playback for NPCs and narration. It is no
 
 ```env
 OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5.4
+OPENAI_MODEL=gpt-5.4-mini
+OPENAI_API_MODE=responses
+OPENAI_REASONING_EFFORT=low
+OPENAI_MAX_OUTPUT_TOKENS=900
+OPENAI_TEMPERATURE=0.62
 
 ELEVENLABS_API_KEY=
 ELEVENLABS_TTS_MODEL=eleven_flash_v2_5
@@ -36,6 +40,19 @@ Only NPCs and the narrator need ElevenLabs voice IDs. Human speech is submitted 
 - Oversized text: return JSON fallback and use browser speech.
 - ElevenLabs request failure: return JSON fallback and use browser speech.
 - Missing OpenAI key: NPCs use deterministic persona fallback lines and legal fallback actions.
+
+## NPC Model
+
+NPC turns default to `gpt-5.4-mini` through the OpenAI Responses API with `OPENAI_REASONING_EFFORT=low`. This keeps the model reasoning-capable without using the flagship `gpt-5.4` model for every table turn.
+
+Hot-swap knobs:
+
+- `OPENAI_MODEL` - any compatible OpenAI model ID.
+- `OPENAI_API_MODE=responses` - default and preferred for reasoning models.
+- `OPENAI_API_MODE=chat` - fallback path for Chat Completions-compatible models.
+- `OPENAI_REASONING_EFFORT=low|medium|high` - use `medium` only if table strategy still feels too shallow.
+- `OPENAI_MAX_OUTPUT_TOKENS` - includes hidden reasoning tokens for reasoning models.
+- `OPENAI_TEMPERATURE` - only used on the Chat Completions fallback path.
 
 ## Current Non-Goals
 

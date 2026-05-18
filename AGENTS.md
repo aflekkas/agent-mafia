@@ -20,6 +20,16 @@ Do not add Tailwind, Three.js, R3F, shadcn, Bun/Hono, SQLite, ElevenLabs Agents/
 
 Prioritize the playable loop and visible UI over architecture expansion. Avoid landing pages.
 
+<!-- BEGIN:nextjs-agent-rules -->
+## Next.js 16 Agent Rules
+
+- This app targets Next.js 16. Before Next.js-specific edits, read the relevant installed docs under `node_modules/next/dist/docs/`; do not rely only on training data, memory, or random web snippets.
+- Start with `node_modules/next/dist/docs/01-app/index.md` for App Router work, then open the closest local doc for the feature being changed, such as route handlers, config, TypeScript, Turbopack, or AI-agent guidance.
+- If the installed local docs are missing after `npm install`, first confirm the installed Next version with `node -p "require('./node_modules/next/package.json').version"`, then use official `nextjs.org/docs` pages as the fallback source and record that fallback in the handoff.
+- Keep the upgrade local-first: do not add hosted MCP, cache components, React Compiler, Proxy, or other Next.js 16 features unless the user explicitly asks for that specific work.
+- Next.js 16 uses Turbopack by default for `next dev` and `next build`; keep scripts simple unless a documented local issue requires a flag.
+<!-- END:nextjs-agent-rules -->
+
 ## Working Rules
 
 - Preserve existing local work. This repo may be dirty.
@@ -53,6 +63,7 @@ Current rule details:
 - The human can receive any role.
 - The Detective privately starts with one confirmed Mafia lead.
 - Mafia know each other privately.
+- Mafia should produce observable partner behavior: subtle defense, pressure redirection, vote alignment, soft questioning of cases on the partner, or strategic distancing when the partner is clearly doomed.
 - The first night has no Mafia kill, but Doctor and Detective actions may still happen.
 - Mafia win at parity with non-Mafia.
 - Town wins when all Mafia are eliminated.
@@ -76,6 +87,7 @@ NPCs should:
 - Avoid random accusations.
 - Avoid punishing scheduled silence before a player has had a turn.
 - Use hidden knowledge carefully without revealing why they know it.
+- Mafia must use partner knowledge behaviorally, not by announcing it.
 - Keep public speech compact and characterful.
 
 The current model response uses a plain `speech` string.

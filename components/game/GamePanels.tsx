@@ -10,12 +10,21 @@ import { PLAYER_PORTRAITS, ROLE_COPY } from "./constants";
 import { HumanAvatarId } from "./types";
 import { avatarFor, formatPhase, nameFor, nextActorIdFor } from "./utils";
 
-export function RoleCard({ player }: { player: Player }) {
+export function RoleCard({ player, game }: { player: Player; game: GameState }) {
+  const mafiaPartners =
+    player.role === "mafia" ? game.players.filter((candidate) => candidate.id !== player.id && candidate.role === "mafia") : [];
+  const detectiveLead =
+    player.role === "detective" ? game.players.find((candidate) => candidate.detectiveKnownRole === "mafia") : undefined;
+
   return (
     <section className={`role-card role-${player.role}`}>
       <p className="eyebrow">Private Role</p>
       <h2>{player.role}</h2>
       <p>{ROLE_COPY[player.role]}</p>
+      {mafiaPartners.length ? (
+        <p className="private-intel">Partner: {mafiaPartners.map((partner) => partner.name).join(", ")}</p>
+      ) : null}
+      {detectiveLead ? <p className="private-intel">Known Mafia: {detectiveLead.name}</p> : null}
       <p className="private-note">Only {player.name} sees this card.</p>
     </section>
   );

@@ -48,6 +48,8 @@ Every started or updated game writes a full JSON snapshot to `.agent-mafia-logs/
 Copy `.env.example` to `.env` and fill only what you need.
 
 - `OPENAI_API_KEY` enables generated NPC turns.
+- `OPENAI_MODEL` defaults to `gpt-5.4-mini`; `OPENAI_API_MODE` defaults to `responses`.
+- `OPENAI_REASONING_EFFORT` defaults to `low` so the table uses a cheaper reasoning-capable model by default.
 - Without `OPENAI_API_KEY`, the game still plays with deterministic fallback turns.
 - `ELEVENLABS_API_KEY` plus per-speaker voice IDs enables REST TTS.
 - Without ElevenLabs config, browser speech synthesis is used.
@@ -77,6 +79,7 @@ Copy `.env.example` to `.env` and fill only what you need.
 ## Docs
 
 - `docs/architecture.md` - how the current app works.
+- `docs/nextjs-16.md` - Next.js 16 upgrade and local documentation rules.
 - `docs/voice.md` - current voice/TTS behavior and env vars.
 - `docs/demo.md` - local demo runbook.
 - `docs/refactor-notes.md` - cleanup findings and maintenance notes.

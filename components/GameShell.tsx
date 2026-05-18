@@ -23,6 +23,7 @@ import {
 } from "@/components/game/constants";
 import { GameDialog } from "@/components/game/GameDialog";
 import { createGame, postGameAction } from "@/components/game/game-api";
+import { CustomCursor } from "@/components/game/CustomCursor";
 import { HomeScreen } from "@/components/game/HomeScreen";
 import { HumanPanel, PhasePanel, RoleCard, TableScene2D, Transcript, VoteBoard } from "@/components/game/GamePanels";
 import { BrowserSpeechWindow, DialogMode, HumanAvatarId, VoiceMode } from "@/components/game/types";
@@ -30,7 +31,6 @@ import {
   ambienceLoopBounds,
   ambienceVolumeFor,
   automaticAdvanceDelay,
-  avatarFor,
   buttonFromEventTarget,
   errorMessage,
   isHumanAvatarId,
@@ -383,7 +383,7 @@ export function GameShell() {
     setHumanAvatarState(avatarId);
     window.localStorage.setItem(HUMAN_AVATAR_STORAGE_KEY, avatarId);
     setAvatarPickerOpen(false);
-    setStatus(`${avatarFor(avatarId).label} portrait selected.`);
+    setStatus("Portrait selected.");
   }
 
   function requestExit() {
@@ -629,6 +629,7 @@ export function GameShell() {
       onClickCapture={playButtonSoundFromClick}
       onPointerOverCapture={playButtonSoundFromHover}
     >
+      <CustomCursor />
       {isHome ? null : (
         <section className="topbar">
           <button type="button" className="title-button" data-sfx="none" onClick={requestExit} title="Return to start">
@@ -686,7 +687,7 @@ export function GameShell() {
       ) : (
         <section className="game-grid">
           <aside className="left-rail">
-            <RoleCard player={human} />
+            <RoleCard player={human} game={game} />
             <PhasePanel game={game} status={status} busy={busy} paused={paused} />
             <VoteBoard game={game} />
           </aside>

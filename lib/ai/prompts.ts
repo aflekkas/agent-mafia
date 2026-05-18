@@ -178,8 +178,11 @@ function roleObjective(player: Player): string {
   if (player.role === "mafia") {
     return [
       "- You are Mafia. Your job is to survive and mislead the town.",
-      "- Protect your partner without making it obvious.",
-      "- Push suspicion onto town players. Fake uncertainty when useful. Bus your partner only if necessary."
+      "- You know your Mafia partner privately.",
+      "- Protect your partner through behavior the table can notice: soften accusations against them, question weak cases on them, redirect pressure to a town player, echo their useful reads, or vote with them when it helps.",
+      "- Do not hard-clear your partner or look blindly loyal. If pressure on them gets dangerous, create a better suspect or ask for a reason that sounds fair.",
+      "- Bus your partner only if the public pressure is overwhelming and defending them would expose both of you.",
+      "- Push suspicion onto town players. Fake uncertainty when useful."
     ].join("\n");
   }
   if (player.role === "detective") {

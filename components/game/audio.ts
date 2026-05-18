@@ -70,7 +70,7 @@ export async function speakEntry(
   elevenLabsAudioCache: Map<string, Blob>,
   setStatus: (status: string) => void
 ) {
-  if (entry.kind !== "speech" && entry.kind !== "narration") {
+  if (entry.kind !== "speech" && entry.kind !== "narration" && entry.kind !== "vote") {
     return;
   }
 
@@ -108,7 +108,7 @@ export async function speakEntry(
 
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(`${entry.speakerName}. ${entry.text}`);
+    const utterance = new SpeechSynthesisUtterance(browserSpeechTextFor(entry));
     utterance.rate = browserVoiceRateFor(entry.speakerId);
     utterance.pitch = pitchFor(entry.speakerId);
     utterance.volume = entry.speakerId === "narrator" ? 0.92 : 1;
@@ -116,6 +116,14 @@ export async function speakEntry(
     setStatus(voiceMode === "elevenlabs" ? "ElevenLabs unavailable; played browser voice." : "Played browser voice.");
     await playBrowserUtterance(utterance);
   }
+}
+
+function browserSpeechTextFor(entry: TranscriptEntry): string {
+  if (entry.kind === "vote" && entry.speakerId !== "player_6") {
+    return entry.text;
+  }
+
+  return `${entry.speakerName}. ${entry.text}`;
 }
 
 async function playAudioBlob(blob: Blob) {

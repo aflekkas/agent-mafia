@@ -14,6 +14,10 @@
   --button: #1b1714;
   --button-light: #5a4e43;
   --button-dark: #050505;
+  --cursor-knife: url("/cursors/knife-default.png") 8 8, auto;
+  --cursor-knife-pointer: url("/cursors/knife-hover.png") 8 8, pointer;
+  --custom-cursor-size: 64px;
+  --custom-cursor-hotspot: 6px;
   color-scheme: dark;
 }
 
@@ -96,6 +100,124 @@ button.listening {
   background: #5c431f;
   color: #fff0c8;
   box-shadow: 0 0 0 2px #000, 0 0 24px rgba(211, 163, 76, 0.42);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html,
+  body,
+  .shell,
+  .dialog-backdrop {
+    cursor: var(--cursor-knife);
+  }
+
+  button,
+  [role="button"],
+  [role="menuitemradio"],
+  summary {
+    cursor: var(--cursor-knife-pointer);
+  }
+
+  input,
+  select,
+  textarea,
+  [contenteditable="true"] {
+    cursor: var(--cursor-knife);
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+html.custom-cursor-enabled,
+html.custom-cursor-enabled body,
+html.custom-cursor-enabled .shell,
+html.custom-cursor-enabled button,
+html.custom-cursor-enabled input,
+html.custom-cursor-enabled [role="button"],
+html.custom-cursor-enabled [role="menuitemradio"],
+html.custom-cursor-enabled select,
+html.custom-cursor-enabled summary,
+html.custom-cursor-enabled textarea,
+html.custom-cursor-enabled [contenteditable="true"] {
+  cursor: none;
+}
+
+.custom-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  width: var(--custom-cursor-size);
+  height: var(--custom-cursor-size);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(calc(var(--cursor-x) - var(--custom-cursor-hotspot)), calc(var(--cursor-y) - var(--custom-cursor-hotspot)), 0);
+  transition: opacity 80ms linear;
+  will-change: transform;
+}
+
+.custom-cursor[data-visible="true"] {
+  opacity: 1;
+}
+
+.custom-cursor span {
+  display: block;
+  width: var(--custom-cursor-size);
+  height: var(--custom-cursor-size);
+  background: url("/cursors/knife-default.png") 0 0 / var(--custom-cursor-size) var(--custom-cursor-size) no-repeat;
+  image-rendering: pixelated;
+  transform-origin: var(--custom-cursor-hotspot) var(--custom-cursor-hotspot);
+  animation: knife-idle 1800ms ease-in-out infinite;
+}
+
+.custom-cursor[data-mode="hover"] span {
+  background-image: url("/cursors/knife-hover.png");
+  animation: knife-hover 900ms ease-in-out infinite;
+}
+
+.custom-cursor[data-mode="pressed"] span {
+  background-image: url("/cursors/knife-pressed.png");
+  animation: knife-press 240ms cubic-bezier(0.2, 0.8, 0.18, 1) both;
+}
+
+.custom-cursor[data-mode="disabled"] span {
+  background-image: url("/cursors/knife-disabled.png");
+  animation: none;
+}
+
+@keyframes knife-idle {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate(1px, 0) rotate(-2deg);
+  }
+}
+
+@keyframes knife-hover {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate(2px, 2px) rotate(-4deg);
+  }
+}
+
+@keyframes knife-press {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: translate(5px, 5px) rotate(-8deg) scale(0.95);
+  }
 }
 
 ::selection {
@@ -267,11 +389,10 @@ button.listening {
 
 .home-avatar-button {
   width: 104px;
-  height: 104px;
-  min-height: 104px;
+  height: 96px;
+  min-height: 96px;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 5px;
+  place-items: center;
   padding: 7px;
   border-color: #41362d #050505 #050505 #41362d;
   background: #070605;
@@ -284,21 +405,10 @@ button.listening {
 
 .home-avatar-button img {
   width: 100%;
-  height: 70px;
+  height: 78px;
   object-fit: contain;
   object-position: center bottom;
   image-rendering: pixelated;
-}
-
-.home-avatar-button span {
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 0.62rem;
-  line-height: 1;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .avatar-popover {
@@ -306,7 +416,7 @@ button.listening {
   right: 0;
   top: calc(100% + 12px);
   z-index: 20;
-  width: min(412px, calc(100vw - 40px));
+  width: min(360px, calc(100vw - 40px));
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
@@ -333,10 +443,9 @@ button.listening {
 
 .avatar-popover-option {
   position: relative;
-  min-height: 120px;
+  min-height: 96px;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 6px;
+  place-items: center;
   padding: 8px;
   border-color: #3d332b #050505 #050505 #3d332b;
   background: #0a0807;
@@ -344,24 +453,12 @@ button.listening {
 
 .avatar-popover-option img {
   width: 100%;
-  height: 84px;
+  height: 78px;
   object-fit: contain;
   object-position: center bottom;
   border: 2px solid #2f271f;
   background: #000;
   image-rendering: pixelated;
-}
-
-.avatar-popover-option span {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 0.68rem;
-  line-height: 1;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .avatar-popover-option.selected {
@@ -469,9 +566,8 @@ button.listening {
 @supports ((background-clip: text) or (-webkit-background-clip: text)) {
   .topbar h1,
   .empty-state h2 {
-    background-image:
-      repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.32) 0 1px, rgba(255, 239, 197, 0.14) 1px 2px, transparent 2px 6px),
-      linear-gradient(180deg, #fff1c8 0%, #d3a34c 46%, #8f1519 100%);
+    background-image: linear-gradient(180deg, #fff1c8 0%, #edc871 36%, #c87c32 62%, #8f1519 100%);
+    background-size: 100% 100%;
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
@@ -562,6 +658,15 @@ button.listening {
 .private-note {
   color: var(--gold) !important;
   font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.private-intel {
+  padding: 8px 10px;
+  border-left: 3px solid var(--gold);
+  background: rgba(211, 163, 76, 0.08);
+  color: var(--ink) !important;
+  font-size: 0.86rem;
   text-transform: uppercase;
 }
 
@@ -1271,29 +1376,20 @@ textarea:focus {
   }
 
   .home-avatar-button img {
-    height: 56px;
+    height: 68px;
   }
 
   .avatar-popover {
     width: calc(100vw - 32px);
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .avatar-popover-option {
-    min-height: 76px;
-    grid-template-columns: 64px minmax(0, 1fr);
-    grid-template-rows: 1fr;
-    align-items: center;
-    justify-items: start;
+    min-height: 72px;
   }
 
   .avatar-popover-option img {
-    width: 64px;
-    height: 58px;
-  }
-
-  .avatar-popover-option span {
-    text-align: left;
+    height: 56px;
   }
 }
 

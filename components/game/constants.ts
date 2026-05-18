@@ -25,9 +25,15 @@ export const ROLE_COPY: Record<string, string> = {
 };
 
 export const HUMAN_AVATARS: { id: HumanAvatarId; label: string; src: string }[] = [
-  { id: "player-masc", label: "Signore", src: "/avatars/player-masc.png" },
-  { id: "player-femme", label: "Signora", src: "/avatars/player-femme.png" },
-  { id: "player-androgynous", label: "Stranger", src: "/avatars/player-androgynous.png" }
+  { id: "player-masc", label: "Portrait 1", src: "/avatars/player-masc.png" },
+  { id: "player-femme", label: "Portrait 2", src: "/avatars/player-femme.png" },
+  { id: "player-androgynous", label: "Portrait 3", src: "/avatars/player-androgynous.png" },
+  { id: "player-04", label: "Portrait 4", src: "/avatars/player-04.png" },
+  { id: "player-05", label: "Portrait 5", src: "/avatars/player-05.png" },
+  { id: "player-06", label: "Portrait 6", src: "/avatars/player-06.png" },
+  { id: "player-07", label: "Portrait 7", src: "/avatars/player-07.png" },
+  { id: "player-08", label: "Portrait 8", src: "/avatars/player-08.png" },
+  { id: "player-09", label: "Portrait 9", src: "/avatars/player-09.png" }
 ];
 
 export const PLAYER_PORTRAITS: Partial<Record<PlayerId, string>> = {

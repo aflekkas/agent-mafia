@@ -120,7 +120,7 @@ export function normalizeHumanName(name: string): string {
 }
 
 export function isHumanAvatarId(value: string | null): value is HumanAvatarId {
-  return value === "player-masc" || value === "player-femme" || value === "player-androgynous";
+  return HUMAN_AVATARS.some((avatar) => avatar.id === value);
 }
 
 export function avatarFor(avatarId: HumanAvatarId) {
