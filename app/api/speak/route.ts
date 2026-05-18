@@ -43,7 +43,6 @@ export async function POST(request: Request) {
   }
 
   const cacheKey = ttsCacheKey({
-    speakerId: body.speakerId,
     voiceId,
     modelId,
     outputFormat: OUTPUT_FORMAT,
@@ -112,7 +111,6 @@ function normalizeVoiceId(voiceId: string | undefined): string | undefined {
 }
 
 function ttsCacheKey(input: {
-  speakerId: SpeakerId | undefined;
   voiceId: string;
   modelId: string;
   outputFormat: string;

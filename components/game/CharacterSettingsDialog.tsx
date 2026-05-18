@@ -3,10 +3,13 @@
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { AiSettings2 } from "pixelarticons/react/AiSettings2";
 import { Cancel } from "pixelarticons/react/Cancel";
+import { Castle } from "pixelarticons/react/Castle";
 import { Check } from "pixelarticons/react/Check";
 import { ChevronDown } from "pixelarticons/react/ChevronDown";
-import { Reload } from "pixelarticons/react/Reload";
+import { Fire } from "pixelarticons/react/Fire";
+import { Headphone } from "pixelarticons/react/Headphone";
 import { Search } from "pixelarticons/react/Search";
+import { Shuffle } from "pixelarticons/react/Shuffle";
 import {
   CHARACTER_PRESETS,
   CHARACTER_PROFILES,
@@ -14,6 +17,7 @@ import {
   normalizeCharacterSetup,
   uniqueRandomCharacterSetup
 } from "@/lib/characters/profiles";
+import { speakCharacterPreview } from "@/components/game/audio";
 import { CharacterSetup, HumanRolePreference, NPC_PLAYER_IDS, NpcPlayerId } from "@/lib/game/types";
 
 const ROLE_OPTIONS: { value: HumanRolePreference; label: string }[] = [
@@ -30,6 +34,11 @@ const SEAT_LABELS: Record<NpcPlayerId, string> = {
   rosa: "Seat 3",
   vincenzo: "Seat 4",
   carmela: "Seat 5"
+};
+
+const PRESET_ICONS: Record<string, typeof AiSettings2> = {
+  classic: Castle,
+  chaos: Fire
 };
 
 function CharacterSelect({
@@ -287,6 +296,15 @@ export function CharacterSettingsDialog({
   onHumanRoleChange: (role: HumanRolePreference) => void;
   onClose: () => void;
 }) {
+  const previewAudioCacheRef = useRef<Map<string, Blob>>(new Map());
+  const [previewingSeatId, setPreviewingSeatId] = useState<NpcPlayerId | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setPreviewingSeatId(null);
+    }
+  }, [open]);
+
   if (!open) {
     return null;
   }
@@ -305,6 +323,22 @@ export function CharacterSettingsDialog({
       ...normalizedSetup,
       [seatId]: characterId
     });
+  }
+
+  async function previewCharacterVoice(seatId: NpcPlayerId) {
+    const profile = characterProfileById(normalizedSetup[seatId]) ?? CHARACTER_PROFILES[0];
+
+    setPreviewingSeatId(seatId);
+
+    try {
+      await speakCharacterPreview({
+        speakerId: seatId,
+        profile,
+        elevenLabsAudioCache: previewAudioCacheRef.current
+      });
+    } finally {
+      setPreviewingSeatId(null);
+    }
   }
 
   return (
@@ -340,14 +374,18 @@ export function CharacterSettingsDialog({
         <div className="settings-section">
           <p className="settings-label">Presets</p>
           <div className="preset-grid">
-            {CHARACTER_PRESETS.map((preset) => (
-              <button key={preset.id} type="button" onClick={() => onCharacterSetupChange(preset.setup)}>
-                <AiSettings2 aria-hidden="true" />
-                {preset.name}
-              </button>
-            ))}
+            {CHARACTER_PRESETS.map((preset) => {
+              const PresetIcon = PRESET_ICONS[preset.id] ?? AiSettings2;
+
+              return (
+                <button key={preset.id} type="button" onClick={() => onCharacterSetupChange(preset.setup)}>
+                  <PresetIcon aria-hidden="true" />
+                  {preset.name}
+                </button>
+              );
+            })}
             <button type="button" onClick={() => onCharacterSetupChange(uniqueRandomCharacterSetup())}>
-              <Reload aria-hidden="true" />
+              <Shuffle aria-hidden="true" />
               Randomize
             </button>
           </div>
@@ -356,6 +394,7 @@ export function CharacterSettingsDialog({
         <div className="settings-section character-slot-list">
           {NPC_PLAYER_IDS.map((seatId) => {
             const selectedProfile = characterProfileById(normalizedSetup[seatId]) ?? CHARACTER_PROFILES[0];
+            const previewing = previewingSeatId === seatId;
             const unavailableProfileIds = new Set(
               NPC_PLAYER_IDS.filter((candidateSeatId) => candidateSeatId !== seatId).map(
                 (candidateSeatId) => normalizedSetup[candidateSeatId]
@@ -373,6 +412,21 @@ export function CharacterSettingsDialog({
                     <strong>{selectedProfile.name}</strong>
                     <p>{selectedProfile.summary}</p>
                   </div>
+                  <button
+                    type="button"
+                    className="voice-preview-button"
+                    onClick={() => void previewCharacterVoice(seatId)}
+                    disabled={previewingSeatId !== null}
+                    aria-label={previewing ? `Loading ${selectedProfile.name} voice preview` : `Preview ${selectedProfile.name} voice`}
+                    aria-busy={previewing}
+                    title={
+                      previewing
+                        ? "Loading voice preview"
+                        : `Preview ${selectedProfile.name}: ${selectedProfile.fallbackLines[0] ?? selectedProfile.summary}`
+                    }
+                  >
+                    {previewing ? <span className="voice-preview-spinner" aria-hidden="true" /> : <Headphone aria-hidden="true" />}
+                  </button>
                 </div>
                 <CharacterSelect
                   label={SEAT_LABELS[seatId]}

@@ -237,14 +237,50 @@ html.custom-cursor-enabled [contenteditable="true"] {
   background: #000;
 }
 
+.mobile-lockout {
+  display: none;
+}
+
+.mobile-lockout div {
+  width: min(520px, 100%);
+  padding: 22px;
+  border: 2px solid var(--gold);
+  background:
+    linear-gradient(180deg, rgba(18, 14, 10, 0.98), rgba(5, 4, 4, 0.98)),
+    #070605;
+  box-shadow:
+    6px 6px 0 #000,
+    0 0 0 999px rgba(0, 0, 0, 0.84);
+  text-align: center;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.mobile-lockout h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.8rem, 10vw, 3.25rem);
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.mobile-lockout p {
+  margin: 12px auto 0;
+  max-width: 420px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.mobile-lockout .eyebrow {
+  margin: 0 0 12px;
+  color: var(--gold);
+}
+
 .home-shell {
   position: relative;
   isolation: isolate;
   grid-template-rows: minmax(0, 1fr);
-  background:
-    radial-gradient(circle at 50% 48%, rgba(211, 163, 76, 0.08) 0, rgba(105, 74, 43, 0.045) 23%, rgba(0, 0, 0, 0) 54%),
-    radial-gradient(circle at 50% 48%, rgba(255, 228, 185, 0.05) 0, rgba(0, 0, 0, 0) 34%),
-    #000;
+  background: #000;
 }
 
 .home-shell::before,
@@ -252,12 +288,15 @@ html.custom-cursor-enabled [contenteditable="true"] {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
 }
 
 .home-shell::before {
-  background: radial-gradient(circle at 50% 47%, rgba(0, 0, 0, 0) 0 28%, rgba(0, 0, 0, 0.5) 74%, rgba(0, 0, 0, 0.92) 100%);
+  background:
+    radial-gradient(circle at 50% 52%, rgba(211, 163, 76, 0.12) 0, rgba(105, 74, 43, 0.06) 22%, rgba(0, 0, 0, 0) 52%),
+    radial-gradient(circle at 50% 48%, rgba(255, 228, 185, 0.045) 0, rgba(0, 0, 0, 0) 34%),
+    radial-gradient(circle at 50% 47%, rgba(0, 0, 0, 0) 0 28%, rgba(0, 0, 0, 0.58) 74%, rgba(0, 0, 0, 0.94) 100%);
 }
 
 .home-shell::after {
@@ -266,6 +305,23 @@ html.custom-cursor-enabled [contenteditable="true"] {
     linear-gradient(#19130e 1px, transparent 1px),
     linear-gradient(90deg, #19130e 1px, transparent 1px);
   background-size: 36px 36px;
+}
+
+.home-town-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.24) 100%),
+    #000;
+}
+
+.home-town-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .topbar,
@@ -363,7 +419,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
 
 .empty-state {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   height: 100%;
   min-height: 0;
   display: grid;
@@ -1566,7 +1622,7 @@ textarea:focus {
 
 .character-preview {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 58px minmax(0, 1fr) 42px;
   gap: 10px;
   align-items: center;
 }
@@ -1611,6 +1667,61 @@ textarea:focus {
 .character-preview p {
   margin: 4px 0 0;
   font-size: 0.72rem;
+}
+
+.voice-preview-button {
+  width: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 7px;
+  justify-self: end;
+  border-color: #4b4036 #050505 #050505 #4b4036;
+  background: #11100e;
+  color: var(--gold);
+}
+
+.voice-preview-button:hover:not(:disabled),
+.voice-preview-button:focus-visible:not(:disabled) {
+  border-color: var(--gold) #050505 #050505 var(--gold);
+}
+
+.voice-preview-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.voice-preview-spinner {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  animation: voice-preview-spin 760ms steps(8, end) infinite;
+  image-rendering: pixelated;
+}
+
+.voice-preview-spinner::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--gold);
+  box-shadow:
+    8px 3px 0 rgba(211, 163, 76, 0.88),
+    12px 8px 0 rgba(211, 163, 76, 0.72),
+    8px 14px 0 rgba(211, 163, 76, 0.56),
+    0 16px 0 rgba(211, 163, 76, 0.42),
+    -8px 14px 0 rgba(211, 163, 76, 0.32),
+    -12px 8px 0 rgba(211, 163, 76, 0.26),
+    -8px 3px 0 rgba(211, 163, 76, 0.2);
+}
+
+.voice-preview-status {
+  margin: 12px 0 0;
+  min-height: 1.1em;
+  color: var(--gold) !important;
+  font-size: 0.72rem;
+  line-height: 1.35;
 }
 
 .character-select {
@@ -1918,6 +2029,12 @@ textarea:focus {
   }
 }
 
+@keyframes voice-preview-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 1180px) {
   .game-grid {
     grid-template-columns: minmax(190px, 0.58fr) minmax(420px, 1.35fr) minmax(240px, 0.72fr);
@@ -1959,6 +2076,29 @@ textarea:focus {
 
   .table-scene {
     min-height: 520px;
+  }
+}
+
+@media (max-width: 760px), (hover: none) and (pointer: coarse) and (max-width: 920px) {
+  .mobile-lockout {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
+    overflow: auto;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(143, 21, 25, 0.24), rgba(0, 0, 0, 0) 46%),
+      linear-gradient(#090706 2px, transparent 2px),
+      linear-gradient(90deg, #090706 2px, transparent 2px),
+      #000;
+    background-size:
+      100% 100%,
+      24px 24px,
+      24px 24px;
+    pointer-events: auto;
   }
 }
 

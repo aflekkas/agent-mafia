@@ -33,6 +33,7 @@ import { GameDialog } from "@/components/game/GameDialog";
 import { createGame, postGameAction } from "@/components/game/game-api";
 import { CustomCursor } from "@/components/game/CustomCursor";
 import { HomeScreen, VoiceModeSwitch } from "@/components/game/HomeScreen";
+import { HomeTownBackground } from "@/components/game/HomeTownBackground";
 import { GameOverPanel, HumanPanel, PhasePanel, RoleCard, TableScene2D, Transcript, VoteBoard } from "@/components/game/GamePanels";
 import { BrowserSpeechRecognition, BrowserSpeechWindow, DialogMode, HumanAvatarId, VoiceMode } from "@/components/game/types";
 import {
@@ -46,6 +47,8 @@ import {
   sanitizeHumanNameDraft,
   sanitizeHumanTextDraft
 } from "@/components/game/utils";
+
+const MOBILE_LOCKOUT_QUERY = "(max-width: 760px), ((hover: none) and (pointer: coarse) and (max-width: 920px))";
 
 export function GameShell() {
   const [game, setGame] = useState<GameState | null>(null);
@@ -65,6 +68,7 @@ export function GameShell() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [characterSetup, setCharacterSetupState] = useState<CharacterSetup>(DEFAULT_CHARACTER_SETUP);
   const [humanRole, setHumanRoleState] = useState<HumanRolePreference>("random");
+  const [viewportLocked, setViewportLocked] = useState(false);
   const spokenEntryRef = useRef<string | null>(null);
   const audioPlayingRef = useRef(false);
   const elevenLabsAudioCacheRef = useRef<Map<string, Blob>>(new Map());
@@ -104,6 +108,31 @@ export function GameShell() {
   }, [game]);
   const isHome = !game || !human;
   const voicePlaybackEnabled = !audioMuted && voiceMode !== "off";
+
+  useEffect(() => {
+    const query = window.matchMedia(MOBILE_LOCKOUT_QUERY);
+    const updateViewportLock = () => setViewportLocked(query.matches);
+
+    updateViewportLock();
+    query.addEventListener("change", updateViewportLock);
+    return () => query.removeEventListener("change", updateViewportLock);
+  }, []);
+
+  useEffect(() => {
+    if (!viewportLocked || !game || game.phase === "game-over") {
+      return;
+    }
+
+    clearPrefetchedAdvance();
+    setPaused(true);
+    setStatus("Screen too small. Resize to continue.");
+    speechRecognitionRef.current?.abort();
+    setListening(false);
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setAudioPlaybackActive(false);
+  }, [game, viewportLocked]);
 
   useEffect(() => {
     const uiClick = new Audio("/sfx/ui-click.wav");
@@ -346,6 +375,10 @@ export function GameShell() {
   }, [busy, game, latestPublicEntry, paused, playbackCompleteId, voicePlaybackEnabled]);
 
   async function start(seed?: string) {
+    if (!canPlayOnCurrentViewport()) {
+      return;
+    }
+
     const displayName = normalizeHumanName(humanName);
 
     setBusy(true);
@@ -371,6 +404,9 @@ export function GameShell() {
 
   async function advance(loop = false) {
     if (!game || busy) {
+      return;
+    }
+    if (!canPlayOnCurrentViewport()) {
       return;
     }
 
@@ -402,6 +438,10 @@ export function GameShell() {
     if (!game || !humanText.trim()) {
       return;
     }
+    if (!canPlayOnCurrentViewport()) {
+      return;
+    }
+
     setBusy(true);
     clearPrefetchedAdvance();
     setStatus("Submitting your speech.");
@@ -422,6 +462,10 @@ export function GameShell() {
   }
 
   async function startListening() {
+    if (!canPlayOnCurrentViewport()) {
+      return;
+    }
+
     if (listening) {
       stopListening("Stopped listening.");
       return;
@@ -545,6 +589,10 @@ export function GameShell() {
     if (!game) {
       return;
     }
+    if (!canPlayOnCurrentViewport()) {
+      return;
+    }
+
     setBusy(true);
     clearPrefetchedAdvance();
     setStatus("Casting vote.");
@@ -564,6 +612,10 @@ export function GameShell() {
     if (!game) {
       return;
     }
+    if (!canPlayOnCurrentViewport()) {
+      return;
+    }
+
     setBusy(true);
     clearPrefetchedAdvance();
     setStatus("Submitting night action.");
@@ -658,6 +710,15 @@ export function GameShell() {
       setPaused(false);
     }
     setDialogMode(null);
+  }
+
+  function canPlayOnCurrentViewport() {
+    if (!viewportLocked) {
+      return true;
+    }
+
+    setStatus("Please resize to a bigger screen before playing.");
+    return false;
   }
 
   async function copyTranscript() {
@@ -1023,6 +1084,14 @@ export function GameShell() {
       onPointerOverCapture={playButtonSoundFromHover}
     >
       <CustomCursor />
+      {isHome ? <HomeTownBackground /> : null}
+      <section className="mobile-lockout" role="status" aria-live="polite" aria-hidden={!viewportLocked}>
+        <div>
+          <p className="eyebrow">Table too small</p>
+          <h2>Hopefully you haven&apos;t started the game.</h2>
+          <p>Please resize the screen to a bigger size. Agent Mafia is not meant to be played on a tiny mobile screen.</p>
+        </div>
+      </section>
       {isHome ? null : (
         <section className="topbar">
           <button type="button" className="title-button" data-sfx="none" onClick={requestExit} title="Return to start">

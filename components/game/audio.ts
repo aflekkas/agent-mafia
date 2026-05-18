@@ -1,4 +1,5 @@
 import { BrowserVoiceProfile, Player, SpeakerId, TranscriptEntry } from "@/lib/game/types";
+import type { CharacterProfile } from "@/lib/characters/profiles";
 import { VoiceMode } from "./types";
 
 type BrowserVoiceGender = "masculine" | "feminine";
@@ -83,7 +84,7 @@ export async function speakEntry(
 
   if (voiceMode === "elevenlabs") {
     const explicitVoiceId = speaker?.voiceId;
-    const cacheKey = explicitVoiceId ? `${entry.speakerId}:${explicitVoiceId}:${entry.text}` : undefined;
+    const cacheKey = explicitVoiceId ? `${explicitVoiceId}:${entry.text}` : undefined;
     const cachedAudio = cacheKey ? elevenLabsAudioCache.get(cacheKey) : undefined;
     if (cachedAudio) {
       await playAudioBlob(cachedAudio);
@@ -127,6 +128,62 @@ export async function speakEntry(
     setStatus(voiceMode === "elevenlabs" ? "ElevenLabs unavailable; played browser voice." : "Played browser voice.");
     await playBrowserUtterance(utterance);
   }
+}
+
+export async function speakCharacterPreview({
+  speakerId,
+  profile,
+  elevenLabsAudioCache
+}: {
+  speakerId: SpeakerId;
+  profile: CharacterProfile;
+  elevenLabsAudioCache: Map<string, Blob>;
+}) {
+  const text = previewSpeechTextFor(profile);
+  const requestSpeakerId = profile.voiceId ? undefined : speakerId;
+  const cacheKey = `${profile.voiceId ?? `seat:${speakerId}`}:${text}`;
+  const cachedAudio = elevenLabsAudioCache.get(cacheKey);
+
+  if (cachedAudio) {
+    await playAudioBlob(cachedAudio);
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/speak", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        speakerId: requestSpeakerId,
+        voiceId: profile.voiceId,
+        text
+      })
+    });
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (response.ok && contentType.includes("audio/")) {
+      const blob = await response.blob();
+      elevenLabsAudioCache.set(cacheKey, blob);
+      await playAudioBlob(blob);
+      return;
+    }
+  } catch {
+    // Browser speech fallback below.
+  }
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = browserVoiceRateFor(speakerId, profile.browserVoice);
+    utterance.pitch = pitchFor(speakerId, profile.browserVoice);
+    utterance.volume = 1;
+    utterance.voice = browserVoiceFor(speakerId, profile.browserVoice);
+    await playBrowserUtterance(utterance);
+  }
+}
+
+function previewSpeechTextFor(profile: CharacterProfile): string {
+  return profile.fallbackLines[0] ?? `${profile.name}. I am listening to every silence at this table.`;
 }
 
 function browserSpeechTextFor(entry: TranscriptEntry): string {
