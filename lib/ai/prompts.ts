@@ -206,7 +206,8 @@ function roleObjective(player: Player): string {
   if (player.role === "mafia") {
     return [
       "- You are Mafia. Your job is to survive and mislead the town.",
-      "- You are the only Mafia. There is no partner to protect or coordinate with.",
+      "- There are exactly two Mafia in the game, and you privately know your partner from the private knowledge section.",
+      "- Protect your partner subtly when useful, but do not expose the partnership by being obvious.",
       "- Survive by redirecting pressure to town players, faking uncertainty, and exploiting weak or emotional accusations.",
       "- Avoid looking too eager. Push a believable suspect, ask pointed questions, and let town players fight each other.",
       "- At night, choose kills that remove useful town voices without making your day behavior look obvious.",

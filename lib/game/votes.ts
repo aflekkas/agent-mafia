@@ -6,7 +6,7 @@ import { checkWinCondition } from "./win";
 export function submitVote(state: GameState, voterId: PlayerId, targetId: PlayerId, rationaleText?: string): GameState {
   const legal = legalTargets(state, voterId, "vote");
   const voter = getPlayer(state, voterId);
-  const declaredTargetId = explicitVoteTargetFromText(state, rationaleText, legal, voterId);
+  const declaredTargetId = voter.isHuman ? explicitVoteTargetFromText(state, rationaleText, legal, voterId) : null;
   const finalTargetId = declaredTargetId ?? (legal.includes(targetId) ? targetId : legal[0] ?? targetId);
 
   if (!legal.includes(finalTargetId)) {
@@ -27,8 +27,8 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
 
   const target = getPlayer(state, finalTargetId);
   const text = voter.isHuman
-    ? formatHumanVoteText(target.name, rationaleText, voter.name) ?? fallbackVoteText(voter.name, target.name, target.suspicion)
-    : formatNpcVoteText(target.name, rationaleText, voter.name) ?? fallbackVoteText(voter.name, target.name, target.suspicion);
+    ? formatHumanVoteText(state, target.name, rationaleText, voter.name) ?? fallbackVoteText(voter.name, target.name, target.suspicion)
+    : formatNpcVoteText(state, target.name, rationaleText, voter.name) ?? fallbackVoteText(voter.name, target.name, target.suspicion);
 
   return addTranscript(
     addActionLog(
@@ -54,16 +54,16 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
   );
 }
 
-function formatHumanVoteText(targetName: string, rationaleText: string | undefined, voterName: string): string | undefined {
+function formatHumanVoteText(state: GameState, targetName: string, rationaleText: string | undefined, voterName: string): string | undefined {
   const trimmed = rationaleText?.replace(/\s+/g, " ").trim();
   if (!trimmed) {
     return undefined;
   }
 
-  return formatNpcVoteText(targetName, trimmed, voterName);
+  return formatNpcVoteText(state, targetName, trimmed, voterName);
 }
 
-function formatNpcVoteText(targetName: string, rationaleText: string | undefined, voterName: string): string | undefined {
+function formatNpcVoteText(state: GameState, targetName: string, rationaleText: string | undefined, voterName: string): string | undefined {
   const trimmed = rationaleText?.replace(/\s+/g, " ").trim();
   if (!trimmed) {
     return undefined;
@@ -72,40 +72,40 @@ function formatNpcVoteText(targetName: string, rationaleText: string | undefined
   const target = escapeRegExp(targetName);
   const thirdPersonVote = new RegExp(`^votes?\\s+(?:for\\s+)?${target}\\b`, "i");
   if (thirdPersonVote.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(thirdPersonVote, voteLead(voterName, targetName)), targetName);
+    return cleanVoteSpeech(trimmed.replace(thirdPersonVote, voteLead(voterName, targetName)), state);
   }
 
   const firstPersonVote = new RegExp(`^i\\s+vote\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVote.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(firstPersonVote, voteLead(voterName, targetName)), targetName);
+    return cleanVoteSpeech(trimmed.replace(firstPersonVote, voteLead(voterName, targetName)), state);
   }
 
   const firstPersonVoting = new RegExp(`^i(?:['’]m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVoting.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(firstPersonVoting, voteLead(voterName, targetName)), targetName);
+    return cleanVoteSpeech(trimmed.replace(firstPersonVoting, voteLead(voterName, targetName)), state);
   }
 
   const myVoteIs = new RegExp(`^my\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?${target}\\b`, "i");
   if (myVoteIs.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(myVoteIs, voteLead(voterName, targetName)), targetName);
+    return cleanVoteSpeech(trimmed.replace(myVoteIs, voteLead(voterName, targetName)), state);
   }
 
   const imOnTarget = new RegExp(`^i(?:['’]m|\\s+am)\\s+on\\s+${target}\\b`, "i");
   if (imOnTarget.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(imOnTarget, voteLead(voterName, targetName)), targetName);
+    return cleanVoteSpeech(trimmed.replace(imOnTarget, voteLead(voterName, targetName)), state);
   }
 
   const votingTarget = new RegExp(`^voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (votingTarget.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(votingTarget, voteLead(voterName, targetName)), targetName);
+    return cleanVoteSpeech(trimmed.replace(votingTarget, voteLead(voterName, targetName)), state);
   }
 
   const targetGetsVote = new RegExp(`^${target}\\s+(?:gets|has)\\s+(?:my|the)\\s+vote\\b`, "i");
   if (targetGetsVote.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(targetGetsVote, voteLead(voterName, targetName)), targetName);
+    return cleanVoteSpeech(trimmed.replace(targetGetsVote, voteLead(voterName, targetName)), state);
   }
 
-  const rationale = stripLeadingTargetSentence(stripEmbeddedVoteDeclarations(stateAgnosticVoteText(trimmed), targetName), targetName);
+  const rationale = stripLeadingTargetSentence(stripAllVoteDeclarations(stateAgnosticVoteText(trimmed), state), targetName);
   return joinVoteSpeech(voteLead(voterName, targetName), rationale || voteRationale("", targetName, 0));
 }
 
@@ -197,10 +197,11 @@ function joinVoteSpeech(lead: string, rationale: string): string {
   return `${/[.!?]$/.test(cleanLead) ? cleanLead : `${cleanLead}.`} ${cleanRationale}`;
 }
 
-function cleanVoteSpeech(text: string, targetName: string): string {
-  return stripEmbeddedVoteDeclarations(text, targetName)
+function cleanVoteSpeech(text: string, state: GameState): string {
+  return stripAllVoteDeclarations(text, state)
     .replace(/\s+/g, " ")
     .replace(/\s+([,.!?])/g, "$1")
+    .replace(/\s*[,.!?]\s*([,.!?])/g, "$1")
     .trim();
 }
 
@@ -208,18 +209,31 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function stripEmbeddedVoteDeclarations(text: string, targetName: string): string {
-  const target = escapeRegExp(targetName);
+function stripAllVoteDeclarations(text: string, state: GameState): string {
+  return stripEmbeddedVoteDeclarations(
+    text,
+    state.players.map((player) => player.name)
+  );
+}
+
+function stripEmbeddedVoteDeclarations(text: string, targetNames: string[]): string {
+  const targets = targetNames.map(escapeRegExp).join("|");
+  if (!targets) {
+    return text;
+  }
+
   return text
-    .replace(new RegExp(`\\b(?:so\\s+)?i\\s+vote\\s+(?:for\\s+)?${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
-    .replace(new RegExp(`\\b(?:so\\s+)?i(?:['’]m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
-    .replace(new RegExp(`\\b(?:so\\s+)?i(?:['’]m|\\s+am)\\s+on\\s+${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
-    .replace(new RegExp(`\\bmy\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
-    .replace(new RegExp(`\\bvoting\\s+(?:for\\s+)?${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
-    .replace(new RegExp(`\\b${target}\\s+(?:gets|has)\\s+(?:my|the)\\s+vote\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
+    .replace(new RegExp(`\\b(?:so\\s+)?i\\s+vote\\s+(?:for\\s+)?(?:${targets})\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
+    .replace(new RegExp(`\\b(?:so\\s+)?i(?:['’]m|\\s+am)\\s+voting\\s+(?:for\\s+)?(?:${targets})\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
+    .replace(new RegExp(`\\b(?:so\\s+)?i(?:['’]m|\\s+am)\\s+on\\s+(?:${targets})\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
+    .replace(new RegExp(`\\bmy\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?(?:${targets})\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
+    .replace(new RegExp(`\\bvoting\\s+(?:for\\s+)?(?:${targets})\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
+    .replace(new RegExp(`\\b(?:${targets})\\s+(?:gets|has)\\s+(?:my|the)\\s+vote\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
     .replace(/\s+/g, " ")
     .replace(/\s+([,.!?])/g, "$1")
+    .replace(/^\s*(?:so\s+)?(?:i\s+vote|i(?:['’]m|\s+am)\s+voting|my\s+vote(?:\s+is|['’]s)|voting)\b\s*(?:because\s*)?/i, "")
     .replace(/\bso\s+(?=[,.!?]|$)/gi, "")
+    .replace(/\s*[,.!?]\s*([,.!?])/g, "$1")
     .trim();
 }
 
