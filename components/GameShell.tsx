@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clock } from "pixelarticons/react/Clock";
 import { Copy } from "pixelarticons/react/Copy";
 import { InfoBox } from "pixelarticons/react/InfoBox";
-import { Play } from "pixelarticons/react/Play";
 import { Reload } from "pixelarticons/react/Reload";
 import { Robot } from "pixelarticons/react/Robot";
 import { Volume } from "pixelarticons/react/Volume";
@@ -51,6 +49,7 @@ import {
 } from "@/components/game/utils";
 
 const MOBILE_LOCKOUT_QUERY = "(max-width: 760px), ((hover: none) and (pointer: coarse) and (max-width: 920px))";
+type DictationState = "idle" | "requesting" | "recording" | "transcribing";
 
 export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolean }) {
   const [game, setGame] = useState<GameState | null>(null);
@@ -58,12 +57,12 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
   const [humanText, setHumanText] = useState("");
   const [humanName, setHumanName] = useState("Player");
   const [listening, setListening] = useState(false);
+  const [dictationState, setDictationState] = useState<DictationState>("idle");
   const [status, setStatus] = useState("Ready.");
   const [audioMuted, setAudioMuted] = useState(true);
   const [voiceMode, setVoiceModeState] = useState<VoiceMode>("browser");
   const [playbackCompleteId, setPlaybackCompleteId] = useState<string | null>(null);
   const [voiceActive, setVoiceActive] = useState(false);
-  const [paused, setPaused] = useState(false);
   const [autoHumanEnabled, setAutoHumanEnabled] = useState(false);
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [humanAvatar, setHumanAvatarState] = useState<HumanAvatarId>("player-masc");
@@ -114,6 +113,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
   const isGameOver = game?.phase === "game-over";
   const hasHumanPrompt = !!game?.currentPrompt && !!human?.alive && !isGameOver;
   const topbarControlsLocked = !!dialogMode || isGameOver;
+  const gameplayLocked = viewportLocked || dialogMode === "exit";
 
   useEffect(() => {
     const query = window.matchMedia(MOBILE_LOCKOUT_QUERY);
@@ -130,7 +130,6 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
     }
 
     clearPrefetchedAdvance();
-    setPaused(true);
     setStatus("Screen too small. Resize to continue.");
     cancelMicCapture();
     setListening(false);
@@ -355,7 +354,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
   }, [audioMuted, latestPublicEntry, voiceMode, voicePlaybackEnabled]);
 
   useEffect(() => {
-    if (!game || !voicePlaybackEnabled || paused || busy || game.currentPrompt || game.phase === "game-over") {
+    if (!game || !voicePlaybackEnabled || gameplayLocked || busy || game.currentPrompt || game.phase === "game-over") {
       return;
     }
     if (!latestPublicEntry || latestPublicEntry.id === playbackCompleteId) {
@@ -363,10 +362,10 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
     }
 
     prefetchNextAdvance(game);
-  }, [busy, game, latestPublicEntry, paused, playbackCompleteId, voicePlaybackEnabled]);
+  }, [busy, game, latestPublicEntry, gameplayLocked, playbackCompleteId, voicePlaybackEnabled]);
 
   useEffect(() => {
-    if (!game || paused || busy || game.currentPrompt || game.phase === "game-over") {
+    if (!game || gameplayLocked || busy || game.currentPrompt || game.phase === "game-over") {
       return;
     }
     if (audioPlayingRef.current) {
@@ -380,10 +379,10 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
     }, delay);
 
     return () => window.clearTimeout(timer);
-  }, [busy, game, latestPublicEntry, paused, playbackCompleteId, voicePlaybackEnabled]);
+  }, [busy, game, latestPublicEntry, gameplayLocked, playbackCompleteId, voicePlaybackEnabled]);
 
   useEffect(() => {
-    if (!game || !autoHumanEnabled || paused || busy || game.phase === "game-over" || !isHumanPrompt(game.currentPrompt)) {
+    if (!game || !autoHumanEnabled || gameplayLocked || busy || game.phase === "game-over" || !isHumanPrompt(game.currentPrompt)) {
       return;
     }
     if (!canPlayOnCurrentViewport()) {
@@ -397,7 +396,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
 
     autoHumanPromptRef.current = promptKey;
     void submitAutoHumanTurn(promptKey);
-  }, [autoHumanEnabled, busy, game, paused]);
+  }, [autoHumanEnabled, busy, game, gameplayLocked]);
 
   async function start(seed?: string) {
     if (!canPlayOnCurrentViewport()) {
@@ -414,7 +413,6 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
       clearPrefetchedAdvance();
       setGame(nextGame);
       setHumanText("");
-      setPaused(false);
       setDialogMode(null);
       setSettingsOpen(false);
       spokenEntryRef.current = null;
@@ -526,10 +524,12 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
 
     try {
       setListening(true);
+      setDictationState("requesting");
       setStatus("Requesting microphone access.");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (micStartRequestIdRef.current !== requestId) {
         stream.getTracks().forEach((track) => track.stop());
+        setDictationState("idle");
         return;
       }
 
@@ -549,6 +549,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
         micStartRequestIdRef.current += 1;
         stopMicCapture();
         setListening(false);
+        setDictationState("idle");
         setBusy(false);
         setStatus("Mic capture failed. Type your line instead.");
       };
@@ -560,9 +561,11 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
         setListening(false);
 
         if (micStartRequestIdRef.current !== requestId) {
+          setDictationState("idle");
           return;
         }
         if (!chunks.length) {
+          setDictationState("idle");
           setStatus("No speech was recorded. Try the mic again or type your line.");
           return;
         }
@@ -571,10 +574,12 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
       };
 
       recorder.start();
+      setDictationState("recording");
       setStatus("Mic is on. Speak now, then stop to transcribe.");
     } catch (error) {
       stopMicCapture();
       setListening(false);
+      setDictationState("idle");
       setStatus(micStartErrorMessage(error));
     }
   }
@@ -587,16 +592,19 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
       } catch {
         cancelMicCapture();
         setListening(false);
+        setDictationState("idle");
       }
     } else {
       cancelMicCapture();
       setListening(false);
+      setDictationState("idle");
     }
     setStatus(message);
   }
 
   async function transcribeMicAudio(chunks: Blob[], mimeType: string) {
     setBusy(true);
+    setDictationState("transcribing");
     setStatus("Transcribing with OpenAI Whisper.");
 
     try {
@@ -623,6 +631,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
       setStatus(errorMessage(error, "Whisper transcription failed. Type your line instead."));
     } finally {
       setBusy(false);
+      setDictationState("idle");
     }
   }
 
@@ -787,7 +796,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
       setGame(null);
       return;
     }
-    setPaused(true);
+    clearPrefetchedAdvance();
     setDialogMode("exit");
   }
 
@@ -795,7 +804,6 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
     clearPrefetchedAdvance();
     setGame(null);
     setHumanText("");
-    setPaused(false);
     setDialogMode(null);
     spokenEntryRef.current = null;
     setPlaybackCompleteId(null);
@@ -811,9 +819,6 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
   }
 
   function closeDialog() {
-    if (dialogMode === "exit") {
-      setPaused(false);
-    }
     setDialogMode(null);
   }
 
@@ -845,14 +850,6 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
     }
 
     setDialogMode("rules");
-  }
-
-  function togglePause() {
-    if (topbarControlsLocked) {
-      return;
-    }
-
-    setPaused((value) => !value);
   }
 
   function clearPrefetchedAdvance() {
@@ -1249,17 +1246,6 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
               </button>
               <button
                 type="button"
-                className={`icon-button pixel-tooltip ${paused ? "active" : ""}`}
-                onClick={togglePause}
-                disabled={topbarControlsLocked}
-                aria-pressed={paused}
-                aria-label={paused ? "Resume game" : "Pause game"}
-                data-tooltip={paused ? "Resume game" : "Pause game"}
-              >
-                {paused ? <Play aria-hidden="true" /> : <Clock aria-hidden="true" />}
-              </button>
-              <button
-                type="button"
                 className="icon-button pixel-tooltip"
                 onClick={requestExit}
                 disabled={topbarControlsLocked}
@@ -1318,18 +1304,19 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
         <section className="game-grid">
           <aside className="left-rail">
             <RoleCard player={human} game={game} />
-            <PhasePanel game={game} status={status} busy={busy} paused={paused} />
+            <PhasePanel game={game} status={status} busy={busy} />
             <VoteBoard game={game} />
           </aside>
 
           <section className={`stage-panel ${isGameOver ? "game-ended" : ""} ${hasHumanPrompt ? "has-human-prompt" : ""}`}>
-            <TableScene2D game={game} busy={busy} paused={paused} humanAvatar={humanAvatar} />
+            <TableScene2D game={game} busy={busy} paused={gameplayLocked} humanAvatar={humanAvatar} />
             <HumanPanel
               game={game}
               humanText={humanText}
               setHumanText={updateHumanText}
               busy={busy}
               listening={listening}
+              dictationState={dictationState}
               micInputEnabled={micInputEnabled}
               onSubmitSpeech={submitSpeech}
               onStartListening={startListening}

@@ -11,12 +11,14 @@ import { roleActionTargets, nightPromptTitleForRole } from "@/lib/game/role-acti
 import { GameState, Player, PlayerId, TranscriptEntry } from "@/lib/game/types";
 import { TableScene3DBackdrop } from "./TableScene3DBackdrop";
 import { ROLE_COPY } from "./constants";
+import { ROLE_PRESENTATION, RoleIconBadge } from "./role-presentation";
 import { HumanAvatarId } from "./types";
 import { avatarFor, formatPhase, nameFor, nextActorIdFor } from "./utils";
 
 type CharacterVisualState = "idle" | "quiet" | "thinking" | "speaking" | "suspected" | "eliminated";
 
 export function RoleCard({ player, game }: { player: Player; game: GameState }) {
+  const role = ROLE_PRESENTATION[player.role];
   const mafiaPartners =
     player.role === "mafia" ? game.players.filter((candidate) => candidate.id !== player.id && candidate.role === "mafia") : [];
   const detectiveKnownIdentities =
@@ -26,9 +28,15 @@ export function RoleCard({ player, game }: { player: Player; game: GameState }) 
 
   return (
     <section className={`role-card role-${player.role}`}>
-      <p className="eyebrow">Private Role</p>
-      <h2>{player.role}</h2>
-      <p>{ROLE_COPY[player.role]}</p>
+      <div className="role-card-header">
+        <RoleIconBadge role={player.role} />
+        <div>
+          <p className="eyebrow">Private Role</p>
+          <h2>{role.label}</h2>
+        </div>
+      </div>
+      <p className="role-card-kicker">{role.kicker}</p>
+      <p className="role-card-copy">{ROLE_COPY[player.role]}</p>
       {mafiaPartners.length ? (
         <p className="private-intel">Partner: {mafiaPartners.map((partner) => partner.name).join(", ")}</p>
       ) : null}
@@ -57,13 +65,11 @@ export function RoleCard({ player, game }: { player: Player; game: GameState }) 
 export function PhasePanel({
   game,
   status,
-  busy,
-  paused
+  busy
 }: {
   game: GameState;
   status: string;
   busy: boolean;
-  paused: boolean;
 }) {
   return (
     <section className="panel">
@@ -81,8 +87,6 @@ export function PhasePanel({
             </span>
             Thinking
           </>
-        ) : paused ? (
-          "Paused."
         ) : (
           status
         )}
