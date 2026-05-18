@@ -82,8 +82,9 @@ export async function speakEntry(
   const speaker = players.find((player) => player.id === entry.speakerId);
 
   if (voiceMode === "elevenlabs") {
-    const cacheKey = `${entry.speakerId}:${speaker?.voiceId ?? "default"}:${entry.text}`;
-    const cachedAudio = elevenLabsAudioCache.get(cacheKey);
+    const explicitVoiceId = speaker?.voiceId;
+    const cacheKey = explicitVoiceId ? `${entry.speakerId}:${explicitVoiceId}:${entry.text}` : undefined;
+    const cachedAudio = cacheKey ? elevenLabsAudioCache.get(cacheKey) : undefined;
     if (cachedAudio) {
       await playAudioBlob(cachedAudio);
       setStatus("Played cached ElevenLabs voice.");
@@ -104,7 +105,9 @@ export async function speakEntry(
       const contentType = response.headers.get("content-type") ?? "";
       if (response.ok && contentType.includes("audio/")) {
         const blob = await response.blob();
-        elevenLabsAudioCache.set(cacheKey, blob);
+        if (cacheKey) {
+          elevenLabsAudioCache.set(cacheKey, blob);
+        }
         await playAudioBlob(blob);
         setStatus("Played ElevenLabs voice.");
         return;
