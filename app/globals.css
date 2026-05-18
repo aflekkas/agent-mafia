@@ -297,6 +297,13 @@ html.custom-cursor-enabled [contenteditable="true"] {
   transform: none;
 }
 
+.title-button:hover:not(:disabled),
+.title-button:focus-visible:not(:disabled),
+.title-button:active:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+}
+
 .topbar h1 {
   margin: 0;
   color: var(--ink);
