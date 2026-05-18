@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Check } from "pixelarticons/react/Check";
+import { Home } from "pixelarticons/react/Home";
 import { Mic } from "pixelarticons/react/Mic";
 import { Reload } from "pixelarticons/react/Reload";
 import { User } from "pixelarticons/react/User";
@@ -217,7 +218,15 @@ export function HumanPanel({
   return <TargetPanel title={nightPromptTitleForRole(human.role)} targets={targets} busy={busy} onPick={onSubmitNightAction} />;
 }
 
-export function GameOverPanel({ game, onPlayAgain }: { game: GameState; onPlayAgain: () => void }) {
+export function GameOverPanel({
+  game,
+  onPlayAgain,
+  onGoHome
+}: {
+  game: GameState;
+  onPlayAgain: () => void;
+  onGoHome: () => void;
+}) {
   const human = game.players.find((player) => player.id === "player_6");
   const humanWon =
     !!human && ((human.role === "mafia" && game.winner === "mafia") || (human.role !== "mafia" && game.winner === "town"));
@@ -238,10 +247,16 @@ export function GameOverPanel({ game, onPlayAgain }: { game: GameState; onPlayAg
       <p className="eyebrow">Game Over</p>
       <h2>{title}</h2>
       <p>{detail}</p>
-      <button type="button" onClick={onPlayAgain} data-sfx="start">
-        <Reload aria-hidden="true" />
-        Play Again
-      </button>
+      <div className="game-over-actions">
+        <button type="button" onClick={onPlayAgain} data-sfx="start">
+          <Reload aria-hidden="true" />
+          Play Again
+        </button>
+        <button type="button" className="secondary-action" onClick={onGoHome}>
+          <Home aria-hidden="true" />
+          Home
+        </button>
+      </div>
     </section>
   );
 }

@@ -649,6 +649,10 @@ export function GameShell() {
     setStatus("Ready.");
   }
 
+  function goHomeFromGameOver() {
+    confirmExit();
+  }
+
   function closeDialog() {
     if (dialogMode === "exit") {
       setPaused(false);
@@ -1100,7 +1104,7 @@ export function GameShell() {
               onSubmitVote={submitVote}
               onSubmitNightAction={submitNightAction}
             />
-            <GameOverPanel game={game} onPlayAgain={() => start()} />
+            <GameOverPanel game={game} onPlayAgain={() => start()} onGoHome={goHomeFromGameOver} />
           </section>
 
           <aside className="right-rail">

@@ -1197,10 +1197,21 @@ html.custom-cursor-enabled [contenteditable="true"] {
   color: var(--muted);
 }
 
-.game-over-panel button {
+.game-over-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
   margin-top: 18px;
+}
+
+.game-over-actions button {
   justify-content: center;
   width: 100%;
+}
+
+.game-over-actions .secondary-action {
+  background: #171310;
+  color: var(--muted);
 }
 
 textarea {
