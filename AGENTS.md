@@ -63,7 +63,7 @@ Current rule details:
 
 - Roles are randomized each game.
 - The human can receive any role.
-- The Detective privately starts with one confirmed Mafia lead.
+- The Detective learns identities only by investigating at night.
 - Mafia know each other privately.
 - Mafia should produce observable partner behavior: subtle defense, pressure redirection, vote alignment, soft questioning of cases on the partner, or strategic distancing when the partner is clearly doomed.
 - The first night has no Mafia kill, but Doctor and Detective actions may still happen.

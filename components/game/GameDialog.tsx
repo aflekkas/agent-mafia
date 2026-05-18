@@ -24,8 +24,8 @@ export function GameDialog({
           <h2 id="rules-title">Roles</h2>
           <div className="rules-grid">
             <article>
-              <strong>Detective Lead</strong>
-              <p>The Detective privately starts with one confirmed Mafia. Nobody else knows that lead.</p>
+              <strong>Detective Notebook</strong>
+              <p>The Detective investigates at night and privately builds a list of known identities.</p>
             </article>
             <article>
               <strong>Mafia Pair</strong>

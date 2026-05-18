@@ -74,7 +74,6 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
   const humanName = normalizeHumanName(options.humanName);
   const characterSetup = normalizeCharacterSetup(options.characterSetup);
   const roles = assignRoles(seed, options.humanRole);
-  const detectiveKnownMafiaId = pickDetectiveKnownMafia(roles, seed);
   const players = PLAYER_IDS.map((id) => {
     const profile = id === "player_6" ? undefined : characterProfileForSeat(id, characterSetup);
 
@@ -82,7 +81,7 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
       ...PLAYER_META[id],
       name: id === "player_6" ? humanName : (profile?.name ?? PLAYER_META[id].name),
       role: roles[id],
-      detectiveKnownRole: id === detectiveKnownMafiaId ? ("mafia" as Role) : undefined,
+      detectiveKnownRole: undefined,
       alive: true,
       suspicion: 0,
       trust: 0,
@@ -127,8 +126,7 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
       "Narrator",
       "Six souls gather at the table. One chair belongs to you.",
       "narration"
-    ),
-    detectiveKnownMafiaId
+    )
   );
 }
 
@@ -206,11 +204,10 @@ function removeOneRole(roles: Role[], roleToRemove: Role): Role[] {
 }
 
 export function forceRoles(state: GameState, roles: Record<PlayerId, Role>): GameState {
-  const detectiveKnownMafiaId = pickDetectiveKnownMafia(roles, state.seed);
   const nextPlayers = state.players.map((player) => ({
     ...player,
     role: roles[player.id],
-    detectiveKnownRole: player.id === detectiveKnownMafiaId ? ("mafia" as Role) : undefined
+    detectiveKnownRole: undefined
   }));
 
   const nextState = touch({
@@ -232,7 +229,7 @@ export function forceRoles(state: GameState, roles: Record<PlayerId, Role>): Gam
       )
   });
 
-  return addOpeningPrivateKnowledge(nextState, detectiveKnownMafiaId);
+  return addOpeningPrivateKnowledge(nextState);
 }
 
 export function addTranscript(
@@ -308,29 +305,8 @@ export function makeId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function pickDetectiveKnownMafia(roles: Record<PlayerId, Role>, seed: string): PlayerId {
-  const mafiaIds = PLAYER_IDS.filter((id) => roles[id] === "mafia");
-  return shuffle(mafiaIds, `${seed}:detective-known-mafia`)[0] ?? mafiaIds[0] ?? "don_vito";
-}
-
-function addOpeningPrivateKnowledge(state: GameState, detectiveKnownMafiaId: PlayerId): GameState {
-  return addMafiaOpeningPartners(addDetectiveOpeningLead(state, detectiveKnownMafiaId));
-}
-
-function addDetectiveOpeningLead(state: GameState, mafiaId: PlayerId): GameState {
-  const detective = state.players.find((player) => player.role === "detective");
-  if (!detective) {
-    return state;
-  }
-
-  return addTranscript(
-    state,
-    "system",
-    "Private note",
-    `${playerName(state.players, mafiaId)} is Mafia. This is Detective-only knowledge; the table does not know.`,
-    "action",
-    [detective.id]
-  );
+function addOpeningPrivateKnowledge(state: GameState): GameState {
+  return addMafiaOpeningPartners(state);
 }
 
 function addMafiaOpeningPartners(state: GameState): GameState {
@@ -352,12 +328,8 @@ function isOpeningPrivateKnowledge(entry: TranscriptEntry): boolean {
   return (
     entry.privateTo?.length === 1 &&
     entry.speakerId === "system" &&
-    (entry.text.includes("Detective-only knowledge") || entry.text.includes("Your Mafia partner is"))
+    entry.text.includes("Your Mafia partner is")
   );
-}
-
-function playerName(players: Player[], playerId: PlayerId): string {
-  return players.find((player) => player.id === playerId)?.name ?? "One player";
 }
 
 export function phaseLabel(phase: Phase): string {

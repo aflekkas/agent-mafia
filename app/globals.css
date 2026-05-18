@@ -691,6 +691,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
 .private-note {
   color: var(--gold) !important;
   font-size: 0.72rem;
+  margin-top: 14px !important;
   text-transform: uppercase;
 }
 
@@ -701,6 +702,47 @@ html.custom-cursor-enabled [contenteditable="true"] {
   color: var(--ink) !important;
   font-size: 0.86rem;
   text-transform: uppercase;
+}
+
+.role-card > .private-intel {
+  margin-top: 14px;
+}
+
+.detective-notebook {
+  display: grid;
+  gap: 8px;
+}
+
+.detective-notebook strong {
+  color: var(--gold);
+  font-size: 0.72rem;
+}
+
+.detective-notebook ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detective-notebook li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid rgba(211, 163, 76, 0.22);
+  padding-top: 6px;
+}
+
+.detective-notebook li span:last-child {
+  color: var(--gold);
+}
+
+.detective-notebook p {
+  margin: 0;
+  color: var(--muted) !important;
+  font-size: 0.78rem;
 }
 
 .role-mafia {

@@ -84,6 +84,14 @@ export function submitNightAction(state: GameState, actorId: PlayerId, targetId:
 
   return touch({
     ...withLog,
+    players: withLog.players.map((player) =>
+      player.id === targetId
+        ? {
+            ...player,
+            detectiveKnownRole: target.role
+          }
+        : player
+    ),
     nightActions: {
       ...withLog.nightActions,
       detectiveTargetId: targetId,

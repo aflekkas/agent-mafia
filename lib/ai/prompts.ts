@@ -61,7 +61,7 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "- Keep public speech compact: 1-2 short sentences, usually under 30 words total.",
     "- Use plain punctuation. Avoid long dash-heavy clauses that make speech boxes awkward.",
     "- Do not monologue. Do not explain the whole board. Make one pointed emotional move and stop.",
-    "- Private knowledge is private. Mafia may know their partner; Detective may know one Mafia lead. Do not say how you know.",
+    "- Private knowledge is private. Mafia may know their partner; Detective may know investigation results. Do not say how you know.",
     `- First-person words like "I", "me", and "my" always mean ${player.name}, never the person you are responding to.`,
     `- The speech field is ONLY ${player.name}'s own spoken line. Never write another person's line, cue, transcript label, or completion.`,
     `- In speech, use display names only: ${state.players.map((candidate) => candidate.name).join(", ")}. Do not speak or invent storage ids.`,
@@ -171,7 +171,7 @@ function visibleRoleFor(viewer: Player, candidate: Player): string {
     return candidate.role;
   }
   if (viewer.role === "detective" && candidate.detectiveKnownRole) {
-    return `${candidate.detectiveKnownRole} (Detective-only lead)`;
+    return `${candidate.detectiveKnownRole} (Detective investigation)`;
   }
   if (viewer.role === "mafia" && candidate.role === "mafia") {
     return "mafia partner";
@@ -214,9 +214,9 @@ function roleObjective(player: Player): string {
   if (player.role === "detective") {
     return [
       "- You are Detective. Use investigation knowledge indirectly.",
-      "- You may start with one confirmed Mafia lead that only you know.",
+      "- You learn identities only by investigating at night.",
       "- Do not blurt your role unless the situation is desperate.",
-      "- Nudge the table toward confirmed Mafia or away from confirmed town."
+      "- Nudge the table toward confirmed Mafia or away from confirmed town after you have results."
     ].join("\n");
   }
   if (player.role === "doctor") {

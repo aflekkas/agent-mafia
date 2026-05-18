@@ -4,7 +4,7 @@ export function redactGameForPlayer(state: GameState, viewerId: PlayerId = "play
   const revealAll = state.phase === "game-over";
   const viewer = state.players.find((player) => player.id === viewerId);
   const viewerCanSeeMafia = viewer?.role === "mafia";
-  const viewerCanSeeDetectiveLead = viewer?.role === "detective";
+  const viewerCanSeeDetectiveKnowledge = viewer?.role === "detective";
   const viewerCanSeeDetectiveResult = viewer?.role === "detective";
   const hideActiveVotes = !revealAll && state.phase === "day-vote" && state.currentPrompt === "human-vote";
   const visibleTranscript = state.transcript.filter(
@@ -30,14 +30,14 @@ export function redactGameForPlayer(state: GameState, viewerId: PlayerId = "play
     players: state.players.map((player) => {
       const visiblePlayer = {
         ...player,
-        detectiveKnownRole: revealAll || viewerCanSeeDetectiveLead ? player.detectiveKnownRole : undefined
+        detectiveKnownRole: revealAll || viewerCanSeeDetectiveKnowledge ? player.detectiveKnownRole : undefined
       };
 
       if (player.id === viewerId || revealAll || (viewerCanSeeMafia && player.role === "mafia")) {
         return visiblePlayer;
       }
 
-      if (viewerCanSeeDetectiveLead && player.detectiveKnownRole) {
+      if (viewerCanSeeDetectiveKnowledge && player.detectiveKnownRole) {
         return {
           ...visiblePlayer,
           role: player.detectiveKnownRole

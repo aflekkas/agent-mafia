@@ -15,8 +15,10 @@ import { avatarFor, formatPhase, nameFor, nextActorIdFor } from "./utils";
 export function RoleCard({ player, game }: { player: Player; game: GameState }) {
   const mafiaPartners =
     player.role === "mafia" ? game.players.filter((candidate) => candidate.id !== player.id && candidate.role === "mafia") : [];
-  const detectiveLead =
-    player.role === "detective" ? game.players.find((candidate) => candidate.detectiveKnownRole === "mafia") : undefined;
+  const detectiveKnownIdentities =
+    player.role === "detective"
+      ? game.players.filter((candidate) => candidate.detectiveKnownRole).sort((left, right) => left.seat - right.seat)
+      : [];
 
   return (
     <section className={`role-card role-${player.role}`}>
@@ -26,7 +28,23 @@ export function RoleCard({ player, game }: { player: Player; game: GameState }) 
       {mafiaPartners.length ? (
         <p className="private-intel">Partner: {mafiaPartners.map((partner) => partner.name).join(", ")}</p>
       ) : null}
-      {detectiveLead ? <p className="private-intel">Known Mafia: {detectiveLead.name}</p> : null}
+      {player.role === "detective" ? (
+        <div className="private-intel detective-notebook">
+          <strong>Known Identities</strong>
+          {detectiveKnownIdentities.length ? (
+            <ul>
+              {detectiveKnownIdentities.map((candidate) => (
+                <li key={candidate.id}>
+                  <span>{candidate.name}</span>
+                  <span>{candidate.detectiveKnownRole}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No investigations yet.</p>
+          )}
+        </div>
+      ) : null}
       <p className="private-note">Only {player.name} sees this card.</p>
     </section>
   );

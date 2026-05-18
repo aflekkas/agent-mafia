@@ -93,9 +93,15 @@ export function privateKnowledgeFor(state: GameState, playerId: PlayerId): strin
   }
 
   if (player.role === "detective") {
-    const knownMafia = state.players.find((candidate) => candidate.detectiveKnownRole === "mafia");
-    if (knownMafia) {
-      facts.push(`${knownMafia.name} is Mafia. This is your Detective-only starting lead; the table does not know.`);
+    const knownIdentities = state.players.filter((candidate) => candidate.detectiveKnownRole);
+    if (knownIdentities.length) {
+      facts.push(
+        `Your private investigation results: ${knownIdentities
+          .map((candidate) => `${candidate.name} is ${candidate.detectiveKnownRole}`)
+          .join("; ")}. The table does not know unless you reveal it.`
+      );
+    } else {
+      facts.push("Your private investigation results: none yet.");
     }
   }
 
