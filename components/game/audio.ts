@@ -226,11 +226,7 @@ function previewSpeechTextFor(profile: CharacterProfile): string {
 }
 
 function browserSpeechTextFor(entry: TranscriptEntry): string {
-  if (entry.kind === "vote" && entry.speakerId !== "player_6") {
-    return entry.text;
-  }
-
-  return `${entry.speakerName}. ${entry.text}`;
+  return entry.text;
 }
 
 async function playAudioBlob(blob: Blob) {
