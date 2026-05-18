@@ -691,6 +691,13 @@ html.custom-cursor-enabled [contenteditable="true"] {
 .stage-panel {
   grid-template-rows: minmax(0, 1fr) auto;
   position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.stage-panel:hover,
+.stage-panel:focus-within {
+  z-index: 20;
 }
 
 .right-rail {
@@ -848,13 +855,19 @@ html.custom-cursor-enabled [contenteditable="true"] {
 .table-scene {
   position: relative;
   min-height: 0;
-  overflow: hidden;
+  z-index: 1;
+  overflow: visible;
   isolation: isolate;
   background:
     linear-gradient(#0b0b0b 2px, transparent 2px),
     linear-gradient(90deg, #0b0b0b 2px, transparent 2px),
     #000;
   background-size: 24px 24px;
+}
+
+.table-scene:hover,
+.table-scene:focus-within {
+  z-index: 30;
 }
 
 .scene-paused {
@@ -996,8 +1009,11 @@ html.custom-cursor-enabled [contenteditable="true"] {
   position: absolute;
   left: calc(100% + 10px);
   top: 6px;
-  z-index: 2;
+  z-index: 50;
   width: min(240px, 34vw);
+  max-height: min(340px, calc(100dvh - 220px));
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 10px 12px;
   border: 2px solid rgba(211, 163, 76, 0.62);
   background:
@@ -1033,6 +1049,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
   color: var(--paper);
   font-size: 0.72rem;
   line-height: 1.35;
+  overflow-wrap: anywhere;
   text-transform: none;
 }
 
@@ -1047,6 +1064,12 @@ html.custom-cursor-enabled [contenteditable="true"] {
 .seat-4 .character-peek {
   right: calc(100% + 10px);
   left: auto;
+}
+
+.seat-3 .character-peek,
+.seat-4 .character-peek {
+  top: auto;
+  bottom: 6px;
 }
 
 .seat-5 .character-peek {
