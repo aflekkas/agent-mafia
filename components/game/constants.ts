@@ -1,10 +1,11 @@
-import { PlayerId } from "@/lib/game/types";
 import { HumanAvatarId } from "./types";
 
 export const AUDIO_MUTED_STORAGE_KEY = "agent-mafia.audioMuted";
 export const VOICE_MODE_STORAGE_KEY = "agent-mafia.voiceMode";
 export const HUMAN_NAME_STORAGE_KEY = "agent-mafia.humanName";
 export const HUMAN_AVATAR_STORAGE_KEY = "agent-mafia.humanAvatar";
+export const CHARACTER_SETUP_STORAGE_KEY = "agent-mafia.characterSetup";
+export const HUMAN_ROLE_STORAGE_KEY = "agent-mafia.humanRole";
 
 export const AMBIENCE_URL = "/sfx/home-crickets.mp3";
 export const HOME_AMBIENCE_VOLUME = 0.24;
@@ -15,6 +16,7 @@ export const UI_HOVER_VOLUME = 0.11;
 export const UI_START_VOLUME = 0.48;
 export const DECISION_CUE_VOLUME = 0.28;
 export const VOTE_CUE_VOLUME = 0.2;
+export const SHIELD_CUE_VOLUME = 0.26;
 
 export const ROLE_COPY: Record<string, string> = {
   mafia: "Lie, survive, and bring the town down to parity.",
@@ -35,11 +37,3 @@ export const HUMAN_AVATARS: { id: HumanAvatarId; label: string; src: string }[] 
   { id: "player-08", label: "Portrait 8", src: "/avatars/player-08.png" },
   { id: "player-09", label: "Portrait 9", src: "/avatars/player-09.png" }
 ];
-
-export const PLAYER_PORTRAITS: Partial<Record<PlayerId, string>> = {
-  don_vito: "/portraits/don-vito.png",
-  salvatore: "/portraits/salvatore.png",
-  rosa: "/portraits/rosa.png",
-  vincenzo: "/portraits/vincenzo.png",
-  carmela: "/portraits/carmela.png"
-};

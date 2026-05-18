@@ -4,7 +4,7 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 
 type CursorMode = "idle" | "hover" | "pressed" | "disabled";
 
-const INTERACTIVE_SELECTOR = 'a[href], button, [role="button"], [role="menuitemradio"], summary';
+const INTERACTIVE_SELECTOR = 'a[href], button, [role="button"], [role="menuitemradio"], [role="option"], summary';
 const TEXT_SELECTOR = 'input, textarea, select, [contenteditable="true"]';
 const DISABLED_SELECTOR = 'button:disabled, [aria-disabled="true"]';
 

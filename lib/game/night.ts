@@ -1,7 +1,7 @@
 import { GameState, PlayerId } from "./types";
 import { getPlayer, legalTargets } from "./selectors";
 import { roleActionForRole } from "./role-actions";
-import { addTranscript, touch } from "./setup";
+import { addActionLog, addTranscript, touch } from "./setup";
 import { buildDiscussionQueueFromPlayers } from "./turn-order";
 import { checkWinCondition } from "./win";
 
@@ -10,25 +10,59 @@ export function submitNightAction(state: GameState, actorId: PlayerId, targetId:
   const action = roleActionForRole(actor.role);
 
   if (!action) {
-    return {
-      ...touch(state),
-      lastError: `${actor.name} has no night action.`
-    };
+    return addActionLog(
+      {
+        ...touch(state),
+        lastError: `${actor.name} has no night action.`
+      },
+      {
+        actorId,
+        actorName: actor.name,
+        action: "mafia-kill",
+        targetId,
+        targetName: getPlayer(state, targetId).name,
+        outcome: "rejected",
+        detail: `${actor.name} has no night action.`
+      }
+    );
   }
 
   const legal = legalTargets(state, actorId, action);
   if (!legal.includes(targetId)) {
-    return {
-      ...touch(state),
-      lastError: `${actor.name} cannot target ${getPlayer(state, targetId).name}.`
-    };
+    const target = getPlayer(state, targetId);
+    return addActionLog(
+      {
+        ...touch(state),
+        lastError: `${actor.name} cannot target ${target.name}.`
+      },
+      {
+        actorId,
+        actorName: actor.name,
+        action,
+        targetId,
+        targetName: target.name,
+        outcome: "rejected",
+        detail: `${actor.name} cannot target ${target.name}.`
+      }
+    );
   }
+
+  const target = getPlayer(state, targetId);
+  const withLog = addActionLog(state, {
+    actorId,
+    actorName: actor.name,
+    action,
+    targetId,
+    targetName: target.name,
+    outcome: "submitted",
+    detail: `${actor.name} submitted ${action} targeting ${target.name}.`
+  });
 
   if (actor.role === "mafia") {
     return touch({
-      ...state,
+      ...withLog,
       nightActions: {
-        ...state.nightActions,
+        ...withLog.nightActions,
         mafiaTargetId: targetId
       },
       currentPrompt: undefined,
@@ -38,9 +72,9 @@ export function submitNightAction(state: GameState, actorId: PlayerId, targetId:
 
   if (actor.role === "doctor") {
     return touch({
-      ...state,
+      ...withLog,
       nightActions: {
-        ...state.nightActions,
+        ...withLog.nightActions,
         doctorSaveId: targetId
       },
       currentPrompt: undefined,
@@ -49,13 +83,13 @@ export function submitNightAction(state: GameState, actorId: PlayerId, targetId:
   }
 
   return touch({
-    ...state,
+    ...withLog,
     nightActions: {
-      ...state.nightActions,
+      ...withLog.nightActions,
       detectiveTargetId: targetId,
       detectiveResult: {
         targetId,
-        role: getPlayer(state, targetId).role
+        role: target.role
       }
     },
     currentPrompt: undefined,
@@ -80,30 +114,75 @@ export function resolveNight(state: GameState): GameState {
     );
   }
 
-  if (state.nightNumber <= 1) {
+  if (state.nightNumber === 0) {
+    if (targetId) {
+      const target = getPlayer(state, targetId);
+      nextState = addActionLog(nextState, {
+        actorId: livingMafia(state)[0] ?? "player_6",
+        actorName: "Mafia",
+        action: "mafia-kill",
+        targetId,
+        targetName: target.name,
+        outcome: "skipped",
+        detail: `First night rule blocked the Mafia kill on ${target.name}.`
+      });
+    }
     nextState = addTranscript(nextState, "narrator", "Narrator", "The first night passes under old rules. No blade is raised.", "narration");
   } else if (targetId && targetId !== saveId) {
     const target = getPlayer(state, targetId);
     nextState = addTranscript(
-      {
-        ...nextState,
-        players: nextState.players.map((player) =>
-          player.id === targetId
-            ? {
-                ...player,
-                alive: false
-              }
-            : player
-        ),
-        eliminatedThisRound: targetId
-      },
+      addActionLog(
+        {
+          ...nextState,
+          players: nextState.players.map((player) =>
+            player.id === targetId
+              ? {
+                  ...player,
+                  alive: false
+                }
+              : player
+          ),
+          eliminatedThisRound: targetId
+        },
+        {
+          actorId: livingMafia(state)[0] ?? "player_6",
+          actorName: "Mafia",
+          action: "mafia-kill",
+          targetId,
+          targetName: target.name,
+          outcome: "resolved",
+          detail: `Mafia kill resolved on ${target.name}.`
+        }
+      ),
       "narrator",
       "Narrator",
       `Dawn finds one chair cold. ${target.name} is gone.`,
       "narration"
     );
   } else if (targetId && targetId === saveId) {
-    nextState = addTranscript(nextState, "narrator", "Narrator", "A blade found its mark, but a hand stayed the wound.", "narration");
+    const target = getPlayer(state, targetId);
+    nextState = addTranscript(
+      addTranscript(
+        addActionLog(nextState, {
+          actorId: livingMafia(state)[0] ?? "player_6",
+          actorName: "Mafia",
+          action: "mafia-kill",
+          targetId,
+          targetName: target.name,
+          outcome: "blocked",
+          detail: `Doctor save blocked the Mafia kill on ${target.name}.`
+        }),
+        "system",
+        "Private note",
+        `Your strike on ${target.name} was blocked. Someone protected them.`,
+        "action",
+        livingMafia(state)
+      ),
+      "narrator",
+      "Narrator",
+      `A blade found ${target.name}, but a hand stayed the wound.`,
+      "narration"
+    );
   } else {
     nextState = addTranscript(nextState, "narrator", "Narrator", "The night passes without a body.", "narration");
   }
@@ -142,4 +221,8 @@ export function resolveNight(state: GameState): GameState {
 
 function livingDetectives(state: GameState): PlayerId[] {
   return state.players.filter((player) => player.alive && player.role === "detective").map((player) => player.id);
+}
+
+function livingMafia(state: GameState): PlayerId[] {
+  return state.players.filter((player) => player.alive && player.role === "mafia").map((player) => player.id);
 }

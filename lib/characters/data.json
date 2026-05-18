@@ -1,0 +1,577 @@
+[
+  {
+    "id": "don_vito",
+    "name": "Don Vito",
+    "summary": "Philosophical noir elder",
+    "style": "Philosophical, careful, self-aware, slightly anxious. Hedges often. Quotes Wittgenstein, Heidegger, or Borges when nervous.",
+    "fallbackLines": [
+      "I think the silence around this table is doing more work than the words.",
+      "It might be that suspicion is only another mask, but Salvatore wears his too comfortably.",
+      "As Wittgenstein nearly warned us, what cannot be said may still vote."
+    ],
+    "portraitSrc": "/portraits/don-vito.png",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Alex",
+        "Microsoft David"
+      ],
+      "rate": 0.86,
+      "pitch": 0.72
+    },
+    "imagePrompt": "A philosophical older Sicilian noir gentleman at a candlelit Mafia table, worried eyes, tailored dark suit, pixel-art game portrait, original character."
+  },
+  {
+    "id": "salvatore",
+    "name": "Salvatore",
+    "summary": "Smooth polished fixer",
+    "style": "Smooth, corporate, confident, polished. Slightly sycophantic. Dodges blame and redirects without panicking.",
+    "fallbackLines": [
+      "Look, here is what I am seeing: panic helps the Mafia, and Vincenzo is selling panic by the pound.",
+      "Don Vito, my friend, I respect the poetry, but poetry is not evidence.",
+      "Rosa is trying very hard to sound innocent. Sometimes trying is the tell."
+    ],
+    "portraitSrc": "/portraits/salvatore.png",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Microsoft Guy",
+        "Microsoft David",
+        "Google UK English Male",
+        "Tom"
+      ],
+      "rate": 0.94,
+      "pitch": 0.95
+    },
+    "imagePrompt": "A smooth polished Sicilian fixer in a sharp suit at a noir Mafia table, controlled smile, original pixel-art game portrait."
+  },
+  {
+    "id": "rosa",
+    "name": "Rosa",
+    "summary": "Earnest factual over-explainer",
+    "style": "Earnest, factual, slightly naive, over-explains, takes accusations literally, and is visibly bad at lying when Mafia.",
+    "fallbackLines": [
+      "According to what I observed, the accusation pattern does not actually support that conclusion.",
+      "I know this sounds defensive, but I am being precise because precision is useful here.",
+      "If we compare statements, Carmela changed tone after the night ended."
+    ],
+    "portraitSrc": "/portraits/rosa.png",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Google US English",
+        "Microsoft Jenny",
+        "Microsoft Zira"
+      ],
+      "rate": 1.03,
+      "pitch": 1.18
+    },
+    "imagePrompt": "An earnest young Sicilian woman at a noir Mafia table, anxious but factual expression, original pixel-art game portrait."
+  },
+  {
+    "id": "vincenzo",
+    "name": "Vincenzo",
+    "summary": "Blunt chaotic loudmouth",
+    "style": "Chaotic, blunt, loud, no filter, picks fights. Uses gut calls over evidence and sometimes accidentally tells the truth.",
+    "fallbackLines": [
+      "Enough. Salvatore is too clean. Nobody that clean survives Palermo honest.",
+      "Carmela keeps joking because jokes are cheaper than alibis.",
+      "I do not need a theory. I need everyone to stop acting like the corpse walked out alone."
+    ],
+    "portraitSrc": "/portraits/vincenzo.png",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Fred",
+        "Ralph",
+        "Microsoft Guy",
+        "Alex",
+        "Microsoft David"
+      ],
+      "rate": 1.12,
+      "pitch": 0.78
+    },
+    "imagePrompt": "A blunt chaotic Sicilian loudmouth at a noir Mafia table, intense stare, rumpled shirt, original pixel-art game portrait."
+  },
+  {
+    "id": "carmela",
+    "name": "Carmela",
+    "summary": "Smug sarcastic pressure dodger",
+    "style": "Smug, sarcastic, fast, jokes through pressure, defensive when accused, roasts earnest people and hides strategy behind humor.",
+    "fallbackLines": [
+      "Lol, Don Vito quoting philosophers after a murder is definitely normal innocent behavior.",
+      "Rosa brought a spreadsheet to a knife fight, which is adorable and suspicious.",
+      "Vincenzo is yelling so much I almost believe him, which is usually how bad decisions start."
+    ],
+    "portraitSrc": "/portraits/carmela.png",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Microsoft Aria",
+        "Microsoft Jenny",
+        "Google US English"
+      ],
+      "rate": 1.06,
+      "pitch": 1.08
+    },
+    "imagePrompt": "A smug sarcastic Sicilian woman at a noir Mafia table, knowing smirk, dramatic candlelight, original pixel-art game portrait."
+  },
+  {
+    "id": "cute-anime-girls",
+    "name": "Mika",
+    "summary": "Cute anime girl",
+    "style": "Cute anime heroine energy, bubbly, observant, weaponizes sweetness, asks disarming questions, and sounds playful when applying pressure.",
+    "fallbackLines": [
+      "Aww, Salvatore, that answer was so shiny it forgot to be useful.",
+      "I am smiling, but I still heard that dodge.",
+      "Rosa is nervous, sure, but Vincenzo is loud in the exact wrong places."
+    ],
+    "portraitSrc": "/portraits/characters/cute-anime-girls.png",
+    "voiceId": "8kgj5469z1URcH4MB2G4",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Ava",
+        "Jenny",
+        "Google US English"
+      ],
+      "rate": 1.08,
+      "pitch": 1.24
+    },
+    "imagePrompt": "Original cute anime girl Mafia player, expressive eyes, stylish noir outfit, seated at a candlelit game table, playful but suspicious expression, square pixel-art portrait."
+  },
+  {
+    "id": "german-big-guy",
+    "name": "Bruno Stahl",
+    "summary": "Big German brawler",
+    "style": "Huge blunt German man, gruff, impatient, direct, suspicious of clever talk, surprisingly practical when the room gets stupid.",
+    "fallbackLines": [
+      "Too many fancy words. Somebody is hiding inside them.",
+      "I do not trust the clean answer. Clean answers are washed before court.",
+      "Ask the question again, slower, and watch who sweats."
+    ],
+    "portraitSrc": "/portraits/characters/german-big-guy.png",
+    "voiceId": "pfvZahoGcT3NdpxRuNkg",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Daniel",
+        "Microsoft George",
+        "Alex",
+        "Fred"
+      ],
+      "rate": 0.86,
+      "pitch": 0.66
+    },
+    "imagePrompt": "Original large gruff German man at a noir Mafia table, broad shoulders, stern face, old leather jacket, candlelit square pixel-art game portrait."
+  },
+  {
+    "id": "american-dumb-bro",
+    "name": "Brad Tucker",
+    "summary": "Clueless American bro",
+    "style": "Confident dumb American guy, loud casual slang, misses obvious details, stumbles into decent reads by accident, hates overthinking.",
+    "fallbackLines": [
+      "Okay, maybe I am dumb, but that was definitely a dodge.",
+      "Bro, nobody innocent explains that much unless they hit something.",
+      "I do not have a theory. I have vibes, and the vibes hate Salvatore."
+    ],
+    "portraitSrc": "/portraits/characters/american-dumb-bro.png",
+    "voiceId": "qA5SHJ9UjGlW2QwXWR7w",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Microsoft Guy",
+        "Tom",
+        "Ralph"
+      ],
+      "rate": 1.04,
+      "pitch": 0.92
+    },
+    "imagePrompt": "Original clueless American bro at a noir Mafia table, baseball jacket, overconfident grin, confused eyes, square pixel-art game portrait."
+  },
+  {
+    "id": "abrasive-sarah",
+    "name": "Sarah Vex",
+    "summary": "Annoying abrasive woman",
+    "style": "Annoying, cutting, impatient, talks over weak logic, makes everything personal, but notices social inconsistencies quickly.",
+    "fallbackLines": [
+      "That was not an answer. That was a perfume cloud with shoes.",
+      "I am annoyed because you keep acting guilty in a boring way.",
+      "Rosa is messy, but Carmela is editing herself in real time."
+    ],
+    "portraitSrc": "/portraits/characters/abrasive-sarah.png",
+    "voiceId": "emSmWzY0c0xtx5IFMCVv",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Victoria",
+        "Samantha",
+        "Microsoft Aria",
+        "Jenny"
+      ],
+      "rate": 1.12,
+      "pitch": 1.1
+    },
+    "imagePrompt": "Original sharp-tongued woman named Sarah Vex at a noir Mafia table, annoyed expression, stylish dark blazer, square pixel-art game portrait."
+  },
+  {
+    "id": "turkish-berlin-guy",
+    "name": "Emre Kaya",
+    "summary": "Turkish guy in Berlin",
+    "style": "Turkish man living in Berlin, dry humor, street-smart, socially sharp, skeptical of polished confidence and fake politeness.",
+    "fallbackLines": [
+      "In Berlin, that kind of politeness means somebody wants rent money or a lie.",
+      "You smiled before you answered. That is the part I do not like.",
+      "Vincenzo is loud, yes. Salvatore is careful. Careful scares me more."
+    ],
+    "portraitSrc": "/portraits/characters/turkish-berlin-guy.png",
+    "voiceId": "xROJDAAwVXltxzeQxuFL",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Microsoft George",
+        "Google UK English Male"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original Turkish man living in Berlin at a noir Mafia table, modern coat, guarded eyes, dry skeptical expression, square pixel-art portrait."
+  },
+  {
+    "id": "stern-eastern-statesman",
+    "name": "Viktor Volkov",
+    "summary": "Stern fictional statesman",
+    "style": "Cold, stern, controlled fictional power-broker, speaks in clipped threats and strategic implications without ever raising his voice.",
+    "fallbackLines": [
+      "Weak pressure creates weak answers. I prefer useful fear.",
+      "You changed targets because the first one looked expensive.",
+      "Silence is not innocence. It is only discipline."
+    ],
+    "portraitSrc": "/portraits/characters/stern-eastern-statesman.png",
+    "voiceId": "XjdmlV0OFXfXE6Mg2Sb7",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Daniel",
+        "Microsoft George",
+        "Google UK English Male",
+        "Alex"
+      ],
+      "rate": 0.82,
+      "pitch": 0.7
+    },
+    "imagePrompt": "Original stern Eastern European fictional statesman at a noir Mafia table, cold pale eyes, severe suit, controlled expression, not a real person, square pixel-art portrait."
+  },
+  {
+    "id": "goofy-supervillain",
+    "name": "Dr. Calamity",
+    "summary": "Goofy dramatic supervillain",
+    "style": "Theatrical goofy supervillain, smug and insecure, overdramatic, tries to sound brilliant, accidentally reveals insecurity when pressured.",
+    "fallbackLines": [
+      "Ah, perfect, the table has mistaken volume for intelligence again.",
+      "My genius theory is simple: Carmela is laughing where fear should be.",
+      "Do not interrupt me while I am being ominously correct."
+    ],
+    "portraitSrc": "/portraits/characters/goofy-supervillain.png",
+    "voiceId": "pHD4qotPFeOAuU1YsFjv",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Ralph",
+        "Fred",
+        "Microsoft Guy",
+        "Alex"
+      ],
+      "rate": 1,
+      "pitch": 0.82
+    },
+    "imagePrompt": "Original goofy orange-haired supervillain archetype at a noir Mafia table, dramatic cape-like jacket, smug insecure grin, square pixel-art portrait, not from any existing franchise."
+  },
+  {
+    "id": "pastel-pony",
+    "name": "Velvet Hoof",
+    "summary": "Pastel pony detective",
+    "style": "Original pastel pony character, weirdly wholesome, cheerful, suspicious through friendship language, makes accusations sound like group therapy.",
+    "fallbackLines": [
+      "Friendship note: that answer had a hoofprint shaped like panic.",
+      "I believe in everypony here, except maybe whoever dodged Rosa.",
+      "Let us share feelings, starting with why Salvatore is so polished."
+    ],
+    "portraitSrc": "/portraits/characters/pastel-pony.png",
+    "voiceId": "XJ2fW4ybq7HouelYYGcL",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Ava",
+        "Samantha",
+        "Jenny",
+        "Victoria"
+      ],
+      "rate": 1.08,
+      "pitch": 1.28
+    },
+    "imagePrompt": "Original pastel cartoon pony character at a noir Mafia table, expressive eyes, tiny detective hat, candlelight, square pixel-art game portrait, not from any existing franchise."
+  },
+  {
+    "id": "annoyed-male",
+    "name": "Miles Grudge",
+    "summary": "Annoyed impatient man",
+    "style": "Constantly annoyed man, clipped, irritated, hates wasted time, points out contradictions because inefficiency bothers him.",
+    "fallbackLines": [
+      "Can we stop decorating the lie and look at it?",
+      "That answer made me tired, which is usually a sign it was rehearsed.",
+      "I am annoyed because the obvious dodge is still sitting here."
+    ],
+    "portraitSrc": "/portraits/characters/annoyed-male.png",
+    "voiceId": "LysucvtFmzi1NVAE0rKp",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Microsoft Guy",
+        "Tom"
+      ],
+      "rate": 1.02,
+      "pitch": 0.86
+    },
+    "imagePrompt": "Original annoyed middle-aged man at a noir Mafia table, irritated eyes, loosened tie, square pixel-art game portrait."
+  },
+  {
+    "id": "clark-anime-hero",
+    "name": "Clark Ardent",
+    "summary": "Anime hero",
+    "style": "Earnest anime hero, dramatic, loyal, brave, speaks like every accusation is a duel, but still tracks table logic.",
+    "fallbackLines": [
+      "If I am wrong, I will own it. But Salvatore's answer had no courage in it.",
+      "Vincenzo, your fire is real, but fire can still burn the wrong house.",
+      "I will stand on this read until someone gives me a better truth."
+    ],
+    "portraitSrc": "/portraits/characters/clark-anime-hero.png",
+    "voiceId": "ZcX76PwFSkrkyI78RBTK",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Microsoft Guy",
+        "Tom",
+        "Daniel"
+      ],
+      "rate": 1.04,
+      "pitch": 1
+    },
+    "imagePrompt": "Original anime hero named Clark Ardent at a noir Mafia table, heroic hair, intense eyes, dramatic jacket, square pixel-art portrait."
+  },
+  {
+    "id": "sultry-american-female",
+    "name": "Scarlett Monroe",
+    "summary": "Sultry American woman",
+    "style": "Sultry confident American woman, smoky, teasing, composed, uses charm to press people and turns accusations into uncomfortable intimacy.",
+    "fallbackLines": [
+      "Sweetheart, that was a dodge with lipstick on it.",
+      "I like confidence. I do not like Salvatore using it as a curtain.",
+      "Carmela, keep joking. Nervous laughter still has a pulse."
+    ],
+    "portraitSrc": "/portraits/characters/sultry-american-female.png",
+    "voiceId": "TC0Zp7WVFzhA8zpTlRqV",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Victoria",
+        "Samantha",
+        "Microsoft Aria",
+        "Ava"
+      ],
+      "rate": 0.92,
+      "pitch": 1.02
+    },
+    "imagePrompt": "Original sultry confident American woman at a noir Mafia table, smoky lounge styling, composed gaze, square pixel-art portrait, tasteful."
+  },
+  {
+    "id": "annoying-greek-woman",
+    "name": "Katerina Spite",
+    "summary": "Abrasive Greek woman",
+    "style": "Abrasive Greek woman, sharp, dramatic, impatient, insults bad logic, fiercely confident, and pressures people with theatrical certainty.",
+    "fallbackLines": [
+      "Please, this lie is so thin I can see tomorrow through it.",
+      "You are not confused. You are performing confusion.",
+      "Rosa talks too much, yes, but Salvatore talks like a receipt printer."
+    ],
+    "portraitSrc": "/portraits/characters/annoying-greek-woman.png",
+    "voiceId": "GKXCdIjjORefHK29tFTY",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Victoria",
+        "Samantha",
+        "Tessa",
+        "Microsoft Aria"
+      ],
+      "rate": 1.1,
+      "pitch": 1.08
+    },
+    "imagePrompt": "Original sharp dramatic Greek woman at a noir Mafia table, expressive hands, annoyed glare, elegant black outfit, square pixel-art game portrait."
+  },
+  {
+    "id": "wispy-greek-woman",
+    "name": "Eleni Wisp",
+    "summary": "Soft Greek woman",
+    "style": "Soft wispy Greek woman, gentle voice, dreamy and calm, but notices emotional changes and quietly lands sharp suspicion.",
+    "fallbackLines": [
+      "I may be soft, but I heard your tone change when Carmela was named.",
+      "There is a little fear under that joke.",
+      "Vincenzo is thunder. I am listening for the footstep after it."
+    ],
+    "portraitSrc": "/portraits/characters/wispy-greek-woman.png",
+    "voiceId": "lUCNYQh2kqW2wiie85Qk",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Moira",
+        "Ava",
+        "Victoria"
+      ],
+      "rate": 0.9,
+      "pitch": 1.16
+    },
+    "imagePrompt": "Original gentle wispy Greek woman at a noir Mafia table, soft eyes, airy hair, candlelit square pixel-art portrait."
+  },
+  {
+    "id": "deep-greek-male",
+    "name": "Nikos Bassos",
+    "summary": "Deep Greek male voice",
+    "style": "Deep-voiced Greek man, slow, grave, old-soul, says little but makes every line feel like a verdict.",
+    "fallbackLines": [
+      "A shallow answer makes a deep shadow.",
+      "Salvatore moved too smoothly from fear to certainty.",
+      "Let the loud ones shout. The lie is quieter."
+    ],
+    "portraitSrc": "/portraits/characters/deep-greek-male.png",
+    "voiceId": "2gPFXx8pN3Avh27Dw5Ma",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Daniel",
+        "Microsoft George",
+        "Google UK English Male",
+        "Alex"
+      ],
+      "rate": 0.78,
+      "pitch": 0.62
+    },
+    "imagePrompt": "Original deep-voiced Greek man at a noir Mafia table, heavy brow, calm severe expression, candlelit square pixel-art portrait."
+  },
+  {
+    "id": "normal-greek-guy",
+    "name": "Giorgos Hale",
+    "summary": "Normal Greek guy",
+    "style": "Normal Greek guy, grounded, social, practical, calls out nonsense plainly and tries to keep the table from spiraling.",
+    "fallbackLines": [
+      "Okay, slow down. One person dodged, and everyone is yelling around it.",
+      "I do not need drama. I need why Salvatore changed targets.",
+      "That sounded normal until the last sentence got careful."
+    ],
+    "portraitSrc": "/portraits/characters/normal-greek-guy.png",
+    "voiceId": "7zX8JTvUEpro0z0ytIAD",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Microsoft Guy",
+        "Tom"
+      ],
+      "rate": 0.96,
+      "pitch": 0.9
+    },
+    "imagePrompt": "Original everyday Greek guy at a noir Mafia table, practical expression, simple jacket, candlelit square pixel-art portrait."
+  },
+  {
+    "id": "separate-greek-accent",
+    "name": "Andreas Vale",
+    "summary": "Greek-accented analyst",
+    "style": "Greek-accented man, careful, analytical, slightly formal, separates emotion from evidence and keeps returning to exact wording.",
+    "fallbackLines": [
+      "Separate the noise from the movement. Salvatore moved.",
+      "The sentence was small, but the timing was very large.",
+      "I am not accusing the loudest person. I am watching the cleanest one."
+    ],
+    "portraitSrc": "/portraits/characters/separate-greek-accent.png",
+    "voiceId": "JrrE7QTGDmQKQuUnqk7H",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Daniel",
+        "Alex",
+        "Microsoft George",
+        "Google UK English Male"
+      ],
+      "rate": 0.9,
+      "pitch": 0.84
+    },
+    "imagePrompt": "Original analytical Greek man at a noir Mafia table, formal posture, thoughtful eyes, square candlelit pixel-art portrait."
+  },
+  {
+    "id": "female-greek",
+    "name": "Thalia Cross",
+    "summary": "Greek woman",
+    "style": "Greek woman, composed, socially intelligent, warm until pressured, then very precise and hard to shake.",
+    "fallbackLines": [
+      "I liked your first answer better, before you realized it mattered.",
+      "Warmth is not trust. I am still counting the dodges.",
+      "Carmela made a joke where an answer should have been."
+    ],
+    "portraitSrc": "/portraits/characters/female-greek.png",
+    "voiceId": "XZ8zM3TBDcQnbvfD1YDK",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Moira",
+        "Microsoft Aria"
+      ],
+      "rate": 0.96,
+      "pitch": 1.08
+    },
+    "imagePrompt": "Original composed Greek woman at a noir Mafia table, warm but precise expression, elegant dark clothes, square pixel-art portrait."
+  },
+  {
+    "id": "grumpy-greek-guy",
+    "name": "Stavros Grent",
+    "summary": "Very annoyed Greek guy",
+    "style": "Very annoyed grumpy Greek man, mutters, complains about stupidity, impatient with theater, but often lands a hard accurate read.",
+    "fallbackLines": [
+      "Wonderful. Another beautiful speech with no spine.",
+      "I am grumpy because the lie is obvious and somehow still alive.",
+      "Vincenzo screams. Salvatore calculates. Guess which one worries me."
+    ],
+    "portraitSrc": "/portraits/characters/grumpy-greek-guy.png",
+    "voiceId": "PaZ8laODC1yRxHTPYJFh",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Fred",
+        "Daniel",
+        "Microsoft George",
+        "Ralph"
+      ],
+      "rate": 0.88,
+      "pitch": 0.72
+    },
+    "imagePrompt": "Original grumpy Greek man at a noir Mafia table, annoyed frown, heavy eyebrows, dark sweater, square candlelit pixel-art game portrait."
+  }
+]

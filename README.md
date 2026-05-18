@@ -19,6 +19,7 @@ Implemented today:
 - OpenAI NPC dialogue and decisions, with fallback lines/actions when no API key is configured.
 - Direct ElevenLabs TTS by speaker when voice IDs are configured.
 - Browser speech synthesis fallback.
+- Voice-off mode for sound effects and ambience without spoken playback.
 - Local ambience and UI sound effects from `public/sfx`.
 - Text transcript, vote board, role card, pause/new-game controls, and avatar/portrait UI.
 - Full local game logs written to `.agent-mafia-logs/` for debugging bad conversations.
@@ -74,7 +75,7 @@ Copy `.env.example` to `.env` and fill only what you need.
 - `lib/voice/` - speaker-to-ElevenLabs voice ID mapping.
 - `public/avatars/` and `public/portraits/` - player and NPC table portraits.
 - `public/sfx/` - local ambience and UI sounds.
-- `docs/` - current architecture, voice, demo, and cleanup notes.
+- `docs/` - current architecture, voice, demo, portrait generation, and cleanup notes.
 
 ## Docs
 
@@ -82,5 +83,6 @@ Copy `.env.example` to `.env` and fill only what you need.
 - `docs/nextjs-16.md` - Next.js 16 upgrade and local documentation rules.
 - `docs/voice.md` - current voice/TTS behavior and env vars.
 - `docs/demo.md` - local demo runbook.
+- `docs/portraits.md` - pixel-art portrait generation prompt.
 - `docs/refactor-notes.md` - cleanup findings and maintenance notes.
 - `AGENTS.md` - instructions for coding agents working in this repo.

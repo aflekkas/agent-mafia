@@ -6,6 +6,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 test-results/
+.agent-mafia-cache/
 .agent-mafia-logs/
 .DS_Store
 *.log

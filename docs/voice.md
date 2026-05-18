@@ -7,9 +7,10 @@ Voice in the current app is direct TTS playback for NPCs and narration. It is no
 1. The game appends a public narration or speech transcript entry.
 2. `GameShell` notices the latest public entry.
 3. If sound is muted, playback is skipped.
-4. If voice mode is ElevenLabs, the browser posts `{ speakerId, text }` to `/api/speak`.
-5. If `/api/speak` returns audio, the browser plays it and caches the blob for the session.
-6. If ElevenLabs is unavailable, browser speech synthesis is used.
+4. If voice mode is Off, voice playback is skipped while ambience and UI sound effects can still play.
+5. If voice mode is ElevenLabs, the browser posts `{ speakerId, text }` to `/api/speak`.
+6. If `/api/speak` returns audio, the browser plays it and caches the blob for the session.
+7. If ElevenLabs is unavailable, browser speech synthesis is used.
 
 ## Environment
 
@@ -24,6 +25,8 @@ OPENAI_TEMPERATURE=0.62
 ELEVENLABS_API_KEY=
 ELEVENLABS_TTS_MODEL=eleven_flash_v2_5
 ELEVENLABS_MAX_TTS_CHARS=900
+ELEVENLABS_TTS_CACHE_ENABLED=true
+ELEVENLABS_TTS_CACHE_DIR=.agent-mafia-cache/tts
 ELEVENLABS_VOICE_NARRATOR=
 ELEVENLABS_VOICE_DON_VITO=
 ELEVENLABS_VOICE_SALVATORE=
@@ -33,6 +36,18 @@ ELEVENLABS_VOICE_CARMELA=
 ```
 
 Only NPCs and the narrator need ElevenLabs voice IDs. Human speech is submitted as text and appears in the transcript.
+
+## Human Dictation
+
+The Use Mic button is a browser speech-recognition helper only. It requests microphone permission with `getUserMedia`, starts the browser `SpeechRecognition`/`webkitSpeechRecognition` API, and writes recognized words into the human text box. The player can edit the text before submitting.
+
+Dictation requires a supported browser and a secure context such as `localhost` or HTTPS. If permission is blocked, no microphone is available, no speech is heard, or the browser speech service is unavailable, the UI reports that status and the player can keep typing.
+
+## TTS Cache
+
+`/api/speak` caches successful ElevenLabs MP3 responses on disk. The cache key includes speaker, voice ID, model, output format, voice settings, and normalized text, so repeated static narrator lines and repeated fallback/persona lines play without a new ElevenLabs request.
+
+By default cache files are written under `.agent-mafia-cache/tts`, which is ignored by git. Set `ELEVENLABS_TTS_CACHE_ENABLED=false` to bypass the server cache.
 
 ## Fallbacks
 

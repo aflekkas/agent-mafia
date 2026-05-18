@@ -3,10 +3,11 @@
 import { useEffect, useRef } from "react";
 import { Check } from "pixelarticons/react/Check";
 import { Mic } from "pixelarticons/react/Mic";
+import { Reload } from "pixelarticons/react/Reload";
 import { User } from "pixelarticons/react/User";
 import { roleActionTargets, nightPromptTitleForRole } from "@/lib/game/role-actions";
 import { GameState, Player, PlayerId, TranscriptEntry } from "@/lib/game/types";
-import { PLAYER_PORTRAITS, ROLE_COPY } from "./constants";
+import { ROLE_COPY } from "./constants";
 import { HumanAvatarId } from "./types";
 import { avatarFor, formatPhase, nameFor, nextActorIdFor } from "./utils";
 
@@ -95,7 +96,7 @@ export function TableScene2D({
         <p>{game.phase === "night" ? "Night in Palermo" : "The Palermo Table"}</p>
       </div>
       {game.players.map((player) => {
-        const portraitSrc = player.id === "player_6" ? avatarFor(humanAvatar).src : PLAYER_PORTRAITS[player.id];
+        const portraitSrc = player.id === "player_6" ? avatarFor(humanAvatar).src : player.portraitSrc;
 
         return (
           <div
@@ -166,9 +167,15 @@ export function HumanPanel({
           rows={4}
         />
         <div className="speech-actions">
-          <button onClick={onStartListening} disabled={busy || listening} className={listening ? "listening" : ""}>
+          <button
+            onClick={onStartListening}
+            disabled={busy}
+            className={listening ? "listening" : ""}
+            aria-pressed={listening}
+            title={listening ? "Stop microphone dictation" : "Start microphone dictation"}
+          >
             <Mic aria-hidden="true" />
-            {listening ? "Listening" : "Use Mic"}
+            {listening ? "Stop Mic" : "Use Mic"}
           </button>
           <button onClick={onSubmitSpeech} disabled={busy || !humanText.trim()}>
             <Check aria-hidden="true" />
@@ -183,6 +190,9 @@ export function HumanPanel({
     return (
       <TargetPanel
         title="Cast your vote"
+        reasonLabel="Give the table your reason"
+        reasonText={humanText}
+        setReasonText={setHumanText}
         targets={game.players.filter((player) => player.alive && player.id !== "player_6")}
         busy={busy}
         onPick={onSubmitVote}
@@ -193,6 +203,35 @@ export function HumanPanel({
   const targetIds = roleActionTargets(game, human);
   const targets = game.players.filter((player) => targetIds.includes(player.id));
   return <TargetPanel title={nightPromptTitleForRole(human.role)} targets={targets} busy={busy} onPick={onSubmitNightAction} />;
+}
+
+export function GameOverPanel({ game, onPlayAgain }: { game: GameState; onPlayAgain: () => void }) {
+  const human = game.players.find((player) => player.id === "player_6");
+  const humanWon =
+    !!human && ((human.role === "mafia" && game.winner === "mafia") || (human.role !== "mafia" && game.winner === "town"));
+  const title = humanWon ? "Victory" : "Defeat";
+  const detail =
+    game.winner === "mafia"
+      ? "Mafia owns the table."
+      : game.winner === "town"
+        ? "Town exposed the Mafia."
+        : "The table goes quiet.";
+
+  if (game.phase !== "game-over") {
+    return null;
+  }
+
+  return (
+    <section className={`game-over-panel ${humanWon ? "victory" : "defeat"}`} aria-live="polite">
+      <p className="eyebrow">Game Over</p>
+      <h2>{title}</h2>
+      <p>{detail}</p>
+      <button type="button" onClick={onPlayAgain} data-sfx="start">
+        <Reload aria-hidden="true" />
+        Play Again
+      </button>
+    </section>
+  );
 }
 
 export function Transcript({ game }: { game: GameState }) {
@@ -247,22 +286,39 @@ export function VoteBoard({ game }: { game: GameState }) {
 
 function TargetPanel({
   title,
+  reasonLabel,
+  reasonText,
+  setReasonText,
   targets,
   busy,
   onPick
 }: {
   title: string;
+  reasonLabel?: string;
+  reasonText?: string;
+  setReasonText?: (text: string) => void;
   targets: Player[];
   busy: boolean;
   onPick: (targetId: PlayerId) => void;
 }) {
+  const needsReason = !!setReasonText;
+  const canPick = !busy && (!needsReason || !!reasonText?.trim());
+
   return (
     <section className="human-panel">
       <p className="eyebrow">Your move</p>
       <h3>{title}</h3>
+      {setReasonText ? (
+        <textarea
+          value={reasonText ?? ""}
+          onChange={(event) => setReasonText(event.target.value)}
+          placeholder={reasonLabel ?? "Give a reason..."}
+          rows={3}
+        />
+      ) : null}
       <div className="target-grid">
         {targets.map((target) => (
-          <button key={target.id} onClick={() => onPick(target.id)} disabled={busy}>
+          <button key={target.id} onClick={() => onPick(target.id)} disabled={!canPick}>
             <User aria-hidden="true" />
             {target.name}
           </button>

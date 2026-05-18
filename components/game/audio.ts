@@ -1,4 +1,4 @@
-import { SpeakerId, TranscriptEntry } from "@/lib/game/types";
+import { BrowserVoiceProfile, Player, SpeakerId, TranscriptEntry } from "@/lib/game/types";
 import { VoiceMode } from "./types";
 
 type BrowserVoiceGender = "masculine" | "feminine";
@@ -62,20 +62,27 @@ const GENDERED_BROWSER_VOICE_NAMES: Record<BrowserVoiceGender, string[]> = {
   ]
 };
 
-const browserVoiceCache = new Map<SpeakerId, SpeechSynthesisVoice | null>();
+const browserVoiceCache = new Map<string, SpeechSynthesisVoice | null>();
 
 export async function speakEntry(
   entry: TranscriptEntry,
   voiceMode: VoiceMode,
   elevenLabsAudioCache: Map<string, Blob>,
-  setStatus: (status: string) => void
+  setStatus: (status: string) => void,
+  players: Player[] = []
 ) {
   if (entry.kind !== "speech" && entry.kind !== "narration" && entry.kind !== "vote") {
     return;
   }
 
+  if (voiceMode === "off") {
+    return;
+  }
+
+  const speaker = players.find((player) => player.id === entry.speakerId);
+
   if (voiceMode === "elevenlabs") {
-    const cacheKey = `${entry.speakerId}:${entry.text}`;
+    const cacheKey = `${entry.speakerId}:${speaker?.voiceId ?? "default"}:${entry.text}`;
     const cachedAudio = elevenLabsAudioCache.get(cacheKey);
     if (cachedAudio) {
       await playAudioBlob(cachedAudio);
@@ -89,6 +96,7 @@ export async function speakEntry(
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           speakerId: entry.speakerId,
+          voiceId: speaker?.voiceId,
           text: entry.text
         })
       });
@@ -109,10 +117,10 @@ export async function speakEntry(
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(browserSpeechTextFor(entry));
-    utterance.rate = browserVoiceRateFor(entry.speakerId);
-    utterance.pitch = pitchFor(entry.speakerId);
+    utterance.rate = browserVoiceRateFor(entry.speakerId, speaker?.browserVoice);
+    utterance.pitch = pitchFor(entry.speakerId, speaker?.browserVoice);
     utterance.volume = entry.speakerId === "narrator" ? 0.92 : 1;
-    utterance.voice = browserVoiceFor(entry.speakerId);
+    utterance.voice = browserVoiceFor(entry.speakerId, speaker?.browserVoice);
     setStatus(voiceMode === "elevenlabs" ? "ElevenLabs unavailable; played browser voice." : "Played browser voice.");
     await playBrowserUtterance(utterance);
   }
@@ -148,7 +156,10 @@ async function playBrowserUtterance(utterance: SpeechSynthesisUtterance) {
   });
 }
 
-function pitchFor(speakerId: SpeakerId): number {
+function pitchFor(speakerId: SpeakerId, profile?: BrowserVoiceProfile): number {
+  if (profile?.pitch) {
+    return profile.pitch;
+  }
   if (speakerId === "rosa") {
     return 1.18;
   }
@@ -164,7 +175,10 @@ function pitchFor(speakerId: SpeakerId): number {
   return 0.95;
 }
 
-function browserVoiceRateFor(speakerId: SpeakerId): number {
+function browserVoiceRateFor(speakerId: SpeakerId, profile?: BrowserVoiceProfile): number {
+  if (profile?.rate) {
+    return profile.rate;
+  }
   if (speakerId === "vincenzo") {
     return 1.12;
   }
@@ -183,13 +197,14 @@ function browserVoiceRateFor(speakerId: SpeakerId): number {
   return 0.94;
 }
 
-function browserVoiceFor(speakerId: SpeakerId): SpeechSynthesisVoice | null {
-  if (browserVoiceCache.has(speakerId)) {
-    return browserVoiceCache.get(speakerId) ?? null;
+function browserVoiceFor(speakerId: SpeakerId, profile?: BrowserVoiceProfile): SpeechSynthesisVoice | null {
+  const cacheKey = `${speakerId}:${profile?.names.join("|") ?? "default"}`;
+  if (browserVoiceCache.has(cacheKey)) {
+    return browserVoiceCache.get(cacheKey) ?? null;
   }
 
   const voices = window.speechSynthesis.getVoices();
-  const preference = SPEAKER_VOICE_PREFERENCES[speakerId];
+  const preference = profile ?? SPEAKER_VOICE_PREFERENCES[speakerId];
   const preferred = preference?.names ?? [];
   const genderedFallbacks = preference ? GENDERED_BROWSER_VOICE_NAMES[preference.gender] : [];
 
@@ -201,7 +216,7 @@ function browserVoiceFor(speakerId: SpeakerId): SpeechSynthesisVoice | null {
     null;
 
   if (selected || voices.length > 0) {
-    browserVoiceCache.set(speakerId, selected);
+    browserVoiceCache.set(cacheKey, selected);
   }
 
   return selected;

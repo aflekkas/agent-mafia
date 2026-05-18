@@ -34,8 +34,10 @@ Prioritize the playable loop and visible UI over architecture expansion. Avoid l
 
 - Preserve existing local work. This repo may be dirty.
 - Keep changes scoped and demo-safe.
+- After coherent completed work, commit and push to `origin/main` by default so GitHub stays current.
 - Validate with `npm run typecheck`; run `npm run build` after route, config, or UI structure changes.
 - All browser-visible game state must be redacted through `redactGameForPlayer`.
+- Sanitize every user-entered text path through the shared profanity/sanitization utility at both the UI input boundary and the route/game-state boundary. Use soft censorship that keeps the first and last character visible and replaces the middle with `#`; do not block typing or reject the whole entry just because profanity was entered.
 - Human input is text submitted to game state. Browser speech recognition is only an input helper.
 - Voice playback must always have a text transcript fallback.
 

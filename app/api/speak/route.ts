@@ -1,14 +1,30 @@
 import { NextResponse } from "next/server";
+import { createHash, randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { sanitizeTextForTranscript } from "@/lib/game/profanity";
 import { voiceIdForSpeaker } from "@/lib/voice/voice-map";
 import { SpeakerId } from "@/lib/game/types";
+
+export const runtime = "nodejs";
+
+const OUTPUT_FORMAT = "mp3_44100_128";
+const VOICE_SETTINGS = {
+  stability: 0.42,
+  similarity_boost: 0.72,
+  style: 0.35,
+  use_speaker_boost: true
+};
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     speakerId?: SpeakerId;
+    voiceId?: string;
     text?: string;
   };
-  const text = body.text?.trim();
-  const voiceId = body.speakerId ? voiceIdForSpeaker(body.speakerId) : undefined;
+  const text = normalizeSpeechText(body.text);
+  const voiceId = normalizeVoiceId(body.voiceId) ?? (body.speakerId ? voiceIdForSpeaker(body.speakerId) : undefined);
+  const modelId = process.env.ELEVENLABS_TTS_MODEL || "eleven_flash_v2_5";
   const configuredMaxCharacters = Number.parseInt(process.env.ELEVENLABS_MAX_TTS_CHARS || "900", 10);
   const maxCharacters = Number.isFinite(configuredMaxCharacters) ? configuredMaxCharacters : 900;
 
@@ -26,6 +42,24 @@ export async function POST(request: Request) {
     });
   }
 
+  const cacheKey = ttsCacheKey({
+    speakerId: body.speakerId,
+    voiceId,
+    modelId,
+    outputFormat: OUTPUT_FORMAT,
+    voiceSettings: VOICE_SETTINGS,
+    text
+  });
+  const cacheFilePath = path.join(ttsCacheDir(), `${cacheKey}.mp3`);
+  const cacheEnabled = process.env.ELEVENLABS_TTS_CACHE_ENABLED !== "false";
+
+  if (cacheEnabled) {
+    const cachedAudio = await readCachedAudio(cacheFilePath);
+    if (cachedAudio) {
+      return audioResponse(cachedAudio, "hit");
+    }
+  }
+
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
     method: "POST",
     headers: {
@@ -34,14 +68,9 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       text,
-      model_id: process.env.ELEVENLABS_TTS_MODEL || "eleven_flash_v2_5",
-      output_format: "mp3_44100_128",
-      voice_settings: {
-        stability: 0.42,
-        similarity_boost: 0.72,
-        style: 0.35,
-        use_speaker_boost: true
-      }
+      model_id: modelId,
+      output_format: OUTPUT_FORMAT,
+      voice_settings: VOICE_SETTINGS
     })
   });
 
@@ -52,10 +81,68 @@ export async function POST(request: Request) {
     });
   }
 
-  return new Response(response.body, {
+  const audio = Buffer.from(await response.arrayBuffer());
+  if (cacheEnabled) {
+    await writeCachedAudio(cacheFilePath, audio);
+  }
+
+  return audioResponse(audio, cacheEnabled ? "miss" : "disabled");
+}
+
+function audioResponse(audio: Uint8Array, cacheStatus: "hit" | "miss" | "disabled") {
+  const body = audio.buffer.slice(audio.byteOffset, audio.byteOffset + audio.byteLength) as ArrayBuffer;
+
+  return new Response(body, {
     headers: {
       "content-type": "audio/mpeg",
-      "cache-control": "no-store"
+      "cache-control": "no-store",
+      "x-agent-mafia-tts-cache": cacheStatus
     }
   });
+}
+
+function normalizeSpeechText(text: string | undefined): string | undefined {
+  const normalized = text?.trim().replace(/\s+/g, " ");
+  return normalized ? sanitizeTextForTranscript(normalized).text : normalized;
+}
+
+function normalizeVoiceId(voiceId: string | undefined): string | undefined {
+  const normalized = voiceId?.trim();
+  return normalized || undefined;
+}
+
+function ttsCacheKey(input: {
+  speakerId: SpeakerId | undefined;
+  voiceId: string;
+  modelId: string;
+  outputFormat: string;
+  voiceSettings: typeof VOICE_SETTINGS;
+  text: string;
+}) {
+  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
+}
+
+function ttsCacheDir() {
+  return path.join(/*turbopackIgnore: true*/ process.cwd(), process.env.ELEVENLABS_TTS_CACHE_DIR || ".agent-mafia-cache/tts");
+}
+
+async function readCachedAudio(filePath: string): Promise<Buffer | undefined> {
+  try {
+    return await readFile(filePath);
+  } catch {
+    return undefined;
+  }
+}
+
+async function writeCachedAudio(filePath: string, audio: Uint8Array) {
+  const directory = path.dirname(filePath);
+  const tempPath = path.join(directory, `${path.basename(filePath)}.${randomUUID()}.tmp`);
+
+  try {
+    await mkdir(directory, { recursive: true });
+    await writeFile(tempPath, audio);
+    await rename(tempPath, filePath);
+  } catch {
+    // Caching is opportunistic; playback should not fail because the cache could not be written.
+  }
 }

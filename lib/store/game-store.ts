@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createGame, createScenarioSeed } from "@/lib/game/setup";
-import { GameState } from "@/lib/game/types";
+import { CharacterSetup, GameState, HumanRolePreference } from "@/lib/game/types";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -13,11 +13,16 @@ globalThis.__agentMafiaGames = games;
 
 const GAME_LOG_DIR = ".agent-mafia-logs";
 
-export function startGame(seed?: string, humanName?: string): GameState {
+export function startGame(
+  seed?: string,
+  humanName?: string,
+  characterSetup?: CharacterSetup,
+  humanRole?: HumanRolePreference
+): GameState {
   const game =
     seed === "scenario-a" || seed === "scenario-b"
-      ? createScenarioSeed(seed, { humanName })
-      : createGame(seed, { humanName });
+      ? createScenarioSeed(seed, { humanName, characterSetup, humanRole })
+      : createGame(seed, { humanName, characterSetup, humanRole });
   games.set(game.id, game);
   persistGameLog(game, "start");
   return game;
@@ -73,6 +78,7 @@ function persistGameLog(game: GameState, reason: "start" | "save"): void {
         })),
       fullTranscript: game.transcript,
       innerMonologues: game.innerMonologues,
+      actionLog: game.actionLog ?? [],
       fullState: game
     };
 

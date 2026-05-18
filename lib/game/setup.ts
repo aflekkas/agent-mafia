@@ -1,5 +1,9 @@
 import {
+  CharacterSetup,
   GameState,
+  HumanRolePreference,
+  NPC_PLAYER_IDS,
+  ActionLogEntry,
   PLAYER_IDS,
   Phase,
   Player,
@@ -8,6 +12,8 @@ import {
   SpeakerId,
   TranscriptEntry
 } from "./types";
+import { characterProfileForSeat, normalizeCharacterSetup } from "@/lib/characters/profiles";
+import { moderationForTranscript, sanitizeTextForTranscript } from "./profanity";
 import { shuffle } from "./random";
 import { buildDiscussionQueueFromPlayers } from "./turn-order";
 
@@ -60,22 +66,35 @@ const ROLE_BAG: Role[] = ["mafia", "mafia", "detective", "doctor", "villager", "
 
 export interface CreateGameOptions {
   humanName?: string;
+  characterSetup?: CharacterSetup;
+  humanRole?: HumanRolePreference;
 }
 
 export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptions = {}): GameState {
   const humanName = normalizeHumanName(options.humanName);
-  const roles = assignRoles(seed);
+  const characterSetup = normalizeCharacterSetup(options.characterSetup);
+  const roles = assignRoles(seed, options.humanRole);
   const detectiveKnownMafiaId = pickDetectiveKnownMafia(roles, seed);
-  const players = PLAYER_IDS.map((id) => ({
-    ...PLAYER_META[id],
-    name: id === "player_6" ? humanName : PLAYER_META[id].name,
-    role: roles[id],
-    detectiveKnownRole: id === detectiveKnownMafiaId ? ("mafia" as Role) : undefined,
-    alive: true,
-    suspicion: 0,
-    trust: 0,
-    notes: []
-  }));
+  const players = PLAYER_IDS.map((id) => {
+    const profile = id === "player_6" ? undefined : characterProfileForSeat(id, characterSetup);
+
+    return {
+      ...PLAYER_META[id],
+      name: id === "player_6" ? humanName : (profile?.name ?? PLAYER_META[id].name),
+      role: roles[id],
+      detectiveKnownRole: id === detectiveKnownMafiaId ? ("mafia" as Role) : undefined,
+      alive: true,
+      suspicion: 0,
+      trust: 0,
+      notes: [],
+      characterId: profile?.id,
+      portraitSrc: profile?.portraitSrc,
+      personalityStyle: profile?.style,
+      fallbackLines: profile?.fallbackLines,
+      voiceId: profile?.voiceId,
+      browserVoice: profile?.browserVoice
+    };
+  });
 
   const now = Date.now();
   const state: GameState = {
@@ -89,6 +108,7 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
     currentPrompt: undefined,
     transcript: [],
     innerMonologues: [],
+    actionLog: [],
     votes: [],
     nightActions: {},
     turnOrder: {
@@ -136,8 +156,9 @@ export function createScenarioSeed(name: "scenario-a" | "scenario-b", options: C
 }
 
 function normalizeHumanName(name: string | undefined): string {
-  const normalized = stripNameDirectives(name ?? "")
-    ?.replace(/[^\p{L}\p{N}' -]/gu, "")
+  const normalized = sanitizeTextForTranscript(stripNameDirectives(name ?? ""))
+    .text
+    ?.replace(/[^\p{L}\p{N}#' -]/gu, "")
     .trim()
     .replace(/\s+/g, " ")
     .slice(0, 24);
@@ -152,15 +173,36 @@ function stripNameDirectives(name: string): string {
   return directiveMatch?.index === undefined ? cleaned : cleaned.slice(0, directiveMatch.index);
 }
 
-export function assignRoles(seed: string): Record<PlayerId, Role> {
-  const shuffledRoles = shuffle(ROLE_BAG, seed);
-  return PLAYER_IDS.reduce(
+export function assignRoles(seed: string, humanRole: HumanRolePreference = "random"): Record<PlayerId, Role> {
+  if (humanRole === "random") {
+    const shuffledRoles = shuffle(ROLE_BAG, seed);
+    return PLAYER_IDS.reduce(
+      (roles, id, index) => ({
+        ...roles,
+        [id]: shuffledRoles[index]
+      }),
+      {} as Record<PlayerId, Role>
+    );
+  }
+
+  const remainingRoles = removeOneRole(ROLE_BAG, humanRole);
+  const shuffledNpcRoles = shuffle(remainingRoles, `${seed}:npc-roles:${humanRole}`);
+  return NPC_PLAYER_IDS.reduce(
     (roles, id, index) => ({
       ...roles,
-      [id]: shuffledRoles[index]
+      [id]: shuffledNpcRoles[index]
     }),
-    {} as Record<PlayerId, Role>
+    { player_6: humanRole } as Record<PlayerId, Role>
   );
+}
+
+function removeOneRole(roles: Role[], roleToRemove: Role): Role[] {
+  const nextRoles = [...roles];
+  const index = nextRoles.indexOf(roleToRemove);
+  if (index >= 0) {
+    nextRoles.splice(index, 1);
+  }
+  return nextRoles;
 }
 
 export function forceRoles(state: GameState, roles: Record<PlayerId, Role>): GameState {
@@ -201,14 +243,16 @@ export function addTranscript(
   kind: TranscriptEntry["kind"] = "speech",
   privateTo?: PlayerId[]
 ): GameState {
+  const sanitized = sanitizeTextForTranscript(text);
   const entry: TranscriptEntry = {
     id: makeId("entry"),
     day: state.day,
     phase: state.phase,
     speakerId,
     speakerName,
-    text,
+    text: sanitized.text,
     kind,
+    moderation: moderationForTranscript(state, speakerId, kind, text, sanitized.profanityCount),
     privateTo,
     createdAt: Date.now()
   };
@@ -225,6 +269,25 @@ export function touch(state: GameState): GameState {
     ...state,
     updatedAt: Date.now()
   };
+}
+
+export function addActionLog(
+  state: GameState,
+  entry: Omit<ActionLogEntry, "id" | "day" | "phase" | "createdAt">
+): GameState {
+  return touch({
+    ...state,
+    actionLog: [
+      ...(state.actionLog ?? []),
+      {
+        id: makeId("action"),
+        day: state.day,
+        phase: state.phase,
+        createdAt: Date.now(),
+        ...entry
+      }
+    ]
+  });
 }
 
 export function makeId(prefix: string): string {

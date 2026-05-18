@@ -7,6 +7,16 @@ export function redactGameForPlayer(state: GameState, viewerId: PlayerId = "play
   const viewerCanSeeDetectiveLead = viewer?.role === "detective";
   const viewerCanSeeDetectiveResult = viewer?.role === "detective";
   const visibleTranscript = state.transcript.filter((entry) => !entry.privateTo?.length || entry.privateTo.includes(viewerId));
+  const visibleActionLog =
+    revealAll
+      ? state.actionLog
+      : (state.actionLog ?? []).filter(
+          (entry) =>
+            entry.actorId === viewerId ||
+            entry.action === "vote" ||
+            (viewerCanSeeMafia && entry.action === "mafia-kill") ||
+            (viewerCanSeeDetectiveResult && entry.action === "detective-investigate")
+        );
 
   return {
     ...state,
@@ -36,6 +46,7 @@ export function redactGameForPlayer(state: GameState, viewerId: PlayerId = "play
     }),
     transcript: visibleTranscript,
     innerMonologues: state.phase === "game-over" ? state.innerMonologues : [],
+    actionLog: visibleActionLog,
     nightActions:
       state.phase === "game-over"
         ? state.nightActions

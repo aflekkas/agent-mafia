@@ -1,6 +1,6 @@
 import { GameState, PlayerId, VoteRecord } from "./types";
 import { aliveIds, getPlayer, legalTargets } from "./selectors";
-import { addTranscript, touch } from "./setup";
+import { addActionLog, addTranscript, touch } from "./setup";
 import { checkWinCondition } from "./win";
 
 export function submitVote(state: GameState, voterId: PlayerId, targetId: PlayerId, rationaleText?: string): GameState {
@@ -19,27 +19,48 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
     ...state.votes.filter((vote) => vote.voterId !== voterId),
     {
       voterId,
-      targetId: finalTargetId
+      targetId: finalTargetId,
+      rationaleText: rationaleText?.replace(/\s+/g, " ").trim() || undefined
     }
   ];
 
   const target = getPlayer(state, finalTargetId);
   const text = voter.isHuman
-    ? `votes for ${target.name}.`
+    ? formatHumanVoteText(target.name, rationaleText) ?? `I vote for ${target.name}.`
     : formatNpcVoteText(target.name, rationaleText) ??
       `I vote for ${target.name}. ${voteRationale(voter.name, target.name, target.suspicion)}`;
 
   return addTranscript(
-    {
-      ...state,
-      votes,
-      lastError: undefined
-    },
+    addActionLog(
+      {
+        ...state,
+        votes,
+        lastError: undefined
+      },
+      {
+        actorId: voterId,
+        actorName: voter.name,
+        action: "vote",
+        targetId: finalTargetId,
+        targetName: target.name,
+        outcome: "submitted",
+        detail: text
+      }
+    ),
     voterId,
     voter.name,
     text,
     "vote"
   );
+}
+
+function formatHumanVoteText(targetName: string, rationaleText: string | undefined): string | undefined {
+  const trimmed = rationaleText?.replace(/\s+/g, " ").trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return formatNpcVoteText(targetName, trimmed);
 }
 
 function formatNpcVoteText(targetName: string, rationaleText: string | undefined): string | undefined {
@@ -62,6 +83,11 @@ function formatNpcVoteText(targetName: string, rationaleText: string | undefined
   const firstPersonVoting = new RegExp(`^i(?:['’]m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVoting.test(trimmed)) {
     return trimmed.replace(firstPersonVoting, `I vote for ${targetName}`);
+  }
+
+  const myVoteIs = new RegExp(`^my\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?${target}\\b`, "i");
+  if (myVoteIs.test(trimmed)) {
+    return trimmed.replace(myVoteIs, `I vote for ${targetName}`);
   }
 
   return `I vote for ${targetName}. ${trimmed}`;

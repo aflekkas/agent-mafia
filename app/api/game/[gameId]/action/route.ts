@@ -33,7 +33,7 @@ export async function POST(request: Request, context: { params: Promise<{ gameId
     if (!isPlayerId(body.targetId)) {
       return NextResponse.json({ error: "Invalid vote target." }, { status: 400 });
     }
-    const next = submitHumanVote(game, body.targetId);
+    const next = submitHumanVote(game, body.targetId, typeof body.text === "string" ? body.text : undefined);
     saveGame(next);
     return NextResponse.json({ game: redactGameForPlayer(next) });
   }

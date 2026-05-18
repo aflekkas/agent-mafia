@@ -1,4 +1,4 @@
-export type VoiceMode = "browser" | "elevenlabs";
+export type VoiceMode = "off" | "browser" | "elevenlabs";
 export type DialogMode = "exit" | "rules" | null;
 export type HumanAvatarId =
   | "player-masc"
@@ -11,14 +11,34 @@ export type HumanAvatarId =
   | "player-08"
   | "player-09";
 
+export type BrowserSpeechRecognitionResult = {
+  readonly isFinal?: boolean;
+  readonly [index: number]: { transcript?: string } | undefined;
+};
+
+export type BrowserSpeechRecognitionEvent = {
+  readonly resultIndex?: number;
+  readonly results: ArrayLike<BrowserSpeechRecognitionResult>;
+};
+
+export type BrowserSpeechRecognitionErrorEvent = {
+  readonly error?: string;
+  readonly message?: string;
+};
+
 export type BrowserSpeechRecognition = {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
-  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
-  onerror: (() => void) | null;
+  onaudiostart: (() => void) | null;
+  onspeechstart: (() => void) | null;
+  onresult: ((event: BrowserSpeechRecognitionEvent) => void) | null;
+  onerror: ((event: BrowserSpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
+  onnomatch: (() => void) | null;
   start: () => void;
+  stop: () => void;
+  abort: () => void;
 };
 
 export type BrowserSpeechWindow = Window & {

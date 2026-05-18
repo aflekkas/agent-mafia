@@ -9,9 +9,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "generate:characters": "node scripts/generate-character-portraits.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "bad-words": "^4.0.0",
     "next": "16.2.6",
     "openai": "^4.103.0",
     "pixelarticons": "^2.1.0",

@@ -6,6 +6,7 @@ import { analyzeSpeechStance, mentionedPlayersInText, shortQuote } from "./speec
 import { submitVote, resolveVote } from "./votes";
 import { GameState, InnerMonologue, NpcTurn, Player, PlayerId } from "./types";
 import { buildVoteQueueFromPlayers } from "./turn-order";
+import { clearNpcVoteBatch, getPreparedNpcVote, startNpcVoteBatch } from "./vote-batch";
 
 const MEMORY_NOTE_LIMIT = 8;
 
@@ -141,7 +142,7 @@ async function advanceNight(state: GameState): Promise<GameState> {
     return runNpcNightAction(state, detective);
   }
 
-  if (state.nightNumber <= 1 && !state.nightActions.mafiaSkippedFirstNight) {
+  if (state.nightNumber === 0 && !state.nightActions.mafiaSkippedFirstNight) {
     return touch({
       ...state,
       nightActions: {
@@ -197,7 +198,7 @@ async function advanceDiscussion(state: GameState): Promise<GameState> {
   const [speakerId, ...remaining] = queue;
 
   if (!speakerId) {
-    return addTranscript(
+    const voteState = addTranscript(
       {
         ...state,
         phase: "day-vote",
@@ -214,6 +215,8 @@ async function advanceDiscussion(state: GameState): Promise<GameState> {
       "The talk curdles into a vote.",
       "narration"
     );
+    startNpcVoteBatch(voteState);
+    return voteState;
   }
 
   const speaker = getPlayer(state, speakerId);
@@ -274,10 +277,13 @@ async function advanceVote(state: GameState): Promise<GameState> {
     return state;
   }
 
+  startNpcVoteBatch(state);
+
   const queue = state.turnOrder.voteQueue;
   const [voterId, ...remaining] = queue;
 
   if (!voterId) {
+    clearNpcVoteBatch(state);
     return resolveVote(state);
   }
 
@@ -321,7 +327,7 @@ async function advanceVote(state: GameState): Promise<GameState> {
     });
   }
 
-  const turn = await generateNpcTurnForPlayer(state, voter);
+  const turn = await getPreparedNpcVote(state, voter);
   const withMind = addInnerMonologue(state, voter.id, turn.inner_monologue);
   const voted = submitVote(withMind, voter.id, turn.vote ?? fallbackVoteTarget(state, voter.id), turn.speech);
 
@@ -334,8 +340,8 @@ async function advanceVote(state: GameState): Promise<GameState> {
   });
 }
 
-export function submitHumanVote(state: GameState, targetId: PlayerId): GameState {
-  const voted = submitVote(state, "player_6", targetId);
+export function submitHumanVote(state: GameState, targetId: PlayerId, rationaleText?: string): GameState {
+  const voted = submitVote(state, "player_6", targetId, rationaleText);
   const queue = voted.turnOrder.voteQueue;
   const nextQueue = queue[0] === "player_6" ? queue.slice(1) : queue.filter((id) => id !== "player_6");
   return touch({

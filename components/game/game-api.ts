@@ -1,13 +1,18 @@
-import { GameState, PlayerId } from "@/lib/game/types";
+import { CharacterSetup, GameState, HumanRolePreference, PlayerId } from "@/lib/game/types";
 import { readGameResponse } from "./utils";
 
 export type GameAction =
   | { type: "advance" }
   | { type: "speech"; text: string }
-  | { type: "vote"; targetId: PlayerId }
+  | { type: "vote"; targetId: PlayerId; text?: string }
   | { type: "night"; targetId: PlayerId };
 
-export async function createGame(input: { seed?: string; humanName: string }): Promise<GameState> {
+export async function createGame(input: {
+  seed?: string;
+  humanName: string;
+  characterSetup?: CharacterSetup;
+  humanRole?: HumanRolePreference;
+}): Promise<GameState> {
   const response = await fetch("/api/game", {
     method: "POST",
     headers: { "content-type": "application/json" },

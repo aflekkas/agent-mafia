@@ -2,31 +2,37 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock } from "pixelarticons/react/Clock";
+import { Copy } from "pixelarticons/react/Copy";
 import { InfoBox } from "pixelarticons/react/InfoBox";
 import { Play } from "pixelarticons/react/Play";
 import { Reload } from "pixelarticons/react/Reload";
 import { Volume } from "pixelarticons/react/Volume";
 import { Volume2 } from "pixelarticons/react/Volume2";
-import { GameState, PlayerId } from "@/lib/game/types";
+import { CharacterSetup, GameState, HumanRolePreference, PlayerId } from "@/lib/game/types";
+import { DEFAULT_CHARACTER_SETUP, normalizeCharacterSetup } from "@/lib/characters/profiles";
 import { speakEntry } from "@/components/game/audio";
 import {
   AMBIENCE_URL,
   AUDIO_MUTED_STORAGE_KEY,
+  CHARACTER_SETUP_STORAGE_KEY,
   DECISION_CUE_VOLUME,
   HUMAN_AVATAR_STORAGE_KEY,
   HUMAN_NAME_STORAGE_KEY,
+  HUMAN_ROLE_STORAGE_KEY,
+  SHIELD_CUE_VOLUME,
   UI_CLICK_VOLUME,
   UI_HOVER_VOLUME,
   UI_START_VOLUME,
   VOICE_MODE_STORAGE_KEY,
   VOTE_CUE_VOLUME
 } from "@/components/game/constants";
+import { CharacterSettingsDialog } from "@/components/game/CharacterSettingsDialog";
 import { GameDialog } from "@/components/game/GameDialog";
 import { createGame, postGameAction } from "@/components/game/game-api";
 import { CustomCursor } from "@/components/game/CustomCursor";
-import { HomeScreen } from "@/components/game/HomeScreen";
-import { HumanPanel, PhasePanel, RoleCard, TableScene2D, Transcript, VoteBoard } from "@/components/game/GamePanels";
-import { BrowserSpeechWindow, DialogMode, HumanAvatarId, VoiceMode } from "@/components/game/types";
+import { HomeScreen, VoiceModeSwitch } from "@/components/game/HomeScreen";
+import { GameOverPanel, HumanPanel, PhasePanel, RoleCard, TableScene2D, Transcript, VoteBoard } from "@/components/game/GamePanels";
+import { BrowserSpeechRecognition, BrowserSpeechWindow, DialogMode, HumanAvatarId, VoiceMode } from "@/components/game/types";
 import {
   ambienceLoopBounds,
   ambienceVolumeFor,
@@ -34,7 +40,9 @@ import {
   buttonFromEventTarget,
   errorMessage,
   isHumanAvatarId,
-  normalizeHumanName
+  normalizeHumanName,
+  sanitizeHumanNameDraft,
+  sanitizeHumanTextDraft
 } from "@/components/game/utils";
 
 export function GameShell() {
@@ -52,6 +60,9 @@ export function GameShell() {
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [humanAvatar, setHumanAvatarState] = useState<HumanAvatarId>("player-masc");
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [characterSetup, setCharacterSetupState] = useState<CharacterSetup>(DEFAULT_CHARACTER_SETUP);
+  const [humanRole, setHumanRoleState] = useState<HumanRolePreference>("random");
   const spokenEntryRef = useRef<string | null>(null);
   const audioPlayingRef = useRef(false);
   const elevenLabsAudioCacheRef = useRef<Map<string, Blob>>(new Map());
@@ -65,6 +76,13 @@ export function GameShell() {
   const latestVoteCueRef = useRef<string | null>(null);
   const decisionAudioContextRef = useRef<AudioContext | null>(null);
   const ambienceFadeRef = useRef<number | null>(null);
+  const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const speechBaseTextRef = useRef("");
+  const speechFinalTextRef = useRef("");
+  const speechDictatedTextRef = useRef("");
+  const speechStartRequestIdRef = useRef(0);
+  const prefetchedAdvanceRef = useRef<{ sourceGameId: string; sourceUpdatedAt: number; game: GameState } | null>(null);
+  const prefetchingAdvanceRef = useRef<{ sourceGameId: string; sourceUpdatedAt: number; promise: Promise<GameState> } | null>(null);
 
   const human = useMemo(() => game?.players.find((player) => player.id === "player_6"), [game]);
   const latestPublicEntry = useMemo(() => {
@@ -73,7 +91,11 @@ export function GameShell() {
   const latestVoteEntry = useMemo(() => {
     return game?.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "vote").at(-1) ?? null;
   }, [game]);
+  const latestBlockedActionEntry = useMemo(() => {
+    return game?.transcript.filter((entry) => entry.kind === "action" && /was blocked|protected/i.test(entry.text)).at(-1) ?? null;
+  }, [game]);
   const isHome = !game || !human;
+  const voicePlaybackEnabled = !audioMuted && voiceMode !== "off";
 
   useEffect(() => {
     const uiClick = new Audio("/sfx/ui-click.wav");
@@ -93,18 +115,30 @@ export function GameShell() {
     }
 
     const storedMode = window.localStorage.getItem(VOICE_MODE_STORAGE_KEY);
-    if (storedMode === "browser" || storedMode === "elevenlabs") {
+    if (storedMode === "off" || storedMode === "browser" || storedMode === "elevenlabs") {
       setVoiceModeState(storedMode);
     }
 
     const storedHumanName = window.localStorage.getItem(HUMAN_NAME_STORAGE_KEY);
     if (storedHumanName) {
-      setHumanName(storedHumanName);
+      const sanitizedName = normalizeHumanName(storedHumanName);
+      setHumanName(sanitizedName);
+      window.localStorage.setItem(HUMAN_NAME_STORAGE_KEY, sanitizedName);
     }
 
     const storedHumanAvatar = window.localStorage.getItem(HUMAN_AVATAR_STORAGE_KEY);
     if (isHumanAvatarId(storedHumanAvatar)) {
       setHumanAvatarState(storedHumanAvatar);
+    }
+
+    const storedCharacterSetup = readStoredCharacterSetup(window.localStorage.getItem(CHARACTER_SETUP_STORAGE_KEY));
+    if (storedCharacterSetup) {
+      setCharacterSetupState(storedCharacterSetup);
+    }
+
+    const storedHumanRole = window.localStorage.getItem(HUMAN_ROLE_STORAGE_KEY);
+    if (isHumanRolePreference(storedHumanRole)) {
+      setHumanRoleState(storedHumanRole);
     }
 
     return () => {
@@ -115,6 +149,7 @@ export function GameShell() {
       void ambienceAudioContextRef.current?.close();
       uiClick.pause();
       uiStart.pause();
+      speechRecognitionRef.current?.abort();
       void decisionAudioContextRef.current?.close();
     };
   }, []);
@@ -172,16 +207,30 @@ export function GameShell() {
   }, [game, latestVoteEntry]);
 
   useEffect(() => {
+    if (!game || !latestBlockedActionEntry) {
+      return;
+    }
+
+    const cueKey = `${game.id}:${latestBlockedActionEntry.id}:blocked`;
+    if (latestDecisionCueRef.current === cueKey) {
+      return;
+    }
+
+    latestDecisionCueRef.current = cueKey;
+    playShieldCue();
+  }, [game, latestBlockedActionEntry]);
+
+  useEffect(() => {
     if (!latestPublicEntry || spokenEntryRef.current === latestPublicEntry.id) {
       return;
     }
     spokenEntryRef.current = latestPublicEntry.id;
-    if (audioMuted) {
+    if (!voicePlaybackEnabled) {
       setAudioPlaybackActive(false);
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
-      setStatus("Sound muted.");
+      setStatus(audioMuted ? "Sound muted." : "Voice off.");
       setPlaybackCompleteId(latestPublicEntry.id);
       return;
     }
@@ -190,7 +239,7 @@ export function GameShell() {
     setAudioPlaybackActive(true);
     void (async () => {
       try {
-        await speakEntry(latestPublicEntry, voiceMode, elevenLabsAudioCacheRef.current, setStatus);
+        await speakEntry(latestPublicEntry, voiceMode, elevenLabsAudioCacheRef.current, setStatus, game?.players ?? []);
       } catch (error) {
         setStatus(errorMessage(error, "Voice playback failed."));
       } finally {
@@ -205,7 +254,18 @@ export function GameShell() {
       cancelled = true;
       setAudioPlaybackActive(false);
     };
-  }, [audioMuted, latestPublicEntry, voiceMode]);
+  }, [audioMuted, latestPublicEntry, voiceMode, voicePlaybackEnabled]);
+
+  useEffect(() => {
+    if (!game || !voicePlaybackEnabled || paused || busy || game.currentPrompt || game.phase === "game-over") {
+      return;
+    }
+    if (!latestPublicEntry || latestPublicEntry.id === playbackCompleteId) {
+      return;
+    }
+
+    prefetchNextAdvance(game);
+  }, [busy, game, latestPublicEntry, paused, playbackCompleteId, voicePlaybackEnabled]);
 
   useEffect(() => {
     if (!game || paused || busy || game.currentPrompt || game.phase === "game-over") {
@@ -216,13 +276,13 @@ export function GameShell() {
     }
 
     const latestEntryWasPlayed = latestPublicEntry?.id === playbackCompleteId;
-    const delay = automaticAdvanceDelay(game, latestPublicEntry, latestEntryWasPlayed, audioMuted);
+    const delay = automaticAdvanceDelay(game, latestPublicEntry, latestEntryWasPlayed, !voicePlaybackEnabled);
     const timer = window.setTimeout(() => {
-      void advance(false);
+      void applyPrefetchedOrAdvance();
     }, delay);
 
     return () => window.clearTimeout(timer);
-  }, [audioMuted, busy, game, latestPublicEntry, paused, playbackCompleteId]);
+  }, [busy, game, latestPublicEntry, paused, playbackCompleteId, voicePlaybackEnabled]);
 
   async function start(seed?: string) {
     const displayName = normalizeHumanName(humanName);
@@ -231,12 +291,15 @@ export function GameShell() {
     setStatus("Starting game.");
     try {
       window.localStorage.setItem(HUMAN_NAME_STORAGE_KEY, displayName);
-      const nextGame = await createGame({ seed, humanName: displayName });
+      const nextGame = await createGame({ seed, humanName: displayName, characterSetup, humanRole });
+      clearPrefetchedAdvance();
       setGame(nextGame);
       setHumanText("");
       setPaused(false);
       setDialogMode(null);
+      setSettingsOpen(false);
       spokenEntryRef.current = null;
+      setPlaybackCompleteId(null);
       setStatus(seed ? `Loaded ${seed}.` : "New game started.");
     } catch (error) {
       setStatus(errorMessage(error, "Could not start game."));
@@ -250,6 +313,7 @@ export function GameShell() {
       return;
     }
 
+    clearPrefetchedAdvance();
     setBusy(true);
     setStatus(loop ? "Advancing to next player decision." : "Advancing.");
     try {
@@ -278,6 +342,7 @@ export function GameShell() {
       return;
     }
     setBusy(true);
+    clearPrefetchedAdvance();
     setStatus("Submitting your speech.");
     try {
       const nextGame = await postGameAction(game.id, { type: "speech", text: humanText });
@@ -291,40 +356,128 @@ export function GameShell() {
     }
   }
 
-  function startListening() {
-    const speechWindow = window as BrowserSpeechWindow;
-    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-    if (!Recognition) {
-      setStatus("Speech recognition is not available here. Type your line instead.");
+  function updateHumanText(text: string) {
+    setHumanText(sanitizeHumanTextDraft(text));
+  }
+
+  async function startListening() {
+    if (listening) {
+      stopListening("Stopped listening.");
       return;
     }
 
+    const speechWindow = window as BrowserSpeechWindow;
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setStatus("Voice dictation is not supported in this browser. Use Chrome or Edge, or type your line.");
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      setStatus("Mic permission requires localhost or HTTPS. Open the app from localhost, then try again.");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStatus("This browser cannot request mic access here. Type your line instead.");
+      return;
+    }
+
+    speechRecognitionRef.current?.abort();
+    speechBaseTextRef.current = humanText.trim();
+    speechFinalTextRef.current = "";
+    speechDictatedTextRef.current = "";
+    const requestId = speechStartRequestIdRef.current + 1;
+    speechStartRequestIdRef.current = requestId;
+
     const recognition = new Recognition();
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.lang = "en-US";
-    recognition.onresult = (event) => {
-      const transcript = event.results[0]?.[0]?.transcript;
-      if (transcript) {
-        setHumanText((existing) => `${existing}${existing ? " " : ""}${transcript}`.trim());
-      }
+    recognition.onaudiostart = () => {
+      setListening(true);
+      setStatus("Mic is on. Speak now.");
     };
-    recognition.onerror = () => {
+    recognition.onspeechstart = () => {
+      setStatus("Listening to your line.");
+    };
+    recognition.onresult = (event) => {
+      let finalText = "";
+      let interimText = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result?.[0]?.transcript?.trim();
+        if (!transcript) {
+          continue;
+        }
+        if (result.isFinal) {
+          finalText = joinDictationText(finalText, transcript);
+        } else {
+          interimText = joinDictationText(interimText, transcript);
+        }
+      }
+
+      speechFinalTextRef.current = finalText;
+      const dictatedText = joinDictationText(speechFinalTextRef.current, interimText);
+      speechDictatedTextRef.current = dictatedText;
+      const nextText = joinDictationText(speechBaseTextRef.current, dictatedText);
+      updateHumanText(nextText);
+      setStatus(dictatedText ? "Dictation captured. You can edit before submitting." : "Listening.");
+    };
+    recognition.onerror = (event) => {
       setListening(false);
-      setStatus("Mic capture failed. Type your line instead.");
+      setStatus(micErrorMessage(event.error));
     };
     recognition.onend = () => {
+      speechRecognitionRef.current = null;
       setListening(false);
+      if (speechDictatedTextRef.current) {
+        setStatus("Dictation ready. Edit it or submit your speech.");
+      }
+    };
+    recognition.onnomatch = () => {
+      setStatus("I could not make out the words. Try again or type your line.");
     };
 
     try {
+      speechRecognitionRef.current = recognition;
       setListening(true);
-      setStatus("Listening.");
+      setStatus("Requesting microphone access.");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      if (speechStartRequestIdRef.current !== requestId || speechRecognitionRef.current !== recognition) {
+        recognition.abort();
+        return;
+      }
+      setStatus("Mic permission granted. Starting dictation.");
       recognition.start();
     } catch (error) {
+      if (speechRecognitionRef.current === recognition) {
+        speechRecognitionRef.current = null;
+      }
       setListening(false);
-      setStatus(errorMessage(error, "Mic capture failed. Type your line instead."));
+      setStatus(micStartErrorMessage(error));
     }
+  }
+
+  function stopListening(message: string) {
+    speechStartRequestIdRef.current += 1;
+    const recognition = speechRecognitionRef.current;
+    speechRecognitionRef.current = null;
+    if (recognition) {
+      try {
+        recognition.stop();
+      } catch {
+        try {
+          recognition.abort();
+        } catch {
+          // The browser may throw if recognition has not fully started yet.
+        }
+      }
+    }
+    setListening(false);
+    setStatus(message);
   }
 
   async function submitVote(targetId: PlayerId) {
@@ -332,10 +485,12 @@ export function GameShell() {
       return;
     }
     setBusy(true);
+    clearPrefetchedAdvance();
     setStatus("Casting vote.");
     try {
-      const nextGame = await postGameAction(game.id, { type: "vote", targetId });
+      const nextGame = await postGameAction(game.id, { type: "vote", targetId, text: humanText });
       setGame(nextGame);
+      setHumanText("");
       setStatus("Vote cast.");
     } catch (error) {
       setStatus(errorMessage(error, "Could not cast vote."));
@@ -349,6 +504,7 @@ export function GameShell() {
       return;
     }
     setBusy(true);
+    clearPrefetchedAdvance();
     setStatus("Submitting night action.");
     try {
       const nextGame = await postGameAction(game.id, { type: "night", targetId });
@@ -376,6 +532,15 @@ export function GameShell() {
   function setVoiceMode(mode: VoiceMode) {
     setVoiceModeState(mode);
     window.localStorage.setItem(VOICE_MODE_STORAGE_KEY, mode);
+    if (mode === "off") {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setAudioPlaybackActive(false);
+      setPlaybackCompleteId(latestPublicEntry?.id ?? null);
+      setStatus("Voice off. Sound effects stay on.");
+      return;
+    }
     setStatus(mode === "elevenlabs" ? "ElevenLabs selected. Turn sound on to use it." : "Browser voice selected.");
   }
 
@@ -384,6 +549,19 @@ export function GameShell() {
     window.localStorage.setItem(HUMAN_AVATAR_STORAGE_KEY, avatarId);
     setAvatarPickerOpen(false);
     setStatus("Portrait selected.");
+  }
+
+  function setCharacterSetup(setup: CharacterSetup) {
+    const normalizedSetup = normalizeCharacterSetup(setup);
+    setCharacterSetupState(normalizedSetup);
+    window.localStorage.setItem(CHARACTER_SETUP_STORAGE_KEY, JSON.stringify(normalizedSetup));
+    setStatus("Table setup updated.");
+  }
+
+  function setHumanRole(role: HumanRolePreference) {
+    setHumanRoleState(role);
+    window.localStorage.setItem(HUMAN_ROLE_STORAGE_KEY, role);
+    setStatus(role === "random" ? "Your role will be random." : `Your role will be ${role}.`);
   }
 
   function requestExit() {
@@ -396,6 +574,7 @@ export function GameShell() {
   }
 
   function confirmExit() {
+    clearPrefetchedAdvance();
     setGame(null);
     setHumanText("");
     setPaused(false);
@@ -414,6 +593,97 @@ export function GameShell() {
       setPaused(false);
     }
     setDialogMode(null);
+  }
+
+  async function copyTranscript() {
+    if (!game) {
+      return;
+    }
+
+    try {
+      await writeClipboardText(formatTranscriptForClipboard(game));
+      setStatus("Transcript copied.");
+    } catch {
+      setStatus("Could not copy transcript.");
+    }
+  }
+
+  function clearPrefetchedAdvance() {
+    prefetchedAdvanceRef.current = null;
+    prefetchingAdvanceRef.current = null;
+  }
+
+  function prefetchKeyMatches(entry: { sourceGameId: string; sourceUpdatedAt: number } | null, source: GameState) {
+    return !!entry && entry.sourceGameId === source.id && entry.sourceUpdatedAt === source.updatedAt;
+  }
+
+  function prefetchNextAdvance(source: GameState) {
+    if (prefetchKeyMatches(prefetchedAdvanceRef.current, source) || prefetchKeyMatches(prefetchingAdvanceRef.current, source)) {
+      return;
+    }
+
+    const sourceGameId = source.id;
+    const sourceUpdatedAt = source.updatedAt;
+    const promise = postGameAction(source.id, { type: "advance" });
+    prefetchingAdvanceRef.current = {
+      sourceGameId,
+      sourceUpdatedAt,
+      promise
+    };
+    setStatus("Next turn thinking.");
+
+    void promise
+      .then((nextGame) => {
+        if (!prefetchKeyMatches(prefetchingAdvanceRef.current, source)) {
+          return;
+        }
+        prefetchedAdvanceRef.current = {
+          sourceGameId,
+          sourceUpdatedAt,
+          game: nextGame
+        };
+        prefetchingAdvanceRef.current = null;
+        setStatus(nextGame.currentPrompt ? "Your move is ready." : "Next turn ready.");
+      })
+      .catch((error) => {
+        if (prefetchKeyMatches(prefetchingAdvanceRef.current, source)) {
+          prefetchingAdvanceRef.current = null;
+          setStatus(errorMessage(error, "Could not prepare the next turn."));
+        }
+      });
+  }
+
+  async function applyPrefetchedOrAdvance() {
+    if (!game || busy) {
+      return;
+    }
+
+    const ready = prefetchedAdvanceRef.current;
+    if (ready && prefetchKeyMatches(ready, game)) {
+      prefetchedAdvanceRef.current = null;
+      setGame(ready.game);
+      setStatus(ready.game.currentPrompt ? "Your move." : ready.game.phase === "game-over" ? "Game over." : "Advanced.");
+      return;
+    }
+
+    const pending = prefetchingAdvanceRef.current;
+    if (pending && prefetchKeyMatches(pending, game)) {
+      setStatus("Next turn finishing.");
+      try {
+        const nextGame = await pending.promise;
+        if (prefetchKeyMatches(prefetchingAdvanceRef.current, game) || prefetchKeyMatches(prefetchedAdvanceRef.current, game)) {
+          clearPrefetchedAdvance();
+          setGame(nextGame);
+          setStatus(nextGame.currentPrompt ? "Your move." : nextGame.phase === "game-over" ? "Game over." : "Advanced.");
+        }
+      } catch (error) {
+        clearPrefetchedAdvance();
+        setStatus(errorMessage(error, "Could not advance game."));
+      }
+      return;
+    }
+
+    await advance(false);
   }
 
   function playButtonSoundFromClick(event: { target: EventTarget | null }) {
@@ -552,30 +822,31 @@ export function GameShell() {
 
       void context.resume().then(() => {
         const gain = context.createGain();
-        const low = context.createOscillator();
-        const high = context.createOscillator();
+        const stab = context.createOscillator();
+        const cry = context.createOscillator();
         const now = context.currentTime;
-        const duration = 0.72;
+        const duration = 0.82;
 
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(DECISION_CUE_VOLUME, now + 0.035);
+        gain.gain.exponentialRampToValueAtTime(DECISION_CUE_VOLUME * 1.2, now + 0.018);
+        gain.gain.exponentialRampToValueAtTime(DECISION_CUE_VOLUME * 0.45, now + 0.12);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-        low.type = "triangle";
-        high.type = "sine";
-        low.frequency.setValueAtTime(92, now);
-        low.frequency.exponentialRampToValueAtTime(46, now + duration);
-        high.frequency.setValueAtTime(138, now);
-        high.frequency.exponentialRampToValueAtTime(69, now + duration);
+        stab.type = "sawtooth";
+        cry.type = "sine";
+        stab.frequency.setValueAtTime(760, now);
+        stab.frequency.exponentialRampToValueAtTime(96, now + 0.16);
+        cry.frequency.setValueAtTime(620, now + 0.08);
+        cry.frequency.exponentialRampToValueAtTime(170, now + duration);
 
-        low.connect(gain);
-        high.connect(gain);
+        stab.connect(gain);
+        cry.connect(gain);
         gain.connect(context.destination);
 
-        low.start(now);
-        high.start(now);
-        low.stop(now + duration);
-        high.stop(now + duration);
+        stab.start(now);
+        cry.start(now + 0.08);
+        stab.stop(now + 0.18);
+        cry.stop(now + duration);
       });
     } catch {
       playUiSound(uiStartRef.current, DECISION_CUE_VOLUME);
@@ -623,6 +894,47 @@ export function GameShell() {
     }
   }
 
+  function playShieldCue() {
+    if (audioMuted) {
+      return;
+    }
+
+    try {
+      const context = decisionAudioContextRef.current ?? new AudioContext();
+      decisionAudioContextRef.current = context;
+
+      void context.resume().then(() => {
+        const gain = context.createGain();
+        const clang = context.createOscillator();
+        const ring = context.createOscillator();
+        const now = context.currentTime;
+        const duration = 0.42;
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(SHIELD_CUE_VOLUME, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        clang.type = "square";
+        ring.type = "triangle";
+        clang.frequency.setValueAtTime(540, now);
+        clang.frequency.exponentialRampToValueAtTime(180, now + duration);
+        ring.frequency.setValueAtTime(820, now + 0.03);
+        ring.frequency.exponentialRampToValueAtTime(260, now + duration);
+
+        clang.connect(gain);
+        ring.connect(gain);
+        gain.connect(context.destination);
+
+        clang.start(now);
+        ring.start(now + 0.03);
+        clang.stop(now + duration);
+        ring.stop(now + duration);
+      });
+    } catch {
+      playUiSound(uiClickRef.current, SHIELD_CUE_VOLUME);
+    }
+  }
+
   return (
     <main
       className={`shell ${isHome ? "home-shell" : ""}`}
@@ -640,6 +952,9 @@ export function GameShell() {
             <button type="button" className="icon-button" onClick={() => setDialogMode("rules")} aria-label="Show roles" title="Show roles">
               <InfoBox aria-hidden="true" />
             </button>
+            <button type="button" className="icon-button" onClick={copyTranscript} aria-label="Copy transcript" title="Copy transcript">
+              <Copy aria-hidden="true" />
+            </button>
             <button
               type="button"
               className={`icon-button ${paused ? "active" : ""}`}
@@ -653,6 +968,7 @@ export function GameShell() {
             <button type="button" className="icon-button" onClick={requestExit} aria-label="New game" title="New game">
               <Reload aria-hidden="true" />
             </button>
+            <VoiceModeSwitch voiceMode={voiceMode} onChange={setVoiceMode} />
             <button
               type="button"
               className={`mute-button ${audioMuted ? "muted" : ""}`}
@@ -677,10 +993,11 @@ export function GameShell() {
           audioMuted={audioMuted}
           busy={busy}
           voiceMode={voiceMode}
-          onHumanNameChange={setHumanName}
+          onHumanNameChange={(name) => setHumanName(sanitizeHumanNameDraft(name))}
           onHumanAvatarChange={setHumanAvatar}
           onAvatarPickerOpenChange={setAvatarPickerOpen}
           onStart={() => start()}
+          onOpenSettings={() => setSettingsOpen(true)}
           onToggleAudio={toggleAudioMuted}
           onVoiceModeChange={setVoiceMode}
         />
@@ -697,7 +1014,7 @@ export function GameShell() {
             <HumanPanel
               game={game}
               humanText={humanText}
-              setHumanText={setHumanText}
+              setHumanText={updateHumanText}
               busy={busy}
               listening={listening}
               onSubmitSpeech={submitSpeech}
@@ -705,6 +1022,7 @@ export function GameShell() {
               onSubmitVote={submitVote}
               onSubmitNightAction={submitNightAction}
             />
+            <GameOverPanel game={game} onPlayAgain={() => start()} />
           </section>
 
           <aside className="right-rail">
@@ -713,6 +1031,112 @@ export function GameShell() {
         </section>
       )}
       <GameDialog mode={dialogMode} onCancel={closeDialog} onConfirmExit={confirmExit} />
+      <CharacterSettingsDialog
+        open={isHome && settingsOpen}
+        characterSetup={characterSetup}
+        humanRole={humanRole}
+        onCharacterSetupChange={setCharacterSetup}
+        onHumanRoleChange={setHumanRole}
+        onClose={() => setSettingsOpen(false)}
+      />
     </main>
   );
+}
+
+function readStoredCharacterSetup(value: string | null): CharacterSetup | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    return normalizeCharacterSetup(JSON.parse(value) as CharacterSetup);
+  } catch {
+    return undefined;
+  }
+}
+
+function isHumanRolePreference(value: string | null): value is HumanRolePreference {
+  return value === "random" || value === "mafia" || value === "detective" || value === "doctor" || value === "villager";
+}
+
+function formatTranscriptForClipboard(game: GameState): string {
+  const visibleTranscript = game.transcript.filter((entry) => !entry.privateTo?.length || entry.privateTo.includes("player_6"));
+  const metadata = [
+    "Agent Mafia Transcript",
+    `Game: ${game.id}`,
+    `Seed: ${game.seed}`,
+    `Phase: ${game.phase}`,
+    `Day: ${game.day}`,
+    `Winner: ${game.winner ?? "none"}`
+  ];
+  const lines = visibleTranscript.map((entry) => `[Day ${entry.day} | ${entry.phase} | ${entry.kind}] ${entry.speakerName}: ${entry.text}`);
+  const actionLines = (game.actionLog ?? []).map(
+    (entry) =>
+      `[Day ${entry.day} | ${entry.phase} | ${entry.action} | ${entry.outcome}] ${entry.actorName} -> ${entry.targetName}: ${entry.detail}`
+  );
+  return [...metadata, "", "Transcript:", ...lines, "", "Visible action log:", ...(actionLines.length ? actionLines : ["none"])].join("\n");
+}
+
+async function writeClipboardText(text: string): Promise<void> {
+  if (window.navigator.clipboard?.writeText) {
+    await window.navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textarea);
+  if (!copied) {
+    throw new Error("Clipboard copy failed.");
+  }
+}
+
+function joinDictationText(...parts: Array<string | undefined>): string {
+  return parts
+    .map((part) => part?.trim())
+    .filter((part): part is string => !!part)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function micErrorMessage(error: string | undefined): string {
+  if (error === "not-allowed" || error === "service-not-allowed") {
+    return "Mic permission was blocked. Allow microphone access in the browser, then try again.";
+  }
+  if (error === "audio-capture") {
+    return "No microphone was found. Connect or select a mic, then try again.";
+  }
+  if (error === "no-speech") {
+    return "No speech was heard. Try the mic again or type your line.";
+  }
+  if (error === "network") {
+    return "The browser speech service is unavailable. Try again, or type your line.";
+  }
+  if (error === "aborted") {
+    return "Mic dictation stopped.";
+  }
+  return "Mic capture failed. Type your line instead.";
+}
+
+function micStartErrorMessage(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+      return "Mic permission was blocked. Allow microphone access in the browser, then try again.";
+    }
+    if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+      return "No microphone was found. Connect or select a mic, then try again.";
+    }
+    if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+      return "The microphone is already in use or cannot be opened.";
+    }
+  }
+
+  return errorMessage(error, "Mic capture failed. Type your line instead.");
 }

@@ -1,4 +1,5 @@
 import { GameState, Phase, PlayerId, TranscriptEntry } from "@/lib/game/types";
+import { sanitizeTextDraft, sanitizeTextForTranscript } from "@/lib/game/profanity";
 import {
   HOME_AMBIENCE_VOLUME,
   IDLE_AMBIENCE_VOLUME,
@@ -110,13 +111,21 @@ export function formatPhase(phase: Phase): string {
 }
 
 export function normalizeHumanName(name: string): string {
-  const normalized = stripNameDirectives(name)
-    .replace(/[^\p{L}\p{N}' -]/gu, "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .slice(0, 24);
+  const normalized = sanitizeHumanNameDraft(name).trim();
 
   return normalized || "Player";
+}
+
+export function sanitizeHumanNameDraft(name: string): string {
+  return sanitizeTextDraft(stripNameDirectives(name))
+    .text
+    .replace(/[^\p{L}\p{N}#' -]/gu, "")
+    .replace(/\s+/g, " ")
+    .slice(0, 24);
+}
+
+export function sanitizeHumanTextDraft(text: string): string {
+  return sanitizeTextDraft(text).text;
 }
 
 export function isHumanAvatarId(value: string | null): value is HumanAvatarId {

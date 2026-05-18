@@ -1,10 +1,11 @@
 import { AiVoice } from "pixelarticons/react/AiVoice";
+import { AiSettings2 } from "pixelarticons/react/AiSettings2";
 import { Play } from "pixelarticons/react/Play";
 import { Volume } from "pixelarticons/react/Volume";
 import { Volume2 } from "pixelarticons/react/Volume2";
 import { HUMAN_AVATARS } from "./constants";
 import { HumanAvatarId, VoiceMode } from "./types";
-import { avatarFor } from "./utils";
+import { avatarFor, sanitizeHumanNameDraft } from "./utils";
 
 export function HomeScreen({
   humanName,
@@ -17,6 +18,7 @@ export function HomeScreen({
   onHumanAvatarChange,
   onAvatarPickerOpenChange,
   onStart,
+  onOpenSettings,
   onToggleAudio,
   onVoiceModeChange
 }: {
@@ -30,6 +32,7 @@ export function HomeScreen({
   onHumanAvatarChange: (avatarId: HumanAvatarId) => void;
   onAvatarPickerOpenChange: (open: boolean | ((open: boolean) => boolean)) => void;
   onStart: () => void;
+  onOpenSettings: () => void;
   onToggleAudio: () => void;
   onVoiceModeChange: (mode: VoiceMode) => void;
 }) {
@@ -42,7 +45,7 @@ export function HomeScreen({
             <span>Your name</span>
             <input
               value={humanName}
-              onChange={(event) => onHumanNameChange(event.target.value)}
+              onChange={(event) => onHumanNameChange(sanitizeHumanNameDraft(event.target.value))}
               placeholder="Player"
               maxLength={24}
               autoComplete="given-name"
@@ -89,6 +92,16 @@ export function HomeScreen({
           </div>
         </div>
         <div className="home-actions">
+          <button
+            type="button"
+            className="home-settings-button"
+            onClick={onOpenSettings}
+            disabled={busy}
+            aria-label="Open game settings"
+            title="Settings"
+          >
+            <AiSettings2 aria-hidden="true" />
+          </button>
           <VoiceModeSwitch voiceMode={voiceMode} onChange={onVoiceModeChange} />
           <button
             type="button"
@@ -112,19 +125,20 @@ export function HomeScreen({
   );
 }
 
-function VoiceModeSwitch({ voiceMode, onChange }: { voiceMode: VoiceMode; onChange: (mode: VoiceMode) => void }) {
-  const useElevenLabs = voiceMode === "elevenlabs";
+export function VoiceModeSwitch({ voiceMode, onChange }: { voiceMode: VoiceMode; onChange: (mode: VoiceMode) => void }) {
+  const nextMode: VoiceMode = voiceMode === "browser" ? "elevenlabs" : voiceMode === "elevenlabs" ? "off" : "browser";
+  const voiceLabel = voiceMode === "elevenlabs" ? "ElevenLabs" : voiceMode === "browser" ? "Browser" : "Off";
 
   return (
     <button
       type="button"
-      className={`voice-mode-toggle ${useElevenLabs ? "elevenlabs" : "browser"}`}
-      onClick={() => onChange(useElevenLabs ? "browser" : "elevenlabs")}
-      aria-pressed={useElevenLabs}
-      title={useElevenLabs ? "Switch to browser voice" : "Switch to ElevenLabs voice"}
+      className={`voice-mode-toggle ${voiceMode}`}
+      onClick={() => onChange(nextMode)}
+      aria-pressed={voiceMode !== "off"}
+      title={`Switch to ${nextMode === "elevenlabs" ? "ElevenLabs" : nextMode === "browser" ? "browser" : "no"} voice`}
     >
       <AiVoice aria-hidden="true" />
-      <span>Voice: {useElevenLabs ? "ElevenLabs" : "Browser"}</span>
+      <span>Voice: {voiceLabel}</span>
     </button>
   );
 }

@@ -1,10 +1,9 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { GameState, NpcTurn, PLAYER_IDS, Player, PlayerId } from "@/lib/game/types";
-import { legalTargets } from "@/lib/game/selectors";
+import { getPlayer, legalTargets } from "@/lib/game/selectors";
 import { roleActionTargets } from "@/lib/game/role-actions";
 import { mentionsPlayer, normalizeSpeech } from "@/lib/game/speech-analysis";
-import { fallbackLineFor } from "./personas";
 import { buildNpcPrompt } from "./prompts";
 
 type OpenAIApiMode = "responses" | "chat";
@@ -174,14 +173,51 @@ function fallbackNpcTurn(state: GameState, player: Player, reason: string): NpcT
   const legalRoleTargets = roleActionTargets(state, player);
   const target = chooseFallbackTarget(state, legalVoteTargets, player.id);
   const roleTarget = chooseFallbackTarget(state, legalRoleTargets, player.id);
+  const fallbackSpeech =
+    state.phase === "day-vote" && target
+      ? fallbackVoteLine(state, player, target)
+      : state.phase === "day-discussion"
+        ? fallbackDiscussionLine(state, player)
+      : fallbackLineForPlayer(player, state.transcript.length + player.seat);
 
   return {
     inner_monologue: `Fallback turn used: ${reason}`,
-    speech: fallbackLineFor(player.id as Exclude<PlayerId, "player_6">, state.transcript.length + player.seat),
+    speech: fallbackSpeech,
     vote: state.phase === "day-vote" ? target : null,
     role_action: state.phase === "night" ? roleTarget : null,
     source: "fallback"
   };
+}
+
+function fallbackLineForPlayer(player: Player, index: number): string {
+  const lines = player.fallbackLines?.length
+    ? player.fallbackLines
+    : ["I do not like that answer. Something about it is too clean."];
+  return lines[index % lines.length];
+}
+
+function fallbackDiscussionLine(state: GameState, player: Player): string {
+  const latest = state.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "speech").at(-1);
+  if (latest?.speakerId === "player_6") {
+    if (/mafia|kill|destroy|fuck|shit|ass|crack|bend|puh/i.test(latest.text)) {
+      return `${latest.speakerName}, what the fuck are you talking about? That is not a read, that is you setting the room on fire. Name a suspect or stop wasting the table's time.`;
+    }
+    return `${latest.speakerName}, slow down and make that useful. Give me one name, one reason, and who benefits if we follow you.`;
+  }
+
+  return fallbackLineForPlayer(player, state.transcript.length + player.seat);
+}
+
+function fallbackVoteLine(state: GameState, player: Player, targetId: PlayerId): string {
+  const target = getPlayer(state, targetId);
+  const note = target.notes.at(-1);
+  if (note) {
+    return `I vote for ${target.name}. The pattern on them is the clearest thing at the table: ${note}`;
+  }
+  if (player.role === "mafia" && target.role !== "mafia") {
+    return `I vote for ${target.name}. This keeps the heat away from the wrong people and gives the table a clean name to test.`;
+  }
+  return `I vote for ${target.name}. I do not love this read, but they have the least convincing position right now.`;
 }
 
 function chooseFallbackTarget(state: GameState, targets: PlayerId[], actorId: PlayerId): PlayerId | null {
@@ -258,7 +294,10 @@ function repairMisaddressedReply(state: GameState, player: Player, speech: strin
 }
 
 function forceSelfReferencesToFirstPerson(player: Player, speech: string): string {
-  const names = [player.name, player.name.split(" ")[0]].filter((name) => name.length > 1).sort((left, right) => right.length - left.length);
+  const firstName = player.name.split(" ")[0];
+  const names = [player.name, firstName === "Don" ? "" : firstName]
+    .filter((name) => name.length > 1)
+    .sort((left, right) => right.length - left.length);
   let fixed = speech;
 
   for (const name of names) {

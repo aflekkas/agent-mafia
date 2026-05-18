@@ -1,4 +1,5 @@
 import { GameState, Player, PlayerId, Role, TranscriptEntry } from "./types";
+import { transcriptToneNote } from "./profanity";
 import { analyzeSpeechStance, mentionedPlayersInText, mentionsPlayer, normalizeSpeech, shortQuote } from "./speech-analysis";
 
 export function getPlayer(state: GameState, playerId: PlayerId): Player {
@@ -60,20 +61,24 @@ export function legalTargets(
   return living.filter((player) => player.id !== actorId).map((player) => player.id);
 }
 
-export function publicTranscriptSummary(state: GameState, limit = 12): string {
-  const publicEntries = state.transcript.filter((entry) => !entry.privateTo?.length);
+export function publicTranscriptSummary(state: GameState, limit = 12, options: { hideActiveVotes?: boolean } = {}): string {
+  const publicEntries = state.transcript.filter((entry) => !entry.privateTo?.length && !shouldHideActiveVote(state, entry, options));
   return publicEntries
     .slice(-limit)
-    .map((entry) => `${entry.speakerName}: ${entry.text}`)
+    .map((entry) => `${entry.speakerName}: ${entry.text}${transcriptToneNote(entry)}`)
     .join("\n");
 }
 
-export function publicConversationLedger(state: GameState, limit = 14): string {
+export function publicConversationLedger(state: GameState, limit = 14, options: { hideActiveVotes?: boolean } = {}): string {
   const publicEntries = state.transcript.filter(
-    (entry) => !entry.privateTo?.length && ["speech", "vote"].includes(entry.kind)
+    (entry) => !entry.privateTo?.length && ["speech", "vote"].includes(entry.kind) && !shouldHideActiveVote(state, entry, options)
   );
   const lines = publicEntries.flatMap((entry) => describePublicEntry(state, entry));
   return lines.slice(-limit).join("\n");
+}
+
+function shouldHideActiveVote(state: GameState, entry: TranscriptEntry, options: { hideActiveVotes?: boolean }): boolean {
+  return !!options.hideActiveVotes && state.phase === "day-vote" && entry.day === state.day && entry.kind === "vote";
 }
 
 export function privateKnowledgeFor(state: GameState, playerId: PlayerId): string {
@@ -99,7 +104,7 @@ export function privateKnowledgeFor(state: GameState, playerId: PlayerId): strin
     facts.push(
       privateEntries
         .slice(-4)
-        .map((entry) => `${entry.speakerName}: ${entry.text}`)
+        .map((entry) => `${entry.speakerName}: ${entry.text}${transcriptToneNote(entry)}`)
         .join("\n")
     );
   }
@@ -111,8 +116,8 @@ function describePublicEntry(state: GameState, entry: TranscriptEntry): string[]
   if (entry.kind === "vote") {
     const target = targetFromVoteText(state, entry.text);
     return target
-      ? [`- ${entry.speakerName} voted for ${target.name}: "${shortQuote(entry.text)}"`]
-      : [`- ${entry.speakerName} cast a vote: "${shortQuote(entry.text)}"`];
+      ? [`- ${entry.speakerName} voted for ${target.name}: "${shortQuote(entry.text)}"${transcriptToneNote(entry)}`]
+      : [`- ${entry.speakerName} cast a vote: "${shortQuote(entry.text)}"${transcriptToneNote(entry)}`];
   }
 
   if (entry.kind !== "speech") {
@@ -121,11 +126,13 @@ function describePublicEntry(state: GameState, entry: TranscriptEntry): string[]
 
   const targets = mentionedPlayersInText(state.players, entry.text, entry.speakerId as PlayerId);
   if (!targets.length) {
-    return [`- ${entry.speakerName} spoke without naming a target: "${shortQuote(entry.text)}"`];
+    return [`- ${entry.speakerName} spoke without naming a target: "${shortQuote(entry.text)}"${transcriptToneNote(entry)}`];
   }
 
   const stance = analyzeSpeechStance(entry.text).ledger;
-  return targets.map((target) => `- ${entry.speakerName} ${stance} ${target.name}: "${shortQuote(entry.text, 120)}"`);
+  return targets.map(
+    (target) => `- ${entry.speakerName} ${stance} ${target.name}: "${shortQuote(entry.text, 120)}"${transcriptToneNote(entry)}`
+  );
 }
 
 function targetFromVoteText(state: GameState, text: string): Player | undefined {
