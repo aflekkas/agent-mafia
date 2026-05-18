@@ -49,6 +49,7 @@ export interface Player {
   notes: string[];
   voiceLabel: string;
   characterId?: string;
+  characterSummary?: string;
   portraitSrc?: string;
   personalityStyle?: string;
   fallbackLines?: string[];

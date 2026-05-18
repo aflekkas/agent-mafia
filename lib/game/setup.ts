@@ -87,6 +87,7 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
       trust: 0,
       notes: [],
       characterId: profile?.id,
+      characterSummary: profile?.summary,
       portraitSrc: profile?.portraitSrc,
       personalityStyle: profile?.style,
       fallbackLines: profile?.fallbackLines,

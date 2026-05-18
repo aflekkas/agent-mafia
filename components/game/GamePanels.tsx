@@ -121,10 +121,13 @@ export function TableScene2D({
       </div>
       {game.players.map((player) => {
         const portraitSrc = player.id === "player_6" ? avatarFor(humanAvatar).src : player.portraitSrc;
+        const characterProfile = characterProfileTextFor(player);
 
         return (
           <div
             key={player.id}
+            tabIndex={0}
+            aria-label={`${player.name}. ${characterProfile.summary}. ${characterProfile.description}`}
             className={`portrait seat-${player.seat} ${player.id === "player_6" ? "human-seat" : ""} ${
               player.alive ? "" : "dead"
             } ${active === player.id ? "active" : ""}`}
@@ -134,6 +137,10 @@ export function TableScene2D({
             </div>
             <strong>{player.name}</strong>
             <span>{player.id === "player_6" ? "you" : player.alive ? suspicionLabel(player.suspicion) : "eliminated"}</span>
+            <div className="character-peek" aria-hidden="true">
+              <strong>{characterProfile.summary}</strong>
+              <p>{characterProfile.description}</p>
+            </div>
           </div>
         );
       })}
@@ -389,6 +396,20 @@ function portraitSrcForSpeaker(entry: TranscriptEntry, game: GameState, humanAva
   }
 
   return speaker.id === "player_6" ? avatarFor(humanAvatar).src : speaker.portraitSrc;
+}
+
+function characterProfileTextFor(player: Player): { summary: string; description: string } {
+  if (player.id === "player_6") {
+    return {
+      summary: "Your seat",
+      description: "The human player at the table. Use your role, private knowledge, and the room's pressure to shape your own personality."
+    };
+  }
+
+  return {
+    summary: player.characterSummary ?? "Personality profile",
+    description: player.personalityStyle ?? "Compact, suspicious, characterful, and reactive to pressure."
+  };
 }
 
 function suspicionLabel(score: number): string {
