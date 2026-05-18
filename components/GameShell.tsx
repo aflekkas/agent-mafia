@@ -23,22 +23,28 @@ type BrowserSpeechWindow = Window & {
   webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
 };
 
+type VoiceMode = "browser" | "elevenlabs";
+
+const AUDIO_MUTED_STORAGE_KEY = "agent-mafia.audioMuted";
+
 const ROLE_COPY: Record<string, string> = {
   mafia: "Lie, survive, and bring the town down to parity.",
   detective: "Investigate at night. Use truth carefully.",
   doctor: "Save one soul each night. Guess well.",
-  villager: "No power. Read the room and vote."
+  villager: "No power. Read the room and vote.",
+  unknown: "Hidden until the game ends."
 };
 
 export function GameShell() {
   const [game, setGame] = useState<GameState | null>(null);
   const [busy, setBusy] = useState(false);
   const [humanText, setHumanText] = useState("");
-  const [muted, setMuted] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(true);
   const [listening, setListening] = useState(false);
   const [status, setStatus] = useState("Ready.");
+  const [audioMuted, setAudioMuted] = useState(true);
+  const voiceMode: VoiceMode = "browser";
   const spokenEntryRef = useRef<string | null>(null);
+  const elevenLabsAudioCacheRef = useRef<Map<string, Blob>>(new Map());
 
   const human = useMemo(() => game?.players.find((player) => player.id === "player_6"), [game]);
   const latestPublicEntry = useMemo(() => {
@@ -46,19 +52,36 @@ export function GameShell() {
   }, [game]);
 
   useEffect(() => {
-    if (!latestPublicEntry || muted || spokenEntryRef.current === latestPublicEntry.id) {
+    const storedMute = window.localStorage.getItem(AUDIO_MUTED_STORAGE_KEY);
+    const shouldMute = storedMute === null ? true : storedMute === "true";
+    window.localStorage.setItem(AUDIO_MUTED_STORAGE_KEY, String(shouldMute));
+    setAudioMuted(shouldMute);
+    if (shouldMute && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!latestPublicEntry || spokenEntryRef.current === latestPublicEntry.id) {
       return;
     }
     spokenEntryRef.current = latestPublicEntry.id;
-    void speakEntry(latestPublicEntry, setStatus);
-  }, [latestPublicEntry, muted]);
+    if (audioMuted) {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setStatus("Sound muted.");
+      return;
+    }
+    void speakEntry(latestPublicEntry, voiceMode, elevenLabsAudioCacheRef.current, setStatus);
+  }, [audioMuted, latestPublicEntry, voiceMode]);
 
   useEffect(() => {
-    if (!game || !autoPlay || busy || game.currentPrompt || game.phase === "game-over") {
+    if (!game || busy || game.currentPrompt || game.phase === "game-over") {
       return;
     }
 
-    const delay = game.phase === "role-reveal" ? 2200 : latestPublicEntry?.kind === "speech" ? 2800 : 1400;
+    const delay = game.phase === "role-reveal" ? 3600 : latestPublicEntry?.kind === "speech" ? 3200 : 1600;
     const timer = window.setTimeout(() => {
       void advance(false);
     }, delay);
@@ -99,8 +122,10 @@ export function GameShell() {
         if (current.currentPrompt || current.phase === "game-over") {
           break;
         }
-        const response = await fetch(`/api/game/${current.id}/advance`, {
-          method: "POST"
+        const response = await fetch(`/api/game/${current.id}/action`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ type: "advance" })
         });
         const data = (await response.json()) as ApiGameResponse;
         current = data.game;
@@ -206,48 +231,47 @@ export function GameShell() {
     }
   }
 
-  return (
-    <main className="shell">
-      <section className="topbar">
-        <div>
-          <p className="eyebrow">Uncommon Hacks 2026</p>
-          <h1>Agent Mafia</h1>
-        </div>
-        <div className="topbar-actions">
-          <button onClick={() => start()} disabled={busy}>
-            New Game
-          </button>
-          <button onClick={() => start("scenario-a")} disabled={busy}>
-            Scenario A
-          </button>
-          <button onClick={() => start("scenario-b")} disabled={busy}>
-            Scenario B
-          </button>
-          <button onClick={() => setMuted((value) => !value)} className={muted ? "danger" : ""}>
-            {muted ? "Muted" : "Voice On"}
-          </button>
-          <button onClick={() => setAutoPlay((value) => !value)} className={autoPlay ? "" : "danger"}>
-            {autoPlay ? "Auto Play" : "Manual"}
-          </button>
-        </div>
-      </section>
+  function toggleAudioMuted() {
+    setAudioMuted((muted) => {
+      const nextMuted = !muted;
+      window.localStorage.setItem(AUDIO_MUTED_STORAGE_KEY, String(nextMuted));
+      if (nextMuted && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setStatus(nextMuted ? "Sound muted." : "Sound on.");
+      return nextMuted;
+    });
+  }
 
-      {!game || !human ? (
-        <section className="empty-state">
-          <div className="empty-scene" aria-hidden="true">
-            <div className="candle-mark" />
-            <div className="empty-seat seat-a" />
-            <div className="empty-seat seat-b" />
-            <div className="empty-seat seat-c" />
-            <div className="empty-seat seat-d" />
-            <div className="empty-seat seat-e" />
+  const isHome = !game || !human;
+
+  return (
+    <main className={`shell ${isHome ? "home-shell" : ""}`}>
+      {isHome ? null : (
+        <section className="topbar">
+          <div>
+            <p className="eyebrow">Voice-first social deduction</p>
+            <h1>Agent Mafia</h1>
           </div>
+          <button
+            type="button"
+            className={`mute-button ${audioMuted ? "muted" : ""}`}
+            onClick={toggleAudioMuted}
+            aria-pressed={audioMuted}
+            aria-label={audioMuted ? "Unmute game sound" : "Mute game sound"}
+            title={audioMuted ? "Unmute game sound" : "Mute game sound"}
+          >
+            {audioMuted ? "Sound Off" : "Sound On"}
+          </button>
+        </section>
+      )}
+
+      {isHome ? (
+        <section className="empty-state">
           <div className="empty-copy">
+            <p className="eyebrow">Voice-first social deduction</p>
             <h2>Six seats. Five voices. One secret.</h2>
-            <p>Speak, accuse, vote. The table handles the rest.</p>
-            <button onClick={() => start()} disabled={busy}>
-              Start Booth Demo
-            </button>
+            <button onClick={() => start()} disabled={busy}>Start Game</button>
           </div>
         </section>
       ) : (
@@ -265,7 +289,6 @@ export function GameShell() {
               setHumanText={setHumanText}
               busy={busy}
               listening={listening}
-              onBegin={() => advance(false)}
               onSubmitSpeech={submitSpeech}
               onStartListening={startListening}
               onSubmitVote={submitVote}
@@ -307,31 +330,9 @@ function PhasePanel({ game, status, busy }: { game: GameState; status: string; b
   );
 }
 
-function ControlPanel({
-  game,
-  busy,
-  onAdvance
-}: {
-  game: GameState;
-  busy: boolean;
-  onAdvance: (loop?: boolean) => void;
-}) {
-  const blocked = Boolean(game.currentPrompt) || game.phase === "game-over";
-  return (
-    <section className="panel controls">
-      <button onClick={() => onAdvance(false)} disabled={busy || blocked}>
-        Continue
-      </button>
-      <button onClick={() => onAdvance(true)} disabled={busy || blocked}>
-        Run To Player
-      </button>
-      <p>{game.currentPrompt ? "Waiting for Player 6." : "Auto Play advances NPC and narrator turns."}</p>
-    </section>
-  );
-}
-
 function TableScene2D({ game }: { game: GameState }) {
   const active = game.activeSpeakerId;
+  const bubble = game.transcript.filter((entry) => !entry.privateTo?.length && ["speech", "narration"].includes(entry.kind)).at(-1);
   return (
     <section className={`table-scene phase-${game.phase}`}>
       <div className="table-vignette" />
@@ -344,14 +345,21 @@ function TableScene2D({ game }: { game: GameState }) {
       {game.players.map((player) => (
         <div
           key={player.id}
-          className={`portrait seat-${player.seat} ${player.alive ? "" : "dead"} ${active === player.id ? "active" : ""}`}
+          className={`portrait seat-${player.seat} ${player.id === "player_6" ? "human-seat" : ""} ${
+            player.alive ? "" : "dead"
+          } ${active === player.id ? "active" : ""}`}
         >
           <div className="portrait-face">{player.name.slice(0, 1)}</div>
           <strong>{player.name}</strong>
-          <span>{player.alive ? suspicionLabel(player.suspicion) : "eliminated"}</span>
+          <span>{player.id === "player_6" ? "you" : player.alive ? suspicionLabel(player.suspicion) : "eliminated"}</span>
         </div>
       ))}
-      {active === "narrator" ? <div className="narrator-glow">Narrator</div> : null}
+      {bubble ? (
+        <div className={`speech-bubble ${bubble.speakerId === "narrator" ? "narrator-bubble" : ""}`}>
+          <strong>{bubble.speakerName}</strong>
+          <p>{bubble.text}</p>
+        </div>
+      ) : null}
       {game.eliminatedThisRound ? <div className="blood-flash" /> : null}
     </section>
   );
@@ -363,7 +371,6 @@ function HumanPanel({
   setHumanText,
   busy,
   listening,
-  onBegin,
   onSubmitSpeech,
   onStartListening,
   onSubmitVote,
@@ -374,7 +381,6 @@ function HumanPanel({
   setHumanText: (text: string) => void;
   busy: boolean;
   listening: boolean;
-  onBegin: () => void;
   onSubmitSpeech: () => void;
   onStartListening: () => void;
   onSubmitVote: (targetId: PlayerId) => void;
@@ -382,19 +388,6 @@ function HumanPanel({
 }) {
   const human = game.players.find((player) => player.id === "player_6");
   const prompt = game.currentPrompt;
-
-  if (prompt === "role-reveal-ready") {
-    return (
-      <section className="human-panel role-ready">
-        <p className="eyebrow">You are {human?.role}</p>
-        <h3>Read your card. The table will wait.</h3>
-        <p>{human ? ROLE_COPY[human.role] : "Your private role is ready."}</p>
-        <button onClick={onBegin} disabled={busy}>
-          Begin First Night
-        </button>
-      </section>
-    );
-  }
 
   if (!prompt || !human?.alive) {
     return (
@@ -509,43 +502,66 @@ function VoteBoard({ game }: { game: GameState }) {
   );
 }
 
-async function speakEntry(entry: TranscriptEntry, setStatus: (status: string) => void) {
+async function speakEntry(
+  entry: TranscriptEntry,
+  voiceMode: VoiceMode,
+  elevenLabsAudioCache: Map<string, Blob>,
+  setStatus: (status: string) => void
+) {
   if (entry.kind !== "speech" && entry.kind !== "narration") {
     return;
   }
 
-  try {
-    const response = await fetch("/api/speak", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        speakerId: entry.speakerId,
-        text: entry.text
-      })
-    });
-
-    const contentType = response.headers.get("content-type") ?? "";
-    if (response.ok && contentType.includes("audio/")) {
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => URL.revokeObjectURL(url);
-      await audio.play();
-      setStatus("Played ElevenLabs voice.");
+  if (voiceMode === "elevenlabs") {
+    const cacheKey = `${entry.speakerId}:${entry.text}`;
+    const cachedAudio = elevenLabsAudioCache.get(cacheKey);
+    if (cachedAudio) {
+      await playAudioBlob(cachedAudio);
+      setStatus("Played cached ElevenLabs voice.");
       return;
     }
-  } catch {
-    // Browser speech fallback below.
+
+    try {
+      const response = await fetch("/api/speak", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          speakerId: entry.speakerId,
+          text: entry.text
+        })
+      });
+
+      const contentType = response.headers.get("content-type") ?? "";
+      if (response.ok && contentType.includes("audio/")) {
+        const blob = await response.blob();
+        elevenLabsAudioCache.set(cacheKey, blob);
+        await playAudioBlob(blob);
+        setStatus("Played ElevenLabs voice.");
+        return;
+      }
+    } catch {
+      // Browser speech fallback below.
+    }
   }
 
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(`${entry.speakerName}. ${entry.text}`);
-    utterance.rate = entry.speakerId === "vincenzo" ? 1.08 : entry.speakerId === "narrator" ? 0.82 : 0.95;
+    utterance.rate = browserVoiceRateFor(entry.speakerId);
     utterance.pitch = pitchFor(entry.speakerId);
+    utterance.volume = entry.speakerId === "narrator" ? 0.92 : 1;
+    utterance.voice = browserVoiceFor(entry.speakerId);
     window.speechSynthesis.speak(utterance);
-    setStatus("Played browser voice fallback.");
+    setStatus(voiceMode === "elevenlabs" ? "ElevenLabs unavailable; played browser voice." : "Played browser voice.");
   }
+}
+
+async function playAudioBlob(blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  audio.onended = () => URL.revokeObjectURL(url);
+  audio.onerror = () => URL.revokeObjectURL(url);
+  await audio.play();
 }
 
 function nightTargets(game: GameState): Player[] {
@@ -616,4 +632,45 @@ function pitchFor(speakerId: SpeakerId): number {
     return 0.72;
   }
   return 0.95;
+}
+
+function browserVoiceRateFor(speakerId: SpeakerId): number {
+  if (speakerId === "vincenzo") {
+    return 1.12;
+  }
+  if (speakerId === "carmela") {
+    return 1.06;
+  }
+  if (speakerId === "rosa") {
+    return 1.03;
+  }
+  if (speakerId === "narrator") {
+    return 0.78;
+  }
+  if (speakerId === "don_vito") {
+    return 0.86;
+  }
+  return 0.94;
+}
+
+function browserVoiceFor(speakerId: SpeakerId): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  const preferredNames: Partial<Record<SpeakerId, string[]>> = {
+    narrator: ["Daniel", "Fred", "Grandpa", "Google UK English Male", "Microsoft George"],
+    don_vito: ["Daniel", "Google UK English Male", "Microsoft George", "Alex"],
+    salvatore: ["Alex", "Microsoft Guy", "Google US English", "Tom"],
+    rosa: ["Samantha", "Victoria", "Google US English", "Microsoft Jenny"],
+    vincenzo: ["Fred", "Ralph", "Microsoft Guy", "Alex"],
+    carmela: ["Samantha", "Victoria", "Microsoft Aria", "Google US English"]
+  };
+  const preferred = preferredNames[speakerId] ?? [];
+
+  return (
+    preferred
+      .map((name) => voices.find((voice) => voice.name.toLowerCase().includes(name.toLowerCase())))
+      .find(Boolean) ??
+    voices.find((voice) => voice.lang.toLowerCase().startsWith("en") && voice.localService) ??
+    voices.find((voice) => voice.lang.toLowerCase().startsWith("en")) ??
+    null
+  );
 }

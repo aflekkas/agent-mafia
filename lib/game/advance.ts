@@ -15,7 +15,7 @@ export async function advanceGame(input: GameState): Promise<GameState> {
     return state;
   }
 
-  if (state.currentPrompt && state.currentPrompt !== "role-reveal-ready") {
+  if (state.currentPrompt) {
     return state;
   }
 
@@ -54,20 +54,23 @@ export function submitHumanSpeech(state: GameState, text: string): GameState {
   const queue = state.turnOrder.discussionQueue;
   const nextQueue = queue[0] === "player_6" ? queue.slice(1) : queue;
 
-  return addTranscript(
-    {
-      ...state,
-      currentPrompt: undefined,
-      turnOrder: {
-        ...state.turnOrder,
-        discussionQueue: nextQueue
+  return applyHumanSpeechSuspicion(
+    addTranscript(
+      {
+        ...state,
+        currentPrompt: undefined,
+        turnOrder: {
+          ...state.turnOrder,
+          discussionQueue: nextQueue
+        },
+        lastError: undefined
       },
-      lastError: undefined
-    },
-    "player_6",
-    "Player 6",
-    trimmed,
-    "speech"
+      "player_6",
+      "Player 6",
+      trimmed,
+      "speech"
+    ),
+    trimmed
   );
 }
 
@@ -187,7 +190,7 @@ async function advanceDiscussion(state: GameState): Promise<GameState> {
         votes: [],
         turnOrder: {
           discussionQueue: [],
-          voteQueue: alivePlayers(state).map((player) => player.id),
+          voteQueue: buildVoteQueue(state),
           nightQueue: []
         }
       },
@@ -245,6 +248,11 @@ async function advanceDiscussion(state: GameState): Promise<GameState> {
   );
 
   return applySuspicionFromSpeech(withSpeech, turn.speech, speaker.id);
+}
+
+function buildVoteQueue(state: GameState): PlayerId[] {
+  const alive = alivePlayers(state).sort((left, right) => left.seat - right.seat);
+  return alive.map((player) => player.id);
 }
 
 async function advanceVote(state: GameState): Promise<GameState> {
@@ -327,14 +335,36 @@ export function submitHumanVote(state: GameState, targetId: PlayerId): GameState
 }
 
 export function submitHumanNightAction(state: GameState, targetId: PlayerId): GameState {
-  return submitNightAction(state, "player_6", targetId);
+  const human = getHuman(state);
+  const target = getPlayer(state, targetId);
+  const withAction = submitNightAction(state, "player_6", targetId);
+  if (withAction.lastError) {
+    return withAction;
+  }
+
+  const roleText =
+    human.role === "mafia"
+      ? `You chose ${target.name}. The rest of the table will learn the result at dawn.`
+      : human.role === "doctor"
+        ? `You chose to protect ${target.name}.`
+        : human.role === "detective"
+          ? `You investigated ${target.name}.`
+          : `You chose ${target.name}.`;
+
+  return addTranscript(withAction, "system", "Private note", roleText, "action", ["player_6"]);
 }
 
 function buildDiscussionQueue(state: GameState): PlayerId[] {
   const alive = alivePlayers(state).sort((left, right) => left.seat - right.seat);
-  const firstPass = alive.map((player) => player.id);
-  const secondPass = alive.filter((player) => !player.isHuman).map((player) => player.id);
-  return [...firstPass, ...secondPass.slice(0, 3)];
+  const human = alive.find((player) => player.isHuman);
+  const npcs = alive.filter((player) => !player.isHuman);
+  const firstSpeaker = npcs[0]?.id;
+  const remainingNpcs = npcs.slice(1).map((player) => player.id);
+  const humanId = human?.id;
+  const roundOne = [firstSpeaker, humanId, ...remainingNpcs].filter(Boolean) as PlayerId[];
+  const roundTwo = [...npcs.map((player) => player.id), humanId].filter(Boolean) as PlayerId[];
+  const roundThree = npcs.map((player) => player.id);
+  return [...roundOne, ...roundTwo, ...roundThree];
 }
 
 function addInnerMonologue(state: GameState, playerId: PlayerId, text: string): GameState {
@@ -360,10 +390,15 @@ function firstNpcOrFirst(players: Player[]): Player | undefined {
 function fallbackVoteTarget(state: GameState, voterId: PlayerId): PlayerId {
   const voter = getPlayer(state, voterId);
   const targets = alivePlayers(state).filter((player) => player.id !== voterId);
+  const demoSafeTargets =
+    state.day === 1 && targets.length > 1 && voterId !== "player_6"
+      ? targets.filter((player) => player.id !== "player_6")
+      : targets;
   const preferred = targets
+    .filter((player) => demoSafeTargets.includes(player))
     .filter((player) => (voter.role === "mafia" ? player.role !== "mafia" : player.role === "mafia"))
     .sort((left, right) => right.suspicion - left.suspicion || left.seat - right.seat)[0];
-  return (preferred ?? targets[0]).id;
+  return (preferred ?? demoSafeTargets[0] ?? targets[0]).id;
 }
 
 function applySuspicionFromSpeech(state: GameState, speech: string, speakerId: PlayerId): GameState {
@@ -380,6 +415,37 @@ function applySuspicionFromSpeech(state: GameState, speech: string, speakerId: P
         ? {
             ...player,
             suspicion: player.suspicion + 1
+          }
+        : player;
+    })
+  });
+}
+
+function applyHumanSpeechSuspicion(state: GameState, speech: string): GameState {
+  const lowered = speech.toLowerCase();
+  const vague = lowered.length < 55 || /\b(not sure|listening|maybe|i guess|hard to say)\b/.test(lowered);
+
+  return touch({
+    ...state,
+    players: state.players.map((player) => {
+      if (!player.alive) {
+        return player;
+      }
+      if (player.id === "player_6") {
+        return vague
+          ? {
+              ...player,
+              suspicion: player.suspicion + 1,
+              notes: [...player.notes, "Player 6 sounded vague under pressure."]
+            }
+          : player;
+      }
+      const firstName = player.name.toLowerCase().split(" ")[0];
+      const mentioned = lowered.includes(firstName) || lowered.includes(player.name.toLowerCase());
+      return mentioned
+        ? {
+            ...player,
+            suspicion: player.suspicion + 2
           }
         : player;
     })

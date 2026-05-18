@@ -75,7 +75,7 @@ export function createGame(seed = `demo-${Date.now()}`): GameState {
     day: 1,
     players,
     activeSpeakerId: "narrator",
-    currentPrompt: "role-reveal-ready",
+    currentPrompt: undefined,
     transcript: [],
     innerMonologues: [],
     votes: [],

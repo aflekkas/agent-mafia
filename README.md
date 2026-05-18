@@ -24,6 +24,19 @@ Built as a personal voice-first game prototype.
 - **Visual signature** — Three.js POV pan camera, pixelated post-process, candlelit table, dark/gloomy. Indie aesthetic, anti-generic.
 - **Shareable moments.** Agent personalities, narrator delivery, and the human at the table should produce short, memorable clips.
 
+## Run Locally
+
+This project uses `npm`.
+
+```bash
+npm install
+npm run dev -- -p 3001
+```
+
+Open `http://localhost:3001`.
+
+Optional AI/voice keys live in `.env`. Copy `.env.example` if needed. With no ElevenLabs key, the app keeps a browser speech fallback and text input still works.
+
 ## Files
 
 - `CLAUDE.md` — Claude context and decisions
@@ -34,4 +47,4 @@ Built as a personal voice-first game prototype.
 
 ## Status
 
-Personal prototype planning phase. Current focus is defining the playable loop, voice architecture, visual direction, and fallback paths before expanding implementation scope.
+Phase 1 is a local playable prototype: real role assignment, night actions, day discussion, voting, elimination, win/loss checks, OpenAI-backed NPC dialogue with fallbacks, Player 6 input, transcript, role card, noir table UI, and an in-app sound mute.

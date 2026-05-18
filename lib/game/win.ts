@@ -20,7 +20,7 @@ export function checkWinCondition(state: GameState): GameState {
     });
   }
 
-  if (mafia.length >= town.length) {
+  if (mafia.length >= town.length && state.day > 1) {
     return touch({
       ...state,
       phase: "game-over",

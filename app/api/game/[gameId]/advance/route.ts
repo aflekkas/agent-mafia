@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { advanceGame } from "@/lib/game/advance";
+import { redactGameForPlayer } from "@/lib/game/redact";
 import { getGame, saveGame } from "@/lib/store/game-store";
 
 export async function POST(_request: Request, context: { params: Promise<{ gameId: string }> }) {
@@ -11,5 +12,5 @@ export async function POST(_request: Request, context: { params: Promise<{ gameI
 
   const next = await advanceGame(game);
   saveGame(next);
-  return NextResponse.json({ game: next });
+  return NextResponse.json({ game: redactGameForPlayer(next) });
 }

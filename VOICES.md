@@ -51,7 +51,7 @@ Source: https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice
 
 Validation: regex `<(NARRATOR|DON_VITO|SALVATORE|ROSA|VINCENZO|CARMELA)>` server-side before forwarding SSE chunk. Reject malformed tags.
 
-**Pre-event verification:** confirm underscore-separated labels parse correctly in EL Agents test playground.
+**Verification:** confirm underscore-separated labels parse correctly in the ElevenLabs Agents test playground.
 
 ## Audio Tag Mapping (per-voice, per-phase)
 

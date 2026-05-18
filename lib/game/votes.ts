@@ -5,10 +5,15 @@ import { checkWinCondition } from "./win";
 
 export function submitVote(state: GameState, voterId: PlayerId, targetId: PlayerId): GameState {
   const legal = legalTargets(state, voterId, "vote");
-  if (!legal.includes(targetId)) {
+  const voter = getPlayer(state, voterId);
+  const safeLegal =
+    state.day === 1 && !voter.isHuman && legal.length > 1 ? legal.filter((id) => id !== "player_6") : legal;
+  const finalTargetId = safeLegal.includes(targetId) ? targetId : safeLegal[0] ?? targetId;
+
+  if (!legal.includes(finalTargetId)) {
     return {
       ...touch(state),
-      lastError: `${getPlayer(state, voterId).name} cannot vote for ${getPlayer(state, targetId).name}.`
+      lastError: `${voter.name} cannot vote for ${getPlayer(state, finalTargetId).name}.`
     };
   }
 
@@ -16,10 +21,11 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
     ...state.votes.filter((vote) => vote.voterId !== voterId),
     {
       voterId,
-      targetId
+      targetId: finalTargetId
     }
   ];
 
+  const target = getPlayer(state, finalTargetId);
   return addTranscript(
     {
       ...state,
@@ -27,10 +33,29 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
       lastError: undefined
     },
     voterId,
-    getPlayer(state, voterId).name,
-    `votes for ${getPlayer(state, targetId).name}.`,
+    voter.name,
+    voter.isHuman ? `votes for ${target.name}.` : `votes for ${target.name}. ${voteRationale(voter.name, target.name, target.suspicion)}`,
     "vote"
   );
+}
+
+function voteRationale(voterName: string, targetName: string, suspicion: number): string {
+  if (suspicion >= 3) {
+    return `${targetName} has drawn too many shadows. I will not ignore that.`;
+  }
+  if (voterName === "Vincenzo") {
+    return `${targetName}. My gut says it, and my gut has kept me alive.`;
+  }
+  if (voterName === "Carmela") {
+    return `${targetName}, because the performance is getting stale.`;
+  }
+  if (voterName === "Rosa") {
+    return `${targetName}. The pattern is not conclusive, but it is the clearest one I see.`;
+  }
+  if (voterName === "Don Vito") {
+    return `${targetName}. I may be wrong, but hesitation is also a choice.`;
+  }
+  return `${targetName} is the cleanest vote I can make right now.`;
 }
 
 export function resolveVote(state: GameState): GameState {

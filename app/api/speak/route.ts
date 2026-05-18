@@ -9,11 +9,20 @@ export async function POST(request: Request) {
   };
   const text = body.text?.trim();
   const voiceId = body.speakerId ? voiceIdForSpeaker(body.speakerId) : undefined;
+  const configuredMaxCharacters = Number.parseInt(process.env.ELEVENLABS_MAX_TTS_CHARS || "900", 10);
+  const maxCharacters = Number.isFinite(configuredMaxCharacters) ? configuredMaxCharacters : 900;
 
   if (!process.env.ELEVENLABS_API_KEY || !voiceId || !text) {
     return NextResponse.json({
       fallback: true,
       reason: !text ? "No text supplied." : "ElevenLabs key or speaker voice id is not configured."
+    });
+  }
+
+  if (text.length > maxCharacters) {
+    return NextResponse.json({
+      fallback: true,
+      reason: `Text is longer than the ElevenLabs safety limit of ${maxCharacters} characters.`
     });
   }
 

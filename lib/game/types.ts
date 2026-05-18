@@ -9,7 +9,7 @@ export const PLAYER_IDS = [
 
 export type PlayerId = (typeof PLAYER_IDS)[number];
 
-export type Role = "mafia" | "detective" | "doctor" | "villager";
+export type Role = "mafia" | "detective" | "doctor" | "villager" | "unknown";
 
 export type Phase =
   | "setup"
@@ -102,6 +102,7 @@ export interface NpcTurn {
   speech: string;
   vote: PlayerId | null;
   role_action: PlayerId | null;
+  source: "openai" | "fallback";
 }
 
 export interface AdvanceResult {

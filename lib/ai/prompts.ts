@@ -25,6 +25,7 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     privateKnowledgeFor(state, player.id),
     "",
     `Recent public transcript:\n${publicTranscriptSummary(state) || "No one has spoken yet."}`,
+    latestHumanInstruction(state),
     "",
     `Legal vote targets by name: ${legalVoteTargets.join(", ") || "none"}`,
     `Legal role-action targets by name: ${roleActionTargets.join(", ") || "none"}`,
@@ -35,6 +36,21 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "For night action, set role_action to a player id from the legal list.",
     "For day-discussion, vote and role_action must be null.",
     `Valid player ids: ${state.players.map((candidate) => candidate.id).join(", ")}`
+  ].join("\n");
+}
+
+function latestHumanInstruction(state: GameState): string {
+  const latestHuman = state.transcript
+    .filter((entry) => entry.speakerId === "player_6" && entry.kind === "speech")
+    .at(-1);
+
+  if (!latestHuman) {
+    return "Player 6 has not spoken publicly yet. Notice that silence if it matters.";
+  }
+
+  return [
+    `Player 6 most recently said: "${latestHuman.text}"`,
+    "You should react to Player 6's actual words when relevant. If they were vague, call that out. If they accused someone, defend, agree, or redirect."
   ].join("\n");
 }
 

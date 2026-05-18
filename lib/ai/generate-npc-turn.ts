@@ -73,7 +73,8 @@ function normalizeTurn(
     inner_monologue: parsed.inner_monologue.trim(),
     speech: parsed.speech.trim(),
     vote,
-    role_action: roleAction
+    role_action: roleAction,
+    source: "openai"
   };
 }
 
@@ -87,13 +88,15 @@ function fallbackNpcTurn(state: GameState, player: Player, reason: string): NpcT
     inner_monologue: `Fallback turn used: ${reason}`,
     speech: fallbackLineFor(player.id as Exclude<PlayerId, "player_6">, state.transcript.length + player.seat),
     vote: state.phase === "day-vote" ? target : null,
-    role_action: state.phase === "night" ? roleTarget : null
+    role_action: state.phase === "night" ? roleTarget : null,
+    source: "fallback"
   };
 }
 
 function roleActionTargets(state: GameState, player: Player): PlayerId[] {
   if (player.role === "mafia") {
-    return legalTargets(state, player.id, "mafia-kill");
+    const targets = legalTargets(state, player.id, "mafia-kill");
+    return state.day === 1 && targets.length > 1 ? targets.filter((id) => id !== "player_6") : targets;
   }
   if (player.role === "doctor") {
     return legalTargets(state, player.id, "doctor-save");

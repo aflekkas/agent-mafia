@@ -148,7 +148,13 @@ function livingDetectives(state: GameState): PlayerId[] {
 
 function buildDiscussionQueue(state: GameState): PlayerId[] {
   const alive = state.players.filter((player) => player.alive).sort((left, right) => left.seat - right.seat);
-  const firstPass = alive.map((player) => player.id);
-  const npcSecondPass = alive.filter((player) => !player.isHuman).map((player) => player.id);
-  return [...firstPass, ...npcSecondPass.slice(0, 3)];
+  const human = alive.find((player) => player.isHuman);
+  const npcs = alive.filter((player) => !player.isHuman);
+  const firstSpeaker = npcs[0]?.id;
+  const remainingNpcs = npcs.slice(1).map((player) => player.id);
+  const humanId = human?.id;
+  const roundOne = [firstSpeaker, humanId, ...remainingNpcs].filter(Boolean) as PlayerId[];
+  const roundTwo = [...npcs.map((player) => player.id), humanId].filter(Boolean) as PlayerId[];
+  const roundThree = npcs.map((player) => player.id);
+  return [...roundOne, ...roundTwo, ...roundThree];
 }
