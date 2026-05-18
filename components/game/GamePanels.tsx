@@ -1,17 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { ComponentType, CSSProperties, SVGProps } from "react";
 import { Check } from "pixelarticons/react/Check";
+import { Clock } from "pixelarticons/react/Clock";
+import { EyeOff } from "pixelarticons/react/EyeOff";
 import { Home } from "pixelarticons/react/Home";
+import { MessageText } from "pixelarticons/react/MessageText";
 import { Mic } from "pixelarticons/react/Mic";
 import { Reload } from "pixelarticons/react/Reload";
+import { SquareAlert } from "pixelarticons/react/SquareAlert";
 import { User } from "pixelarticons/react/User";
+import { UserX } from "pixelarticons/react/UserX";
 import { roleActionTargets, nightPromptTitleForRole } from "@/lib/game/role-actions";
 import { GameState, Player, PlayerId, TranscriptEntry } from "@/lib/game/types";
 import { TableScene3DBackdrop } from "./TableScene3DBackdrop";
-import { ROLE_COPY } from "./constants";
-import { ROLE_PRESENTATION, RoleIconBadge } from "./role-presentation";
+import { ROLE_PRESENTATION, RoleBeatRow, RoleIconBadge } from "./role-presentation";
 import { HumanAvatarId } from "./types";
 import { avatarFor, formatPhase, nameFor, nextActorIdFor } from "./utils";
 
@@ -19,8 +23,6 @@ type CharacterVisualState = "idle" | "quiet" | "thinking" | "speaking" | "suspec
 
 export function RoleCard({ player, game }: { player: Player; game: GameState }) {
   const role = ROLE_PRESENTATION[player.role];
-  const mafiaPartners =
-    player.role === "mafia" ? game.players.filter((candidate) => candidate.id !== player.id && candidate.role === "mafia") : [];
   const detectiveKnownIdentities =
     player.role === "detective"
       ? game.players.filter((candidate) => candidate.detectiveKnownRole).sort((left, right) => left.seat - right.seat)
@@ -28,6 +30,7 @@ export function RoleCard({ player, game }: { player: Player; game: GameState }) 
 
   return (
     <section className={`role-card role-${player.role}`}>
+      <RoleIconBadge role={player.role} className="role-card-watermark" />
       <div className="role-card-header">
         <RoleIconBadge role={player.role} />
         <div>
@@ -35,11 +38,9 @@ export function RoleCard({ player, game }: { player: Player; game: GameState }) 
           <h2>{role.label}</h2>
         </div>
       </div>
-      <p className="role-card-kicker">{role.kicker}</p>
-      <p className="role-card-copy">{ROLE_COPY[player.role]}</p>
-      {mafiaPartners.length ? (
-        <p className="private-intel">Partner: {mafiaPartners.map((partner) => partner.name).join(", ")}</p>
-      ) : null}
+      <p className="role-card-copy">{role.description}</p>
+      <p className="role-card-cue">{role.cue}</p>
+      <RoleBeatRow role={player.role} compact />
       {player.role === "detective" ? (
         <div className="private-intel detective-notebook">
           <strong>Known Identities</strong>
@@ -57,6 +58,7 @@ export function RoleCard({ player, game }: { player: Player; game: GameState }) 
           )}
         </div>
       ) : null}
+      <p className="role-objective">{role.objective}</p>
       <p className="private-note">Only {player.name} sees this card.</p>
     </section>
   );
@@ -138,9 +140,6 @@ export function TableScene2D({
       />
       <div className="table-vignette" />
       <div className="table-core">
-        <div className="candle">
-          <span />
-        </div>
         <p>{game.phase === "night" ? "Night in Palermo" : "The Palermo Table"}</p>
       </div>
       {game.players.map((player) => {
@@ -173,7 +172,13 @@ export function TableScene2D({
               visualState={visualState}
             />
             <strong>{player.name}</strong>
-            <span>{player.id === "player_6" ? "you" : player.alive ? suspicionLabel(player.suspicion) : "eliminated"}</span>
+            <div className="portrait-meta">
+              {player.id === "player_6" ? <span className="portrait-owner">the user</span> : null}
+              <PlayerStateLabel
+                visualState={visualState}
+                label={player.id === "player_6" ? `the user's state: ${visualStateLabel(visualState)}` : seatStateLabel(player, visualState)}
+              />
+            </div>
             <div className="character-peek" aria-hidden="true">
               <strong>{characterProfile.summary}</strong>
               <p>{characterProfile.description}</p>
@@ -200,6 +205,19 @@ export function TableScene2D({
       ) : null}
       {game.eliminatedThisRound ? <div className="blood-flash" /> : null}
     </section>
+  );
+}
+
+type StateIcon = ComponentType<SVGProps<SVGSVGElement>>;
+
+function PlayerStateLabel({ visualState, label }: { visualState: CharacterVisualState; label: string }) {
+  const Icon = STATE_ICON_BY_VISUAL_STATE[visualState];
+
+  return (
+    <span className={`portrait-state portrait-state-${visualState}`}>
+      <Icon aria-hidden="true" />
+      <span>{label}</span>
+    </span>
   );
 }
 
@@ -462,7 +480,7 @@ export function Transcript({ game, humanAvatar }: { game: GameState; humanAvatar
       <div ref={listRef} className="transcript-list" onScroll={handleTranscriptScroll}>
         {humanVisible.map((entry) => {
           const face = faceAssetsForSpeaker(entry, game, humanAvatar);
-          const showTranscriptFace = entry.speakerId !== "narrator";
+          const showTranscriptFace = entry.speakerId !== "narrator" && !entry.privateTo?.length;
 
           return (
             <article key={entry.id} className={`line kind-${entry.kind} ${showTranscriptFace ? "" : "line-without-face"}`}>
@@ -673,6 +691,43 @@ function visualStateForPlayer({
   }
 
   return "idle";
+}
+
+const STATE_ICON_BY_VISUAL_STATE: Record<CharacterVisualState, StateIcon> = {
+  idle: User,
+  quiet: EyeOff,
+  thinking: Clock,
+  speaking: MessageText,
+  suspected: SquareAlert,
+  eliminated: UserX
+};
+
+function visualStateLabel(visualState: CharacterVisualState): string {
+  switch (visualState) {
+    case "thinking":
+      return "thinking";
+    case "speaking":
+      return "speaking";
+    case "suspected":
+      return "under pressure";
+    case "eliminated":
+      return "eliminated";
+    case "quiet":
+      return "quiet";
+    case "idle":
+    default:
+      return "idle";
+  }
+}
+
+function seatStateLabel(player: Player, visualState: CharacterVisualState): string {
+  if (!player.alive) {
+    return "eliminated";
+  }
+  if (visualState === "speaking" || visualState === "thinking") {
+    return visualStateLabel(visualState);
+  }
+  return suspicionLabel(player.suspicion);
 }
 
 function characterProfileTextFor(player: Player): { summary: string; description: string } {

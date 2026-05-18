@@ -34,7 +34,7 @@ Prioritize the playable loop and visible UI over architecture expansion. Avoid l
 
 - Preserve existing local work. This repo may be dirty.
 - Keep changes scoped and demo-safe.
-- After coherent completed work, commit and push to `origin/main` by default so GitHub stays current.
+- After coherent completed work, commit and push to `origin/main` by default so GitHub stays current, but only stage and push the agent's own scoped changes unless the user explicitly asks to include other local work.
 - Use pnpm for dependency installation and scripts. Do not use npm, yarn, or Bun unless the user explicitly asks for that specific package manager.
 - Validate with `pnpm typecheck`; run `pnpm build` after route, config, or UI structure changes.
 - Use `pnpm generate:character -- --dry-run ...` before adding a new character profile, then run the same command without `--dry-run` when the brief is correct. Use `pnpm generate:character-states -- --ids=all --concurrency=1` for existing NPC sprite sheets.

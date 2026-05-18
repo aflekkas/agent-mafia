@@ -25,7 +25,13 @@ export type CharacterPackId =
   | "world-tour-weirdos"
   | "cartoon-crime-table"
   | "office-hell-mafia"
-  | "mythic-reroll-chaos";
+  | "mythic-reroll-chaos"
+  | "flirty-noir"
+  | "checked-out-table"
+  | "gen-z-chaos"
+  | "trap-cypher"
+  | "short-form-mob"
+  | "random-reroll";
 
 export const CHARACTER_PACKS: { id: CharacterPackId; name: string; summary: string }[] = [
   {
@@ -57,6 +63,36 @@ export const CHARACTER_PACKS: { id: CharacterPackId; name: string; summary: stri
     id: "mythic-reroll-chaos",
     name: "Mythic Reroll",
     summary: "Fantasy-adjacent table disasters"
+  },
+  {
+    id: "flirty-noir",
+    name: "Flirty Noir",
+    summary: "Seductive, freaky lounge-table pressure"
+  },
+  {
+    id: "checked-out-table",
+    name: "Checked Out",
+    summary: "Barely playing, accidentally lethal"
+  },
+  {
+    id: "gen-z-chaos",
+    name: "Gen Z Chaos",
+    summary: "Fast slang, memes, and sharp suspicion"
+  },
+  {
+    id: "trap-cypher",
+    name: "Trap Cypher",
+    summary: "Fictional rappers and trap-table punchlines"
+  },
+  {
+    id: "short-form-mob",
+    name: "Short-Form Mob",
+    summary: "Viral boss energy without real-person likenesses"
+  },
+  {
+    id: "random-reroll",
+    name: "Random Reroll",
+    summary: "Surreal one-off table weirdness"
   }
 ];
 
@@ -64,7 +100,19 @@ export const CHARACTER_RANDOM_PRESETS: { id: string; name: string; packIds?: Cha
   {
     id: "balanced-chaos",
     name: "Balanced Chaos",
-    packIds: ["world-tour-weirdos", "cartoon-crime-table", "office-hell-mafia", "mythic-reroll-chaos", "chaos-core"]
+    packIds: [
+      "world-tour-weirdos",
+      "cartoon-crime-table",
+      "office-hell-mafia",
+      "mythic-reroll-chaos",
+      "flirty-noir",
+      "checked-out-table",
+      "gen-z-chaos",
+      "trap-cypher",
+      "short-form-mob",
+      "random-reroll",
+      "chaos-core"
+    ]
   },
   {
     id: "world-tour",
@@ -85,6 +133,36 @@ export const CHARACTER_RANDOM_PRESETS: { id: string; name: string; packIds?: Cha
     id: "mythic-reroll",
     name: "Mythic Reroll",
     packIds: ["mythic-reroll-chaos"]
+  },
+  {
+    id: "flirty-noir",
+    name: "Flirty Noir",
+    packIds: ["flirty-noir"]
+  },
+  {
+    id: "checked-out",
+    name: "Checked Out",
+    packIds: ["checked-out-table"]
+  },
+  {
+    id: "gen-z",
+    name: "Gen Z",
+    packIds: ["gen-z-chaos"]
+  },
+  {
+    id: "trap-cypher",
+    name: "Trap Cypher",
+    packIds: ["trap-cypher"]
+  },
+  {
+    id: "mob-shorts",
+    name: "Mob Shorts",
+    packIds: ["short-form-mob"]
+  },
+  {
+    id: "random-reroll",
+    name: "Random Reroll",
+    packIds: ["random-reroll"]
   },
   {
     id: "full-roulette",

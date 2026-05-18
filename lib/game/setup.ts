@@ -334,7 +334,9 @@ function isOpeningPrivateKnowledge(entry: TranscriptEntry): boolean {
   return (
     entry.privateTo?.length === 1 &&
     entry.speakerId === "system" &&
-    (entry.text.includes("Your Mafia partner is") || entry.text.includes("You are the only Mafia."))
+    (entry.text.includes("Your Mafia partner is") ||
+      entry.text.includes("No Mafia partner was assigned.") ||
+      entry.text.includes("You are the only Mafia."))
   );
 }
 

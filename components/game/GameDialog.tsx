@@ -2,6 +2,7 @@ import { Cancel } from "pixelarticons/react/Cancel";
 import { Check } from "pixelarticons/react/Check";
 import { Home } from "pixelarticons/react/Home";
 import { DialogMode } from "./types";
+import { ROLE_PRESENTATION, RULE_ROLE_ORDER, RoleBeatRow, RoleIconBadge } from "./role-presentation";
 
 export function GameDialog({
   mode,
@@ -23,26 +24,24 @@ export function GameDialog({
           <p className="eyebrow">Rules</p>
           <h2 id="rules-title">Roles</h2>
           <div className="rules-grid">
-            <article>
-              <strong>Detective Notebook</strong>
-              <p>The Detective investigates at night and privately builds a list of known identities.</p>
-            </article>
-            <article>
-              <strong>Mafia Pair</strong>
-              <p>One Mafia lies alone and wins if they bring the town down to parity.</p>
-            </article>
-            <article>
-              <strong>Doctor</strong>
-              <p>Chooses a save before Mafia chooses a kill. A correct save stops the death.</p>
-            </article>
-            <article>
-              <strong>Detective</strong>
-              <p>Investigates one player at night and gets a private role result.</p>
-            </article>
-            <article>
-              <strong>Villagers</strong>
-              <p>No power. Read the room, argue, and vote out both Mafia.</p>
-            </article>
+            {RULE_ROLE_ORDER.map((role) => {
+              const card = ROLE_PRESENTATION[role];
+
+              return (
+                <article className={`role-brief-card role-${role}`} key={role}>
+                  <div className="role-brief-heading">
+                    <RoleIconBadge role={role} />
+                    <div>
+                      <strong>{card.label}</strong>
+                    </div>
+                  </div>
+                  <p className="role-brief-copy">{card.description}</p>
+                  <p className="role-card-cue">{card.cue}</p>
+                  <RoleBeatRow role={role} />
+                  <p className="role-objective">{card.objective}</p>
+                </article>
+              );
+            })}
           </div>
           <div className="dialog-actions">
             <button type="button" onClick={onCancel}>

@@ -27,8 +27,8 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
 
   const target = getPlayer(state, finalTargetId);
   const text = voter.isHuman
-    ? formatHumanVoteText(state, target.name, rationaleText, voter.name) ?? fallbackVoteText(voter.name, target.name, target.suspicion)
-    : formatNpcVoteText(state, target.name, rationaleText, voter.name) ?? fallbackVoteText(voter.name, target.name, target.suspicion);
+    ? formatHumanVoteText(state, target.name, rationaleText) ?? fallbackVoteText(voter.name, target.name, target.suspicion)
+    : formatNpcVoteText(state, target.name, rationaleText) ?? fallbackVoteText(voter.name, target.name, target.suspicion);
 
   return addTranscript(
     addActionLog(
@@ -54,16 +54,16 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
   );
 }
 
-function formatHumanVoteText(state: GameState, targetName: string, rationaleText: string | undefined, voterName: string): string | undefined {
+function formatHumanVoteText(state: GameState, targetName: string, rationaleText: string | undefined): string | undefined {
   const trimmed = rationaleText?.replace(/\s+/g, " ").trim();
   if (!trimmed) {
     return undefined;
   }
 
-  return formatNpcVoteText(state, targetName, trimmed, voterName);
+  return formatNpcVoteText(state, targetName, trimmed);
 }
 
-function formatNpcVoteText(state: GameState, targetName: string, rationaleText: string | undefined, voterName: string): string | undefined {
+function formatNpcVoteText(state: GameState, targetName: string, rationaleText: string | undefined): string | undefined {
   const trimmed = rationaleText?.replace(/\s+/g, " ").trim();
   if (!trimmed) {
     return undefined;
@@ -72,41 +72,41 @@ function formatNpcVoteText(state: GameState, targetName: string, rationaleText: 
   const target = escapeRegExp(targetName);
   const thirdPersonVote = new RegExp(`^votes?\\s+(?:for\\s+)?${target}\\b`, "i");
   if (thirdPersonVote.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(thirdPersonVote, voteLead(voterName, targetName)), state);
+    return cleanVoteSpeech(trimmed.replace(thirdPersonVote, voteLead(targetName)), state);
   }
 
   const firstPersonVote = new RegExp(`^i\\s+vote\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVote.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(firstPersonVote, voteLead(voterName, targetName)), state);
+    return cleanVoteSpeech(trimmed.replace(firstPersonVote, voteLead(targetName)), state);
   }
 
   const firstPersonVoting = new RegExp(`^i(?:['’]m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVoting.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(firstPersonVoting, voteLead(voterName, targetName)), state);
+    return cleanVoteSpeech(trimmed.replace(firstPersonVoting, voteLead(targetName)), state);
   }
 
   const myVoteIs = new RegExp(`^my\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?${target}\\b`, "i");
   if (myVoteIs.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(myVoteIs, voteLead(voterName, targetName)), state);
+    return cleanVoteSpeech(trimmed.replace(myVoteIs, voteLead(targetName)), state);
   }
 
   const imOnTarget = new RegExp(`^i(?:['’]m|\\s+am)\\s+on\\s+${target}\\b`, "i");
   if (imOnTarget.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(imOnTarget, voteLead(voterName, targetName)), state);
+    return cleanVoteSpeech(trimmed.replace(imOnTarget, voteLead(targetName)), state);
   }
 
   const votingTarget = new RegExp(`^voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (votingTarget.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(votingTarget, voteLead(voterName, targetName)), state);
+    return cleanVoteSpeech(trimmed.replace(votingTarget, voteLead(targetName)), state);
   }
 
   const targetGetsVote = new RegExp(`^${target}\\s+(?:gets|has)\\s+(?:my|the)\\s+vote\\b`, "i");
   if (targetGetsVote.test(trimmed)) {
-    return cleanVoteSpeech(trimmed.replace(targetGetsVote, voteLead(voterName, targetName)), state);
+    return cleanVoteSpeech(trimmed.replace(targetGetsVote, voteLead(targetName)), state);
   }
 
   const rationale = stripLeadingTargetSentence(stripAllVoteDeclarations(stateAgnosticVoteText(trimmed), state), targetName);
-  return joinVoteSpeech(voteLead(voterName, targetName), rationale || voteRationale("", targetName, 0));
+  return joinVoteSpeech(voteLead(targetName), rationale || voteRationale("", targetName, 0));
 }
 
 function explicitVoteTargetFromText(
@@ -147,26 +147,11 @@ function matchIndexes(text: string, regex: RegExp): number[] {
 }
 
 function fallbackVoteText(voterName: string, targetName: string, suspicion: number): string {
-  return joinVoteSpeech(voteLead(voterName, targetName), voteRationale(voterName, targetName, suspicion));
+  return joinVoteSpeech(voteLead(targetName), voteRationale(voterName, targetName, suspicion));
 }
 
-function voteLead(voterName: string, targetName: string): string {
-  if (voterName === "Vincenzo") {
-    return `${targetName}. That's where I'm landing.`;
-  }
-  if (voterName === "Carmela") {
-    return `${targetName}. Cute story, ugly pattern.`;
-  }
-  if (voterName === "Rosa") {
-    return `${targetName}. The pattern points there.`;
-  }
-  if (voterName === "Don Vito") {
-    return `${targetName}. I may be wrong, but that is where I land.`;
-  }
-  if (voterName === "Salvatore") {
-    return `${targetName}. That is the cleanest read on the table.`;
-  }
-  return `${targetName}. That is my call.`;
+function voteLead(targetName: string): string {
+  return targetName;
 }
 
 function voteRationale(voterName: string, targetName: string, suspicion: number): string {

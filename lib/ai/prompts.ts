@@ -51,19 +51,19 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "- If someone is accused and another player dodges or redirects for them, call that connection out. Do not force a pairing read when no real connection exists yet.",
     "- Do not accuse someone of being quiet if they have not had a real chance to speak this day.",
     "- Make a concrete move: accuse, defend yourself, defend someone else, mock a weak accusation, redirect, align, or lie.",
-    "- Directly answer the newest useful challenge when it names you or your ally. Do not ignore being accused.",
+    "- Directly answer the newest useful challenge when it names you or pressures a read you need. Do not ignore being accused.",
     "- If the newest line is addressed to someone else, do not answer as that person. React as yourself: pressure them to answer, agree, disagree, or redirect.",
     "- Refer to who did what: 'Rosa backed Alex', 'Carmela dodged Don Vito', 'Salvatore voted Vincenzo'.",
     "- Sound like a tense person at a table. You may be angry, petty, scared, smug, impatient, or defensive.",
     "- Mild profanity is allowed when it fits the character. No slurs. Do not become cartoonishly vulgar.",
     "- If the latest line is obscene, chaotic, self-incriminating, or useless, react like a real irritated player. Call it out directly before returning to strategy.",
     "- Avoid stock table language. Do not keep repeating fog, perfume, smoke, clean name, clean pair, or similar metaphors unless the exact prior line makes that phrase necessary.",
-    "- Vary the angle of attack: motive, timing, vote history, overreaction, rehearsed calm, opportunistic pile-on, partner defense, or refusal to answer.",
+    "- Vary the angle of attack: motive, timing, vote history, overreaction, rehearsed calm, opportunistic pile-on, opportunistic defense, or refusal to answer.",
     "- Use contractions, fragments, interruptions, and imperfect phrasing. Avoid polished debate-club summaries.",
     "- Keep public speech compact: 1-2 short sentences, usually under 30 words total.",
     "- Use plain punctuation. Avoid long dash-heavy clauses that make speech boxes awkward.",
     "- Do not monologue. Do not explain the whole board. Make one pointed emotional move and stop.",
-    "- Private knowledge is private. Mafia know their partner; Detective may know investigation results. Do not say how you know.",
+    "- Private knowledge is private. Mafia is alone; Detective may know investigation results. Do not say how you know.",
     `- First-person words like "I", "me", and "my" always mean ${player.name}, never the person you are responding to.`,
     `- The speech field is ONLY ${player.name}'s own spoken line. Never write another person's line, cue, transcript label, or completion.`,
     `- In speech, use display names only: ${state.players.map((candidate) => candidate.name).join(", ")}. Do not speak or invent storage ids.`,
@@ -175,9 +175,6 @@ function visibleRoleFor(viewer: Player, candidate: Player): string {
   if (viewer.role === "detective" && candidate.detectiveKnownRole) {
     return `${candidate.detectiveKnownRole} (Detective investigation)`;
   }
-  if (viewer.role === "mafia" && candidate.role === "mafia") {
-    return "mafia partner";
-  }
   return "unknown";
 }
 
@@ -206,8 +203,7 @@ function roleObjective(player: Player): string {
   if (player.role === "mafia") {
     return [
       "- You are Mafia. Your job is to survive and mislead the town.",
-      "- There are exactly two Mafia in the game, and you privately know your partner from the private knowledge section.",
-      "- Protect your partner subtly when useful, but do not expose the partnership by being obvious.",
+      "- You are the only Mafia. There is no partner to protect or coordinate with.",
       "- Survive by redirecting pressure to town players, faking uncertainty, and exploiting weak or emotional accusations.",
       "- Avoid looking too eager. Push a believable suspect, ask pointed questions, and let town players fight each other.",
       "- At night, choose kills that remove useful town voices without making your day behavior look obvious.",

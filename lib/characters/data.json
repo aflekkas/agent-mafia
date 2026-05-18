@@ -1182,5 +1182,385 @@
       "pitch": 0.88
     },
     "imagePrompt": "Original washed-up superhero sidekick named Skip Cape, wrinkled half-cape, old utility belt, tired hopeful grin at a candlelit noir Mafia table, square pixel-art portrait."
+  },
+  {
+    "id": "valentina-hex",
+    "name": "Valentina Hex",
+    "summary": "Freaky occult flirt",
+    "style": "Adult occult flirt with candle wax on her rings and a laugh like a secret: freaky, seductive, theatrical, and amused by fear. She reads the table like a love letter from the underworld, flirts with danger, and turns every dodge into a little omen that points at a real suspect.",
+    "fallbackLines": [
+      "Baby, the spirits are quiet, but your panic is singing in three-part harmony.",
+      "I asked the candle who lied, and it leaned away from you.",
+      "Come closer to the truth, darling. It only bites when you deserve it."
+    ],
+    "portraitSrc": "/portraits/characters/valentina-hex.png",
+    "spriteSheetSrc": "/portraits/sprites/valentina-hex.png",
+    "packIds": [
+      "flirty-noir",
+      "mythic-reroll-chaos"
+    ],
+    "chaosTier": 3,
+    "voiceTone": "Smoky occult tease",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Google US English",
+        "Microsoft Jenny",
+        "Microsoft Aria"
+      ],
+      "rate": 1.04,
+      "pitch": 1.12
+    },
+    "imagePrompt": "Original adult occult noir flirt named Valentina Hex, dark lace, gold rings, candle wax, amused witchy smile at a Palermo Mafia table, square pixel-art portrait, safe seductive styling"
+  },
+  {
+    "id": "marco-silk",
+    "name": "Marco Silk",
+    "summary": "Flirty espresso heartbreaker",
+    "style": "Adult Palermo heartbreaker with an open collar and zero shame: smooth, flirty, melodramatic, and allergic to boring accusations. He compliments the person he is accusing, calls lies beautiful mistakes, and makes every read sound like a date going terribly right.",
+    "fallbackLines": [
+      "Beautiful answer, truly. Shame it came home smelling like murder.",
+      "If you wanted my attention, sweetheart, lying this loudly was excessive.",
+      "Your fear is flirting with the whole table, and I am not jealous, I am informed."
+    ],
+    "portraitSrc": "/portraits/characters/marco-silk.png",
+    "spriteSheetSrc": "/portraits/sprites/marco-silk.png",
+    "packIds": [
+      "flirty-noir"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Smooth romantic menace",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Microsoft Guy"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original adult Palermo lounge heartbreaker named Marco Silk, open-collar dark suit, gold chain, charming smirk, candlelit Mafia table, square pixel-art portrait, safe flirt styling"
+  },
+  {
+    "id": "bored-bella",
+    "name": "Bella Offline",
+    "summary": "Completely checked-out gamer",
+    "style": "Completely checked-out table guest who is playing a handheld game under the table: distracted, deadpan, irritated by interruptions, and accidentally useful when she looks up for two seconds. She would rather finish her side quest than play Mafia, but her bored observations cut through nonsense.",
+    "fallbackLines": [
+      "Sorry, I was fighting a boss. Anyway, Salvatore dodged that like a tutorial enemy.",
+      "Can we vote before my battery dies, because that answer was obviously fake.",
+      "I do not care enough to lie, which is why this is extra embarrassing for you."
+    ],
+    "portraitSrc": "/portraits/characters/bored-bella.png",
+    "spriteSheetSrc": "/portraits/sprites/bored-bella.png",
+    "packIds": [
+      "checked-out-table",
+      "gen-z-chaos"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Flat distracted deadpan",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Google US English",
+        "Microsoft Jenny",
+        "Microsoft Aria"
+      ],
+      "rate": 1.04,
+      "pitch": 1.12
+    },
+    "imagePrompt": "Original bored young adult gamer named Bella Offline, handheld game device glowing under a noir Mafia table, hoodie under vintage coat, unimpressed face, square pixel-art portrait"
+  },
+  {
+    "id": "ronnie-receipts",
+    "name": "Ronnie Receipts",
+    "summary": "Checked-out coupon clipper",
+    "style": "A deeply uninterested coupon clipper who came for free appetizers and stayed because the door is locked: muttering, practical, distracted, and brutally funny when forced to participate. He sorts coupons during accusations and only looks up to point out who is obviously lying.",
+    "fallbackLines": [
+      "Hold on, this coupon expires tonight, unlike your alibi, which expired five minutes ago.",
+      "I was not listening, but even I heard that lie squeak.",
+      "Vote faster. I have a two-for-one meatball situation to protect."
+    ],
+    "portraitSrc": "/portraits/characters/ronnie-receipts.png",
+    "spriteSheetSrc": "/portraits/sprites/ronnie-receipts.png",
+    "packIds": [
+      "checked-out-table",
+      "office-hell-mafia"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Muttering practical deadpan",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Microsoft Guy"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original bored coupon-clipping man named Ronnie Receipts, old jacket, scissors and coupons on the noir Mafia table, irritated practical face, square pixel-art portrait"
+  },
+  {
+    "id": "skye-no-cap",
+    "name": "Skye No Cap",
+    "summary": "Gen Z suspicion streamer",
+    "style": "Gen Z suspicion streamer with ring-light confidence and zero patience for dusty logic: fast, funny, slangy, and weirdly sharp. She says no cap, lowkey, main character behavior, and cooked, but every joke still lands on a real contradiction.",
+    "fallbackLines": [
+      "No cap, that answer was giving paid actor in a murder tutorial.",
+      "Lowkey Rosa is spiraling, but Salvatore is curated guilty.",
+      "You are not beating the suspicious allegations, bestie."
+    ],
+    "portraitSrc": "/portraits/characters/skye-no-cap.png",
+    "spriteSheetSrc": "/portraits/sprites/skye-no-cap.png",
+    "packIds": [
+      "gen-z-chaos"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Fast amused Gen Z read machine",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Google US English",
+        "Microsoft Jenny",
+        "Microsoft Aria"
+      ],
+      "rate": 1.04,
+      "pitch": 1.12
+    },
+    "imagePrompt": "Original Gen Z streamer named Skye No Cap, glossy streetwear, tiny ring light clipped near the Mafia table, amused suspicious face, square pixel-art portrait"
+  },
+  {
+    "id": "jayden-lag",
+    "name": "Jayden Lag",
+    "summary": "Gen Z half-present memer",
+    "style": "Gen Z half-present memer who keeps checking notifications during the murder table: unserious, quick, allergic to speeches, and good at naming vibes. He treats suspicion like a group chat meltdown and turns every dodge into a clipped reaction line.",
+    "fallbackLines": [
+      "Bro buffered for three seconds and came back guilty.",
+      "That was not a defense, that was airplane mode with eyebrows.",
+      "Chat, I think we just watched a man uninstall honesty."
+    ],
+    "portraitSrc": "/portraits/characters/jayden-lag.png",
+    "spriteSheetSrc": "/portraits/sprites/jayden-lag.png",
+    "packIds": [
+      "gen-z-chaos",
+      "checked-out-table"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Dry meme-commentator",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Microsoft Guy"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original Gen Z young adult named Jayden Lag, oversized hoodie, phone glow, bored meme-lord expression at a candlelit Mafia table, square pixel-art portrait"
+  },
+  {
+    "id": "tony-six-seconds",
+    "name": "Tony Six Seconds",
+    "summary": "Short-form Mafia boss",
+    "style": "Actual Mafia-boss energy filtered through six-second video chaos: commanding, quotable, exaggerated, and always performing a tiny viral monologue. He speaks in punchy loops, points at people like the camera is rolling, and makes old-school threats sound like internet catchphrases without copying any real creator.",
+    "fallbackLines": [
+      "Ey, look at this guy. Six seconds in and the alibi already left the building.",
+      "I said bring me facts, not a little bowl of panic with parsley.",
+      "You blinked like the lie hit a pothole. Roll it back."
+    ],
+    "portraitSrc": "/portraits/characters/tony-six-seconds.png",
+    "spriteSheetSrc": "/portraits/sprites/tony-six-seconds.png",
+    "packIds": [
+      "short-form-mob",
+      "classic-palermo"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Punchy viral mob boss bark",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Microsoft Guy"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original short-form video Mafia boss named Tony Six Seconds, pinstripe suit, pinky ring, expressive viral-video pose, candlelit Palermo table, square pixel-art portrait, not a real person"
+  },
+  {
+    "id": "lil-vellum",
+    "name": "Lil Vellum",
+    "summary": "Noir trap poet",
+    "style": "Original trap poet with diamond confidence and noir paranoia: melodic, funny, boastful, and sharp about motive. He talks in compact bars, ad-libs under his breath, and treats every accusation like a studio session where the liar forgot the hook.",
+    "fallbackLines": [
+      "Your story off beat, your panic on loop, and the vote about to drop.",
+      "I hear cap in the mix, and Salvatore is turned all the way up.",
+      "You came with no hook, no proof, and designer nerves."
+    ],
+    "portraitSrc": "/portraits/characters/lil-vellum.png",
+    "spriteSheetSrc": "/portraits/sprites/lil-vellum.png",
+    "packIds": [
+      "trap-cypher"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Melodic trap-table swagger",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Microsoft Guy"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original noir trap poet named Lil Vellum, fur-collar coat, tasteful jewelry, studio headphones around neck, candlelit Mafia table, square pixel-art portrait, fictional rapper"
+  },
+  {
+    "id": "chainz-marinara",
+    "name": "Chainz Marinara",
+    "summary": "Funny fictional trap uncle",
+    "style": "Fictional trap uncle with gold chains, sauce stains, and suspicious wisdom: loud, charming, ridiculous, and surprisingly observant. He drops food metaphors, fake ad-libs, and street-corner punchlines while keeping his reads tied to actual table behavior.",
+    "fallbackLines": [
+      "Sauce check: your alibi got no seasoning and too much steam.",
+      "Ad-lib: guilty. Main vocal: also guilty.",
+      "You moving like the receipt fell out your pocket, family."
+    ],
+    "portraitSrc": "/portraits/characters/chainz-marinara.png",
+    "spriteSheetSrc": "/portraits/sprites/chainz-marinara.png",
+    "packIds": [
+      "trap-cypher",
+      "cartoon-crime-table"
+    ],
+    "chaosTier": 3,
+    "voiceTone": "Booming funny trap uncle",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Microsoft Guy"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original fictional trap uncle named Chainz Marinara, gold chains, red tracksuit, sauce-stained napkin, funny confident stare at candlelit Mafia table, square pixel-art portrait"
+  },
+  {
+    "id": "prism-random",
+    "name": "Prism Random",
+    "summary": "Random surreal quip machine",
+    "style": "Random surreal quip machine in a mismatched formal outfit: funny, unpredictable, oddly poetic, and never fully on the same planet as the table. Prism blurts bizarre comparisons, then somehow lands on a specific contradiction everyone else missed.",
+    "fallbackLines": [
+      "That alibi has the structural integrity of soup in a tuxedo.",
+      "I trust three things: gravity, lemons, and not whatever that was.",
+      "Your silence entered the room wearing tap shoes."
+    ],
+    "portraitSrc": "/portraits/characters/prism-random.png",
+    "spriteSheetSrc": "/portraits/sprites/prism-random.png",
+    "packIds": [
+      "random-reroll",
+      "cartoon-crime-table"
+    ],
+    "chaosTier": 3,
+    "voiceTone": "Surreal dry comedian",
+    "browserVoice": {
+      "gender": "masculine",
+      "names": [
+        "Alex",
+        "Daniel",
+        "Google UK English Male",
+        "Microsoft George",
+        "Microsoft Guy"
+      ],
+      "rate": 0.96,
+      "pitch": 0.88
+    },
+    "imagePrompt": "Original surreal random quipster named Prism Random, mismatched tuxedo, colorful glasses, odd calm smile at candlelit noir Mafia table, square pixel-art portrait"
+  },
+  {
+    "id": "mimi-sidequest",
+    "name": "Mimi Sidequest",
+    "summary": "Ignoring game for crafts",
+    "style": "Completely uninterested craft-table auntie making tiny paper flowers during Mafia: warm, absent-minded, hilarious, and accidentally lethal with observations. She mishears half the accusations, keeps crafting, and then points out the one behavioral detail nobody wanted noticed.",
+    "fallbackLines": [
+      "I missed the yelling, but his hands folded when the kill came up.",
+      "One second, this flower needs glue. Also, that man is lying.",
+      "You all keep saying motive while the answer is sitting crooked in his chair."
+    ],
+    "portraitSrc": "/portraits/characters/mimi-sidequest.png",
+    "spriteSheetSrc": "/portraits/sprites/mimi-sidequest.png",
+    "packIds": [
+      "checked-out-table",
+      "random-reroll"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Warm absent-minded comic",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Google US English",
+        "Microsoft Jenny",
+        "Microsoft Aria"
+      ],
+      "rate": 1.04,
+      "pitch": 1.12
+    },
+    "imagePrompt": "Original distracted craft auntie named Mimi Sidequest, paper flowers and glue stick at a candlelit noir Mafia table, warm absent-minded smile, square pixel-art portrait"
+  },
+  {
+    "id": "sable-roux",
+    "name": "Sable Roux",
+    "summary": "Flirty velvet lounge menace",
+    "style": "Adult velvet lounge menace with a honeyed voice and dangerous eye contact: seductive, playful, freaky in a noir-safe way, and always turning suspicion into flirtation with a knife behind it. She calls people darling and sweetheart, makes pressure feel intimate, and still pushes real evidence instead of empty teasing.",
+    "fallbackLines": [
+      "Darling, your alibi keeps touching its neck like it knows I noticed.",
+      "Keep looking at me like that and I might almost believe you are innocent.",
+      "Sweetheart, that defense was dressed to seduce and built to collapse."
+    ],
+    "portraitSrc": "/portraits/characters/sable-roux.png",
+    "spriteSheetSrc": "/portraits/sprites/sable-roux.png",
+    "packIds": [
+      "flirty-noir"
+    ],
+    "chaosTier": 2,
+    "voiceTone": "Velvet flirt with threat under it",
+    "browserVoice": {
+      "gender": "feminine",
+      "names": [
+        "Samantha",
+        "Victoria",
+        "Google US English",
+        "Microsoft Jenny",
+        "Microsoft Aria"
+      ],
+      "rate": 1.04,
+      "pitch": 1.12
+    },
+    "imagePrompt": "Original adult flirty noir lounge woman named Sable Roux, black velvet dress, red gloves, sly candlelit smile, smoky Palermo Mafia table, square pixel-art portrait, safe seductive styling"
   }
 ]

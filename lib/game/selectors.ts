@@ -86,10 +86,7 @@ export function privateKnowledgeFor(state: GameState, playerId: PlayerId): strin
   const facts: string[] = [`You are ${player.name}. Your secret role is ${player.role}.`];
 
   if (player.role === "mafia") {
-    const partners = state.players
-      .filter((candidate) => candidate.role === "mafia" && candidate.id !== playerId)
-      .map((candidate) => candidate.name);
-    facts.push(partners.length ? `Your Mafia partner: ${partners.join(", ")}.` : "You are the only Mafia. There is no partner.");
+    facts.push("You are the only Mafia. There is no partner.");
   }
 
   if (player.role === "detective") {

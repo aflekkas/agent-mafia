@@ -3,15 +3,27 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, RefObject } from "react";
 import { AiSettings2 } from "pixelarticons/react/AiSettings2";
+import { Bed } from "pixelarticons/react/Bed";
+import { Briefcase } from "pixelarticons/react/Briefcase";
 import { Cancel } from "pixelarticons/react/Cancel";
 import { Castle } from "pixelarticons/react/Castle";
 import { Check } from "pixelarticons/react/Check";
 import { ChevronDown } from "pixelarticons/react/ChevronDown";
+import { Clapperboard } from "pixelarticons/react/Clapperboard";
+import { Crown } from "pixelarticons/react/Crown";
+import { DiamondGem } from "pixelarticons/react/DiamondGem";
+import { Earth } from "pixelarticons/react/Earth";
 import { Fire } from "pixelarticons/react/Fire";
+import { Gamepad } from "pixelarticons/react/Gamepad";
+import { Heart } from "pixelarticons/react/Heart";
 import { Headphone } from "pixelarticons/react/Headphone";
 import { InfoBox } from "pixelarticons/react/InfoBox";
+import { MessageText } from "pixelarticons/react/MessageText";
+import { Mic } from "pixelarticons/react/Mic";
 import { Search } from "pixelarticons/react/Search";
 import { Shuffle } from "pixelarticons/react/Shuffle";
+import { Sparkles } from "pixelarticons/react/Sparkles";
+import { Video } from "pixelarticons/react/Video";
 import {
   CHARACTER_PRESETS,
   CHARACTER_PROFILES,
@@ -42,12 +54,28 @@ const SEAT_LABELS: Record<NpcPlayerId, string> = {
 const PRESET_ICONS: Record<string, typeof AiSettings2> = {
   classic: Castle,
   chaos: Fire,
-  "balanced-chaos": Shuffle,
-  "world-tour": AiSettings2,
-  "cartoon-crimes": Fire,
-  "office-hell": Castle,
-  "mythic-reroll": Fire,
-  "full-roulette": Shuffle
+  "balanced-chaos": Gamepad,
+  "world-tour": Earth,
+  "cartoon-crimes": Clapperboard,
+  "office-hell": Briefcase,
+  "mythic-reroll": Sparkles,
+  "flirty-noir": Heart,
+  "checked-out": Bed,
+  "gen-z": MessageText,
+  "trap-cypher": Mic,
+  "mob-shorts": Video,
+  "random-reroll": DiamondGem,
+  "full-roulette": Shuffle,
+  "classic-palermo": Castle,
+  "chaos-core": Fire,
+  "world-tour-weirdos": Earth,
+  "cartoon-crime-table": Clapperboard,
+  "office-hell-mafia": Briefcase,
+  "mythic-reroll-chaos": Crown,
+  "checked-out-table": Bed,
+  "gen-z-chaos": MessageText,
+  "short-form-mob": Video,
+  "random-reroll-pack": DiamondGem
 };
 
 type FloatingMenuPlacement = "above" | "below";
@@ -69,8 +97,15 @@ function useAnchoredMenuPlacement(open: boolean, anchorRef: RefObject<HTMLElemen
 
     const rect = anchor.getBoundingClientRect();
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    const spaceBelow = viewportHeight - rect.bottom - MENU_VIEWPORT_PADDING - MENU_GAP;
-    const spaceAbove = rect.top - MENU_VIEWPORT_PADDING - MENU_GAP;
+    const scrollContainer = anchor.closest(".settings-dialog");
+    const containerRect = scrollContainer?.getBoundingClientRect();
+    const clippingTop = Math.max(MENU_VIEWPORT_PADDING, (containerRect?.top ?? 0) + MENU_VIEWPORT_PADDING);
+    const clippingBottom = Math.min(
+      viewportHeight - MENU_VIEWPORT_PADDING,
+      (containerRect?.bottom ?? viewportHeight) - MENU_VIEWPORT_PADDING
+    );
+    const spaceBelow = clippingBottom - rect.bottom - MENU_GAP;
+    const spaceAbove = rect.top - clippingTop - MENU_GAP;
     const nextPlacement = spaceBelow >= MENU_MIN_HEIGHT || spaceBelow >= spaceAbove ? "below" : "above";
     const availableSpace = Math.max(nextPlacement === "below" ? spaceBelow : spaceAbove, MENU_MIN_HEIGHT);
 
@@ -264,7 +299,7 @@ function CharacterSelect({
   }
 
   return (
-    <div className="character-select" ref={rootRef}>
+    <div className={`character-select ${open ? "is-open" : ""}`} ref={rootRef}>
       <span className="character-select-label">{label}</span>
       <button
         type="button"
@@ -487,33 +522,33 @@ export function CharacterSettingsDialog({
                   </div>
                   <div className="character-preview-copy">
                     <strong>{selectedProfile.name}</strong>
-                    <div className="character-summary-row">
-                      <p>{selectedProfile.summary}</p>
-                      <button
-                        type="button"
-                        className="character-personality-button"
-                        aria-label={`${selectedProfile.name} personality`}
-                        data-personality-tooltip={selectedProfile.style}
-                      >
-                        <InfoBox aria-hidden="true" />
-                      </button>
-                    </div>
+                    <p>{selectedProfile.summary}</p>
                   </div>
-                  <button
-                    type="button"
-                    className="voice-preview-button"
-                    onClick={() => void previewCharacterVoice(seatId)}
-                    disabled={previewingSeatId !== null}
-                    aria-label={previewing ? `Loading ${selectedProfile.name} voice preview` : `Preview ${selectedProfile.name} voice`}
-                    aria-busy={previewing}
-                    title={
-                      previewing
-                        ? "Loading voice preview"
-                        : `Preview ${selectedProfile.name}: ${selectedProfile.fallbackLines[0] ?? selectedProfile.summary}`
-                    }
-                  >
-                    {previewing ? <span className="voice-preview-spinner" aria-hidden="true" /> : <Headphone aria-hidden="true" />}
-                  </button>
+                  <div className="character-preview-actions">
+                    <button
+                      type="button"
+                      className="character-personality-button"
+                      aria-label={`${selectedProfile.name} personality`}
+                      data-personality-tooltip={selectedProfile.style}
+                    >
+                      <InfoBox aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className="voice-preview-button"
+                      onClick={() => void previewCharacterVoice(seatId)}
+                      disabled={previewingSeatId !== null}
+                      aria-label={previewing ? `Loading ${selectedProfile.name} voice preview` : `Preview ${selectedProfile.name} voice`}
+                      aria-busy={previewing}
+                      title={
+                        previewing
+                          ? "Loading voice preview"
+                          : `Preview ${selectedProfile.name}: ${selectedProfile.fallbackLines[0] ?? selectedProfile.summary}`
+                      }
+                    >
+                      {previewing ? <span className="voice-preview-spinner" aria-hidden="true" /> : <Headphone aria-hidden="true" />}
+                    </button>
+                  </div>
                 </div>
                 <CharacterSelect
                   label={SEAT_LABELS[seatId]}
