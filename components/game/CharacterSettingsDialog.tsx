@@ -6,6 +6,7 @@ import { Cancel } from "pixelarticons/react/Cancel";
 import { Check } from "pixelarticons/react/Check";
 import { ChevronDown } from "pixelarticons/react/ChevronDown";
 import { Reload } from "pixelarticons/react/Reload";
+import { Search } from "pixelarticons/react/Search";
 import {
   CHARACTER_PRESETS,
   CHARACTER_PROFILES,
@@ -43,14 +44,25 @@ function CharacterSelect({
   onChange: (characterId: string) => void;
 }) {
   const listboxId = useId();
+  const searchId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const selectedIndex = Math.max(
     0,
     CHARACTER_PROFILES.findIndex((profile) => profile.id === selectedProfileId)
   );
   const selectedProfile = CHARACTER_PROFILES[selectedIndex] ?? CHARACTER_PROFILES[0];
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredProfiles = normalizedSearchQuery
+    ? CHARACTER_PROFILES.filter((profile) => {
+        const searchableText = `${profile.name} ${profile.summary} ${profile.style} ${profile.id}`.toLowerCase();
+        return searchableText.includes(normalizedSearchQuery);
+      })
+    : CHARACTER_PROFILES;
+  const selectedFilteredIndex = filteredProfiles.findIndex((profile) => profile.id === selectedProfile.id);
 
   useEffect(() => {
     if (!open) {
@@ -60,12 +72,14 @@ function CharacterSelect({
     function handlePointerDown(event: PointerEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        setSearchQuery("");
       }
     }
 
     function handleKeyDown(event: globalThis.KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
+        setSearchQuery("");
       }
     }
 
@@ -79,10 +93,10 @@ function CharacterSelect({
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      optionRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
+    if (open && selectedFilteredIndex >= 0) {
+      optionRefs.current[selectedFilteredIndex]?.scrollIntoView({ block: "nearest" });
     }
-  }, [open, selectedIndex]);
+  }, [open, selectedFilteredIndex]);
 
   function selectCharacter(characterId: string) {
     if (unavailableProfileIds.has(characterId)) {
@@ -91,35 +105,72 @@ function CharacterSelect({
 
     onChange(characterId);
     setOpen(false);
+    setSearchQuery("");
   }
 
   function focusOption(index: number) {
     optionRefs.current[index]?.focus();
   }
 
+  function openMenu() {
+    setOpen(true);
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  }
+
+  function closeMenu() {
+    setOpen(false);
+    setSearchQuery("");
+  }
+
   function handleButtonKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (["ArrowDown", "Enter", " "].includes(event.key)) {
       event.preventDefault();
-      setOpen(true);
-      requestAnimationFrame(() => focusOption(selectedIndex));
+      openMenu();
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      setOpen(true);
-      requestAnimationFrame(() => focusOption(selectedIndex));
+      openMenu();
+    }
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu();
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (filteredProfiles.length === 0) {
+        return;
+      }
+      focusOption(selectedFilteredIndex >= 0 ? selectedFilteredIndex : 0);
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (filteredProfiles.length === 0) {
+        return;
+      }
+      focusOption(selectedFilteredIndex >= 0 ? selectedFilteredIndex : filteredProfiles.length - 1);
     }
   }
 
   function handleOptionKeyDown(event: KeyboardEvent<HTMLDivElement>, index: number, characterId: string) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu();
+    }
+
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      focusOption((index + 1) % CHARACTER_PROFILES.length);
+      focusOption((index + 1) % filteredProfiles.length);
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      focusOption((index - 1 + CHARACTER_PROFILES.length) % CHARACTER_PROFILES.length);
+      focusOption((index - 1 + filteredProfiles.length) % filteredProfiles.length);
     }
 
     if (event.key === "Home") {
@@ -129,7 +180,7 @@ function CharacterSelect({
 
     if (event.key === "End") {
       event.preventDefault();
-      focusOption(CHARACTER_PROFILES.length - 1);
+      focusOption(filteredProfiles.length - 1);
     }
 
     if (event.key === "Enter" || event.key === " ") {
@@ -147,7 +198,14 @@ function CharacterSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
-        onClick={() => setOpen((isOpen) => !isOpen)}
+        onClick={() => {
+          if (open) {
+            closeMenu();
+            return;
+          }
+
+          openMenu();
+        }}
         onKeyDown={handleButtonKeyDown}
       >
         <span className="character-select-trigger-face" aria-hidden="true">
@@ -158,37 +216,56 @@ function CharacterSelect({
         <ChevronDown aria-hidden="true" />
       </button>
       {open ? (
-        <div className="character-select-menu" id={listboxId} role="listbox" aria-label={`${label} character`}>
-          {CHARACTER_PROFILES.map((profile, index) => {
-            const selected = profile.id === selectedProfile.id;
-            const inUse = unavailableProfileIds.has(profile.id);
+        <div className="character-select-menu">
+          <label className="character-select-search" htmlFor={searchId}>
+            <Search aria-hidden="true" />
+            <input
+              ref={searchInputRef}
+              id={searchId}
+              type="search"
+              value={searchQuery}
+              placeholder="Search characters"
+              aria-label={`Search ${label} characters`}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={handleSearchKeyDown}
+            />
+          </label>
+          <div className="character-select-results" id={listboxId} role="listbox" aria-label={`${label} character`}>
+            {filteredProfiles.length > 0 ? (
+              filteredProfiles.map((profile, index) => {
+                const selected = profile.id === selectedProfile.id;
+                const inUse = unavailableProfileIds.has(profile.id);
 
-            return (
-              <div
-                key={profile.id}
-                ref={(node) => {
-                  optionRefs.current[index] = node;
-                }}
-                className={`character-select-option ${selected ? "selected" : ""} ${inUse ? "in-use" : ""}`}
-                role="option"
-                aria-selected={selected}
-                aria-disabled={inUse}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => selectCharacter(profile.id)}
-                onKeyDown={(event) => handleOptionKeyDown(event, index, profile.id)}
-              >
-                <span className="character-select-check">{selected ? <Check aria-hidden="true" /> : null}</span>
-                <span className="character-select-option-face" aria-hidden="true">
-                  <span>{profile.name.slice(0, 1)}</span>
-                  <img src={profile.portraitSrc} alt="" onError={(event) => (event.currentTarget.hidden = true)} />
-                </span>
-                <span className="character-select-option-copy">
-                  <strong>{profile.name}</strong>
-                  <small>{profile.summary}{inUse ? " - already seated" : ""}</small>
-                </span>
-              </div>
-            );
-          })}
+                return (
+                  <div
+                    key={profile.id}
+                    ref={(node) => {
+                      optionRefs.current[index] = node;
+                    }}
+                    className={`character-select-option ${selected ? "selected" : ""} ${inUse ? "in-use" : ""}`}
+                    role="option"
+                    aria-selected={selected}
+                    aria-disabled={inUse}
+                    tabIndex={selected || (selectedFilteredIndex < 0 && index === 0) ? 0 : -1}
+                    onClick={() => selectCharacter(profile.id)}
+                    onKeyDown={(event) => handleOptionKeyDown(event, index, profile.id)}
+                  >
+                    <span className="character-select-check">{selected ? <Check aria-hidden="true" /> : null}</span>
+                    <span className="character-select-option-face" aria-hidden="true">
+                      <span>{profile.name.slice(0, 1)}</span>
+                      <img src={profile.portraitSrc} alt="" onError={(event) => (event.currentTarget.hidden = true)} />
+                    </span>
+                    <span className="character-select-option-copy">
+                      <strong>{profile.name}</strong>
+                      <small>{profile.summary}{inUse ? " - already seated" : ""}</small>
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="character-select-empty">No matching characters.</p>
+            )}
+          </div>
         </div>
       ) : null}
     </div>
