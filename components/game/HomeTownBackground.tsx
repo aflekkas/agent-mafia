@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPixelatedRenderer, type Disposable } from "./pixel-three";
 
 type ThreeModule = typeof import("three");
-type Disposable = { dispose: () => void };
 
 const STUCCO_COLORS = [0x241910, 0x2a1b12, 0x302013, 0x211710, 0x2a2217];
 const ROOF_COLOR = 0x7b2d18;
@@ -27,6 +27,7 @@ export function HomeTownBackground() {
     let disposeTown: (() => void) | null = null;
     let renderStatic: (() => void) | null = null;
     let tickTown: ((elapsed: number) => void) | null = null;
+    let resizeRenderer: ((camera: import("three").PerspectiveCamera) => void) | null = null;
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const pointer = {
@@ -36,17 +37,12 @@ export function HomeTownBackground() {
       targetY: 0
     };
 
-    const updateSize = () => {
-      if (!renderer || !camera) {
+    let updateSize = () => {
+      if (!camera || !resizeRenderer) {
         return;
       }
 
-      const width = mount.clientWidth || window.innerWidth;
-      const height = mount.clientHeight || window.innerHeight;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.55));
-      renderer.setSize(width, height, false);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
+      resizeRenderer(camera);
       renderStatic?.();
     };
 
@@ -72,16 +68,14 @@ export function HomeTownBackground() {
         camera = new THREE.PerspectiveCamera(43, 1, 0.1, 90);
         camera.position.set(0, 4.05, 13.6);
 
-        renderer = new THREE.WebGLRenderer({
-          alpha: true,
-          antialias: true,
-          powerPreference: "high-performance"
+        const pixelRenderer = createPixelatedRenderer({
+          THREE,
+          mount,
+          className: "home-town-canvas",
+          pixelScale: 3
         });
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.setClearColor(0x000000, 0);
-        renderer.domElement.className = "home-town-canvas";
-        renderer.domElement.setAttribute("aria-hidden", "true");
-        mount.appendChild(renderer.domElement);
+        renderer = pixelRenderer.renderer;
+        resizeRenderer = pixelRenderer.resize;
 
         const town = buildTownScene(THREE, scene);
         disposeTown = town.dispose;

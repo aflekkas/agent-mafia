@@ -8,6 +8,7 @@ import { Reload } from "pixelarticons/react/Reload";
 import { User } from "pixelarticons/react/User";
 import { roleActionTargets, nightPromptTitleForRole } from "@/lib/game/role-actions";
 import { GameState, Player, PlayerId, TranscriptEntry } from "@/lib/game/types";
+import { TableScene3DBackdrop } from "./TableScene3DBackdrop";
 import { ROLE_COPY } from "./constants";
 import { HumanAvatarId } from "./types";
 import { avatarFor, formatPhase, nameFor, nextActorIdFor } from "./utils";
@@ -112,6 +113,17 @@ export function TableScene2D({
         showBubble ? "has-speech-bubble" : ""
       }`}
     >
+      <TableScene3DBackdrop
+        activeSpeakerId={active}
+        busy={busy}
+        paused={paused}
+        phase={game.phase}
+        players={game.players.map((player) => ({
+          id: player.id,
+          seat: player.seat,
+          alive: player.alive
+        }))}
+      />
       <div className="table-vignette" />
       <div className="table-core">
         <div className="candle">
