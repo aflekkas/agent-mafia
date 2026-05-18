@@ -3,6 +3,7 @@ import { readGameResponse } from "./utils";
 
 export type GameAction =
   | { type: "advance" }
+  | { type: "auto-human" }
   | { type: "speech"; text: string }
   | { type: "vote"; targetId: PlayerId; text?: string }
   | { type: "night"; targetId: PlayerId };

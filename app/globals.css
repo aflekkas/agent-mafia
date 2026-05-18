@@ -624,8 +624,16 @@ html.custom-cursor-enabled [contenteditable="true"] {
   color: #ffd8cf;
 }
 
+.autoplay-toggle.active {
+  color: var(--green);
+}
+
 .topbar-actions .voice-mode-toggle {
   min-width: 156px;
+}
+
+.topbar-actions .autoplay-toggle {
+  min-width: 168px;
 }
 
 .empty-copy .eyebrow {

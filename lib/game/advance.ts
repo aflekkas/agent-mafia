@@ -375,6 +375,45 @@ export function submitHumanNightAction(state: GameState, targetId: PlayerId): Ga
   return addTranscript(withAction, "system", "Private note", roleText, "action", ["player_6"]);
 }
 
+export async function submitAutoHumanTurn(state: GameState): Promise<GameState> {
+  if (!state.currentPrompt?.startsWith("human-") || state.phase === "game-over") {
+    return state;
+  }
+
+  const human = getHuman(state);
+  if (!human.alive) {
+    return touch({
+      ...state,
+      currentPrompt: undefined
+    });
+  }
+
+  const turn = await generateNpcTurnForPlayer(state, human);
+  const withMind = addInnerMonologue(state, human.id, turn.inner_monologue);
+
+  if (state.currentPrompt === "human-speech" && state.phase === "day-discussion") {
+    return submitHumanSpeech(withMind, turn.speech);
+  }
+
+  if (state.currentPrompt === "human-vote" && state.phase === "day-vote") {
+    return submitHumanVote(withMind, turn.vote ?? fallbackVoteTarget(state, human.id), turn.speech);
+  }
+
+  if (state.currentPrompt.startsWith("human-night") && state.phase === "night") {
+    const targetId = turn.role_action ?? fallbackNightTarget(state, human);
+    if (!targetId) {
+      return touch({
+        ...withMind,
+        currentPrompt: undefined
+      });
+    }
+
+    return submitHumanNightAction(withMind, targetId);
+  }
+
+  return state;
+}
+
 function addInnerMonologue(state: GameState, playerId: PlayerId, text: string): GameState {
   const entry: InnerMonologue = {
     id: makeId("mind"),

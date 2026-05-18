@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { advanceGame, submitHumanNightAction, submitHumanSpeech, submitHumanVote } from "@/lib/game/advance";
+import { advanceGame, submitAutoHumanTurn, submitHumanNightAction, submitHumanSpeech, submitHumanVote } from "@/lib/game/advance";
 import { isPlayerId } from "@/lib/game/guards";
 import { redactGameForPlayer } from "@/lib/game/redact";
 import { getGame, saveGame } from "@/lib/store/game-store";
@@ -19,6 +19,15 @@ export async function POST(request: Request, context: { params: Promise<{ gameId
 
   if (body.type === "advance") {
     const next = await advanceGame(game);
+    saveGame(next);
+    return NextResponse.json({ game: redactGameForPlayer(next) });
+  }
+
+  if (body.type === "auto-human") {
+    if (!game.currentPrompt?.startsWith("human-")) {
+      return NextResponse.json({ error: "The table is not waiting on your move." }, { status: 409 });
+    }
+    const next = await submitAutoHumanTurn(game);
     saveGame(next);
     return NextResponse.json({ game: redactGameForPlayer(next) });
   }

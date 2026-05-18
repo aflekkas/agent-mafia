@@ -2,6 +2,7 @@ import { HumanAvatarId } from "./types";
 
 export const AUDIO_MUTED_STORAGE_KEY = "agent-mafia.audioMuted";
 export const VOICE_MODE_STORAGE_KEY = "agent-mafia.voiceMode";
+export const AUTO_HUMAN_STORAGE_KEY = "agent-mafia.autoHuman";
 export const HUMAN_NAME_STORAGE_KEY = "agent-mafia.humanName";
 export const HUMAN_AVATAR_STORAGE_KEY = "agent-mafia.humanAvatar";
 export const CHARACTER_SETUP_STORAGE_KEY = "agent-mafia.characterSetup";

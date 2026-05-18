@@ -6,6 +6,7 @@ import { Copy } from "pixelarticons/react/Copy";
 import { InfoBox } from "pixelarticons/react/InfoBox";
 import { Play } from "pixelarticons/react/Play";
 import { Reload } from "pixelarticons/react/Reload";
+import { Robot } from "pixelarticons/react/Robot";
 import { Volume } from "pixelarticons/react/Volume";
 import { Volume2 } from "pixelarticons/react/Volume2";
 import { CharacterSetup, GameState, HumanRolePreference, PlayerId } from "@/lib/game/types";
@@ -15,6 +16,7 @@ import { speakEntry } from "@/components/game/audio";
 import {
   AMBIENCE_URL,
   AUDIO_MUTED_STORAGE_KEY,
+  AUTO_HUMAN_STORAGE_KEY,
   CHARACTER_SETUP_STORAGE_KEY,
   DECISION_CUE_VOLUME,
   HUMAN_AVATAR_STORAGE_KEY,
@@ -62,6 +64,7 @@ export function GameShell() {
   const [playbackCompleteId, setPlaybackCompleteId] = useState<string | null>(null);
   const [voiceActive, setVoiceActive] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [autoHumanEnabled, setAutoHumanEnabled] = useState(false);
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [humanAvatar, setHumanAvatarState] = useState<HumanAvatarId>("player-masc");
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
@@ -90,6 +93,7 @@ export function GameShell() {
   const speechFinalTextRef = useRef("");
   const speechDictatedTextRef = useRef("");
   const speechStartRequestIdRef = useRef(0);
+  const autoHumanPromptRef = useRef<string | null>(null);
   const prefetchedAdvanceRef = useRef<{ sourceGameId: string; sourceUpdatedAt: number; game: GameState } | null>(null);
   const prefetchingAdvanceRef = useRef<{ sourceGameId: string; sourceUpdatedAt: number; promise: Promise<GameState> } | null>(null);
 
@@ -108,6 +112,8 @@ export function GameShell() {
   }, [game]);
   const isHome = !game || !human;
   const voicePlaybackEnabled = !audioMuted && voiceMode !== "off";
+  const isGameOver = game?.phase === "game-over";
+  const topbarControlsLocked = !!dialogMode || isGameOver;
 
   useEffect(() => {
     const query = window.matchMedia(MOBILE_LOCKOUT_QUERY);
@@ -155,6 +161,8 @@ export function GameShell() {
     if (storedMode === "off" || storedMode === "browser" || storedMode === "elevenlabs") {
       setVoiceModeState(storedMode);
     }
+
+    setAutoHumanEnabled(window.localStorage.getItem(AUTO_HUMAN_STORAGE_KEY) === "true");
 
     const storedHumanName = window.localStorage.getItem(HUMAN_NAME_STORAGE_KEY);
     if (storedHumanName) {
@@ -373,6 +381,23 @@ export function GameShell() {
 
     return () => window.clearTimeout(timer);
   }, [busy, game, latestPublicEntry, paused, playbackCompleteId, voicePlaybackEnabled]);
+
+  useEffect(() => {
+    if (!game || !autoHumanEnabled || paused || busy || game.phase === "game-over" || !isHumanPrompt(game.currentPrompt)) {
+      return;
+    }
+    if (!canPlayOnCurrentViewport()) {
+      return;
+    }
+
+    const promptKey = `${game.id}:${game.updatedAt}:${game.currentPrompt}`;
+    if (autoHumanPromptRef.current === promptKey) {
+      return;
+    }
+
+    autoHumanPromptRef.current = promptKey;
+    void submitAutoHumanTurn(promptKey);
+  }, [autoHumanEnabled, busy, game, paused]);
 
   async function start(seed?: string) {
     if (!canPlayOnCurrentViewport()) {
@@ -630,6 +655,36 @@ export function GameShell() {
     }
   }
 
+  async function submitAutoHumanTurn(promptKey: string) {
+    if (!game || busy) {
+      return;
+    }
+    if (!canPlayOnCurrentViewport()) {
+      return;
+    }
+
+    clearPrefetchedAdvance();
+    speechRecognitionRef.current?.abort();
+    setListening(false);
+    setBusy(true);
+    setStatus("Autoplay choosing your move.");
+    try {
+      const nextGame = await postGameAction(game.id, { type: "auto-human" });
+      setGame(nextGame);
+      setHumanText("");
+      setStatus(nextGame.currentPrompt ? "Autoplay waiting." : nextGame.phase === "game-over" ? "Game over." : "Autoplay moved.");
+    } catch (error) {
+      if (autoHumanPromptRef.current === promptKey) {
+        autoHumanPromptRef.current = null;
+      }
+      setAutoHumanEnabled(false);
+      window.localStorage.setItem(AUTO_HUMAN_STORAGE_KEY, "false");
+      setStatus(errorMessage(error, "Autoplay stopped."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function toggleAudioMuted() {
     setAudioMuted((muted) => {
       const nextMuted = !muted;
@@ -655,6 +710,20 @@ export function GameShell() {
       return;
     }
     setStatus(mode === "elevenlabs" ? "ElevenLabs selected. Turn sound on to use it." : "Browser voice selected.");
+  }
+
+  function toggleAutoHuman() {
+    if (topbarControlsLocked) {
+      return;
+    }
+
+    setAutoHumanEnabled((enabled) => {
+      const nextEnabled = !enabled;
+      autoHumanPromptRef.current = null;
+      window.localStorage.setItem(AUTO_HUMAN_STORAGE_KEY, String(nextEnabled));
+      setStatus(nextEnabled ? "Autoplay on." : "Autoplay off.");
+      return nextEnabled;
+    });
   }
 
   function setHumanAvatar(avatarId: HumanAvatarId) {
@@ -1115,7 +1184,26 @@ export function GameShell() {
             >
               {paused ? <Play aria-hidden="true" /> : <Clock aria-hidden="true" />}
             </button>
-            <button type="button" className="icon-button" onClick={requestExit} aria-label="New game" title="New game">
+            <button
+              type="button"
+              className={`autoplay-toggle ${autoHumanEnabled ? "active" : ""}`}
+              onClick={toggleAutoHuman}
+              disabled={topbarControlsLocked}
+              aria-pressed={autoHumanEnabled}
+              aria-label={autoHumanEnabled ? "Turn autoplay off" : "Turn autoplay on"}
+              title={autoHumanEnabled ? "Turn autoplay off" : "Turn autoplay on"}
+            >
+              <Robot aria-hidden="true" />
+              <span>Autoplay {autoHumanEnabled ? "On" : "Off"}</span>
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={requestExit}
+              disabled={topbarControlsLocked}
+              aria-label="New game"
+              title="New game"
+            >
               <Reload aria-hidden="true" />
             </button>
             <VoiceModeSwitch voiceMode={voiceMode} onChange={setVoiceMode} />
@@ -1260,6 +1348,10 @@ function isPressureLine(text: string): boolean {
   return /\b(accuse|alibi|blood|cover|dodg|guilty|knife|lie|liar|lying|mafia|murder|quiet|suspicious|suspect|vote|voted|why)\b/i.test(
     text
   );
+}
+
+function isHumanPrompt(prompt: string | undefined): boolean {
+  return !!prompt?.startsWith("human-");
 }
 
 function micErrorMessage(error: string | undefined): string {
