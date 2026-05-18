@@ -9,7 +9,7 @@ import {
 import { ApiGameResponse, HumanAvatarId } from "./types";
 
 export function buttonFromEventTarget(target: EventTarget | null): HTMLButtonElement | null {
-  if (!(target instanceof HTMLElement)) {
+  if (!(target instanceof Element)) {
     return null;
   }
 
