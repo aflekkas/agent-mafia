@@ -5,8 +5,8 @@ The demo goal is a playable local Mafia round, not a platform architecture showc
 ## Setup
 
 ```bash
-npm install
-npm run dev -- -p 3001
+pnpm install
+pnpm dev -- -p 3001
 ```
 
 Open `http://localhost:3001`.
@@ -42,4 +42,4 @@ Sound can remain muted. The game still works with text and transcript only.
 - Cast a vote.
 - Complete a human Doctor, Detective, or Mafia night action when assigned.
 - Confirm non-human roles stay hidden until game over unless privately visible.
-- Confirm `npm run typecheck` and `npm run build` pass.
+- Confirm `pnpm typecheck` and `pnpm build` pass.

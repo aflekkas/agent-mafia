@@ -31,15 +31,16 @@ Then play the full social deduction loop:
 Requirements:
 
 - Node.js `20.9.0` or newer.
+- pnpm `10` or newer.
 - An OpenAI API key if you want generated NPC turns.
 - Optional ElevenLabs API key and voice IDs if you want server-side TTS.
 
 ```bash
 git clone <your-fork-or-this-repo-url>
 cd agent-mafia
-npm install
+pnpm install
 cp .env.example .env
-npm run dev -- -p 3001
+pnpm dev -- -p 3001
 ```
 
 Open `http://localhost:3001`.
@@ -90,27 +91,27 @@ If you use an AI coding agent, this prompt is safe to paste after cloning the re
 ```text
 Set up this local Agent Mafia Next.js app for me. Inspect the repository first, then:
 1. Confirm my Node version is >=20.9.0.
-2. Run npm install if dependencies are missing.
+2. Confirm pnpm 10 or newer is available, then run pnpm install if dependencies are missing.
 3. Copy .env.example to .env only if .env does not already exist.
 4. Tell me exactly which values I need to add for OPENAI_API_KEY and optional ElevenLabs voice IDs, but do not invent keys.
-5. Run npm run typecheck.
-6. Start the app with npm run dev -- -p 3001.
+5. Run pnpm typecheck.
+6. Start the app with pnpm dev -- -p 3001.
 7. Give me the local URL and summarize any setup problems.
-Do not add new frameworks, databases, hosted services, or voice systems.
+Use pnpm for dependency installation and scripts. Do not add new frameworks, databases, hosted services, or voice systems.
 ```
 
 ## Useful Commands
 
 ```bash
-npm run dev -- -p 3001
-npm run typecheck
-npm run build
+pnpm dev -- -p 3001
+pnpm typecheck
+pnpm build
 ```
 
 Optional API-only smoke test:
 
 ```bash
-npm run playtest:api
+pnpm playtest:api
 ```
 
 ## Local Logs

@@ -16,7 +16,7 @@ Recommended starting points:
 - `node_modules/next/dist/docs/01-app/03-api-reference/08-turbopack.md` for Turbopack behavior.
 - `node_modules/next/dist/docs/01-app/02-guides/ai-agents.md` for AI-agent documentation workflow.
 
-If those docs are missing after `npm install`, confirm the installed version:
+If those docs are missing after `pnpm install`, confirm the installed version:
 
 ```bash
 node -p "require('./node_modules/next/package.json').version"
@@ -29,8 +29,9 @@ Then use official `nextjs.org/docs` pages as the fallback and mention the missin
 - `next` is pinned to `16.2.6`.
 - `react` and `react-dom` are pinned to `19.2.6`.
 - Node must be `>=20.9.0`; the local machine currently satisfies this with Node 24.
+- pnpm is the project package manager; use `pnpm install` and `pnpm <script>`.
 - `next dev` and `next build` use Turbopack by default in Next.js 16.
-- This repo does not use `next lint`; keep `npm run typecheck` and `npm run build` as the required upgrade checks.
+- This repo does not use `next lint`; keep `pnpm typecheck` and `pnpm build` as the required upgrade checks.
 - Dynamic route handler params are Promise-based in this codebase; keep awaiting `context.params`.
 
 ## Scope Boundaries

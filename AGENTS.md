@@ -25,7 +25,7 @@ Prioritize the playable loop and visible UI over architecture expansion. Avoid l
 
 - This app targets Next.js 16. Before Next.js-specific edits, read the relevant installed docs under `node_modules/next/dist/docs/`; do not rely only on training data, memory, or random web snippets.
 - Start with `node_modules/next/dist/docs/01-app/index.md` for App Router work, then open the closest local doc for the feature being changed, such as route handlers, config, TypeScript, Turbopack, or AI-agent guidance.
-- If the installed local docs are missing after `npm install`, first confirm the installed Next version with `node -p "require('./node_modules/next/package.json').version"`, then use official `nextjs.org/docs` pages as the fallback source and record that fallback in the handoff.
+- If the installed local docs are missing after `pnpm install`, first confirm the installed Next version with `node -p "require('./node_modules/next/package.json').version"`, then use official `nextjs.org/docs` pages as the fallback source and record that fallback in the handoff.
 - Keep the upgrade local-first: do not add hosted MCP, cache components, React Compiler, Proxy, or other Next.js 16 features unless the user explicitly asks for that specific work.
 - Next.js 16 uses Turbopack by default for `next dev` and `next build`; keep scripts simple unless a documented local issue requires a flag.
 <!-- END:nextjs-agent-rules -->
@@ -35,7 +35,8 @@ Prioritize the playable loop and visible UI over architecture expansion. Avoid l
 - Preserve existing local work. This repo may be dirty.
 - Keep changes scoped and demo-safe.
 - After coherent completed work, commit and push to `origin/main` by default so GitHub stays current.
-- Validate with `npm run typecheck`; run `npm run build` after route, config, or UI structure changes.
+- Use pnpm for dependency installation and scripts. Do not use npm, yarn, or Bun unless the user explicitly asks for that specific package manager.
+- Validate with `pnpm typecheck`; run `pnpm build` after route, config, or UI structure changes.
 - All browser-visible game state must be redacted through `redactGameForPlayer`.
 - Sanitize every user-entered text path through the shared profanity/sanitization utility at both the UI input boundary and the route/game-state boundary. Use soft censorship that keeps the first and last character visible and replaces the middle with `#`; do not block typing or reject the whole entry just because profanity was entered.
 - Human input is text submitted to game state. Browser speech recognition is only an input helper.
