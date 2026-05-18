@@ -59,7 +59,7 @@ function formatNpcVoteText(targetName: string, rationaleText: string | undefined
     return trimmed.replace(firstPersonVote, `I vote for ${targetName}`);
   }
 
-  const firstPersonVoting = new RegExp(`^i(?:'m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b`, "i");
+  const firstPersonVoting = new RegExp(`^i(?:['’]m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVoting.test(trimmed)) {
     return trimmed.replace(firstPersonVoting, `I vote for ${targetName}`);
   }

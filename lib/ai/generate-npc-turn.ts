@@ -155,7 +155,10 @@ function normalizeTurn(
     parsed.role_action && isPlayerId(parsed.role_action) && legalRoleTargets.includes(parsed.role_action)
       ? parsed.role_action
       : null;
-  const speech = repairMisaddressedReply(state, player, cleanSingleSpeakerSpeech(state, parsed.speech.trim()));
+  const speech = forceSelfReferencesToFirstPerson(
+    player,
+    repairMisaddressedReply(state, player, cleanSingleSpeakerSpeech(state, parsed.speech.trim()))
+  );
 
   return {
     inner_monologue: parsed.inner_monologue.trim(),
@@ -252,6 +255,29 @@ function repairMisaddressedReply(state: GameState, player: Player, speech: strin
 
   const target = latestNames[0];
   return `${target.name}, answer ${latest.speakerName}. I'm watching whether this turns into a dodge.`;
+}
+
+function forceSelfReferencesToFirstPerson(player: Player, speech: string): string {
+  const names = [player.name, player.name.split(" ")[0]].filter((name) => name.length > 1).sort((left, right) => right.length - left.length);
+  let fixed = speech;
+
+  for (const name of names) {
+    const escaped = escapeRegExp(name);
+    fixed = fixed
+      .replace(new RegExp(`\\b${escaped}\\s*['’]s\\b`, "gi"), "my")
+      .replace(new RegExp(`\\b${escaped}\\b`, "gi"), "me");
+  }
+
+  return fixed
+    .replace(/\bme\s+votes\b/gi, "I vote")
+    .replace(/\bme\s+vote\b/gi, "I vote")
+    .replace(/\bme\s+voted\b/gi, "I voted")
+    .replace(/\bme\s+am\b/gi, "I am")
+    .replace(/\bme\s+was\b/gi, "I was")
+    .replace(/\bme\s+has\b/gi, "I have")
+    .replace(/\bme\s+had\b/gi, "I had")
+    .replace(/\bme\s+keeps\b/gi, "I keep")
+    .replace(/\bme\s+kept\b/gi, "I kept");
 }
 
 function escapeRegExp(value: string): string {

@@ -5,6 +5,7 @@ import { roleActionTargets } from "./role-actions";
 import { analyzeSpeechStance, mentionedPlayersInText, shortQuote } from "./speech-analysis";
 import { submitVote, resolveVote } from "./votes";
 import { GameState, InnerMonologue, NpcTurn, Player, PlayerId } from "./types";
+import { buildVoteQueueFromPlayers } from "./turn-order";
 
 const MEMORY_NOTE_LIMIT = 8;
 
@@ -265,8 +266,7 @@ async function advanceDiscussion(state: GameState): Promise<GameState> {
 }
 
 function buildVoteQueue(state: GameState): PlayerId[] {
-  const alive = alivePlayers(state).sort((left, right) => left.seat - right.seat);
-  return alive.map((player) => player.id);
+  return buildVoteQueueFromPlayers(alivePlayers(state), state.seed, state.day);
 }
 
 async function advanceVote(state: GameState): Promise<GameState> {

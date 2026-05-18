@@ -32,6 +32,7 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "Your private knowledge:",
     privateKnowledgeFor(state, player.id),
     selfMemory(state, player.id),
+    selfPublicActions(state, player.id),
     "",
     "Public transcript so far:",
     publicTranscriptSummary(state, 40) || "No one has spoken yet.",
@@ -172,6 +173,18 @@ function selfMemory(state: GameState, playerId: PlayerId): string {
   }
 
   return `Your prior private thoughts:\n${memories.map((entry) => `- ${entry.text}`).join("\n")}`;
+}
+
+function selfPublicActions(state: GameState, playerId: PlayerId): string {
+  const actions = state.transcript
+    .filter((entry) => entry.speakerId === playerId && !entry.privateTo?.length && ["speech", "vote"].includes(entry.kind))
+    .slice(-6);
+
+  if (!actions.length) {
+    return "Your prior public actions: none yet.";
+  }
+
+  return `Your prior public actions:\n${actions.map((entry) => `- Day ${entry.day} ${entry.kind}: ${entry.text}`).join("\n")}`;
 }
 
 function roleObjective(player: Player): string {
