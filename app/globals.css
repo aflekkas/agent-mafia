@@ -682,6 +682,12 @@ html.custom-cursor-enabled [contenteditable="true"] {
   margin: 8px 0 0;
 }
 
+.role-card > .eyebrow,
+.panel > .eyebrow,
+.human-panel > .eyebrow {
+  margin: 0 0 14px;
+}
+
 .private-note {
   color: var(--gold) !important;
   font-size: 0.72rem;
