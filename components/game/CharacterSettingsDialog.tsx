@@ -9,6 +9,7 @@ import { Check } from "pixelarticons/react/Check";
 import { ChevronDown } from "pixelarticons/react/ChevronDown";
 import { Fire } from "pixelarticons/react/Fire";
 import { Headphone } from "pixelarticons/react/Headphone";
+import { InfoBox } from "pixelarticons/react/InfoBox";
 import { Search } from "pixelarticons/react/Search";
 import { Shuffle } from "pixelarticons/react/Shuffle";
 import {
@@ -465,9 +466,19 @@ export function CharacterSettingsDialog({
                     <span>{selectedProfile.name.slice(0, 1)}</span>
                     <img src={selectedProfile.portraitSrc} alt="" onError={(event) => (event.currentTarget.hidden = true)} />
                   </div>
-                  <div>
+                  <div className="character-preview-copy">
                     <strong>{selectedProfile.name}</strong>
-                    <p>{selectedProfile.summary}</p>
+                    <div className="character-summary-row">
+                      <p>{selectedProfile.summary}</p>
+                      <button
+                        type="button"
+                        className="character-personality-button"
+                        aria-label={`${selectedProfile.name} personality`}
+                        data-personality-tooltip={selectedProfile.style}
+                      >
+                        <InfoBox aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
                   <button
                     type="button"

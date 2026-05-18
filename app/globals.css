@@ -2030,9 +2030,106 @@ textarea:focus {
   text-transform: uppercase;
 }
 
+.character-preview-copy {
+  min-width: 0;
+}
+
 .character-preview p {
   margin: 4px 0 0;
   font-size: 0.72rem;
+}
+
+.character-summary-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.character-summary-row p {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-personality-button {
+  position: relative;
+  flex: 0 0 auto;
+  width: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 4px;
+  border-color: #4b4036 #050505 #050505 #4b4036;
+  background: #11100e;
+  color: var(--gold);
+  box-shadow: none;
+}
+
+.character-personality-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.character-personality-button::before,
+.character-personality-button::after {
+  position: absolute;
+  left: 50%;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -4px);
+  transition:
+    opacity 80ms linear,
+    transform 80ms linear;
+}
+
+.character-personality-button::before {
+  content: "";
+  top: calc(100% + 6px);
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid var(--gold);
+  border-left: 2px solid var(--gold);
+  background: #050403;
+  transform: translate(-50%, -4px) rotate(45deg);
+}
+
+.character-personality-button::after {
+  content: attr(data-personality-tooltip);
+  top: calc(100% + 12px);
+  width: min(420px, calc(100vw - 44px));
+  padding: 10px 12px;
+  border: 2px solid var(--gold);
+  background: #050403;
+  color: var(--ink);
+  box-shadow:
+    4px 4px 0 #000,
+    inset 0 0 0 2px #15100c;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  text-align: left;
+  text-transform: none;
+  text-shadow: 2px 2px 0 #000;
+  white-space: normal;
+}
+
+.character-personality-button:hover:not(:disabled),
+.character-personality-button:focus-visible:not(:disabled) {
+  border-color: var(--gold) #050505 #050505 var(--gold);
+}
+
+.character-personality-button:hover:not(:disabled)::before,
+.character-personality-button:hover:not(:disabled)::after,
+.character-personality-button:focus-visible:not(:disabled)::before,
+.character-personality-button:focus-visible:not(:disabled)::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.character-personality-button:hover:not(:disabled)::before,
+.character-personality-button:focus-visible:not(:disabled)::before {
+  transform: translate(-50%, 0) rotate(45deg);
 }
 
 .voice-preview-button {
