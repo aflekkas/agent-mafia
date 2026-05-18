@@ -37,17 +37,6 @@ export const CHARACTER_PRESETS: { id: string; name: string; setup: Record<NpcPla
     setup: DEFAULT_CHARACTER_SETUP
   },
   {
-    id: "greek-table",
-    name: "Greek Table",
-    setup: {
-      don_vito: "deep-greek-male",
-      salvatore: "normal-greek-guy",
-      rosa: "wispy-greek-woman",
-      vincenzo: "grumpy-greek-guy",
-      carmela: "female-greek"
-    }
-  },
-  {
     id: "chaos",
     name: "Chaos Table",
     setup: {
