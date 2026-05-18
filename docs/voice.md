@@ -42,6 +42,8 @@ ELEVENLABS_VOICE_CARMELA=
 
 Only NPCs and the narrator need ElevenLabs voice IDs. Human speech is submitted as text and appears in the transcript.
 
+Classic seat voices can still come from `ELEVENLABS_VOICE_*` environment variables. Generated character profiles may also carry an explicit `voiceId` in `lib/characters/data.json`; when a seated profile has one, the browser sends that voice ID to `/api/speak` for direct REST TTS. If a profile voice is unavailable, playback falls back to browser speech synthesis.
+
 ## Human Dictation
 
 The Use Mic button records browser microphone audio with `MediaRecorder`, posts the audio to `/api/transcribe`, and the route transcribes it through OpenAI with `OPENAI_TRANSCRIPTION_MODEL` defaulting to `whisper-1`. The returned text is sanitized and written into the human text box. The player can edit the text before submitting.
@@ -72,6 +74,7 @@ By default cache files are written under `.agent-mafia-cache/tts`, which is igno
 ## Fallbacks
 
 - Missing ElevenLabs key or speaker voice ID: return JSON fallback and use browser speech.
+- Missing or invalid character profile voice ID: return JSON fallback and use browser speech.
 - Oversized text: return JSON fallback and use browser speech.
 - ElevenLabs request failure: return JSON fallback and use browser speech.
 - Missing OpenAI key for mic transcription: keep text input usable and report the missing key.

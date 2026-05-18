@@ -147,6 +147,9 @@ function buildLocalProfile(existing) {
     portraitSrc: existing?.portraitSrc,
     spriteSheetSrc: existing?.spriteSheetSrc,
     voiceId: option("voice-id") || existing?.voiceId,
+    packIds: repeatedOption("pack-id").length ? repeatedOption("pack-id") : existing?.packIds,
+    chaosTier: option("chaos-tier") || existing?.chaosTier,
+    voiceTone: option("voice-tone") || existing?.voiceTone,
     browserVoice: existing?.browserVoice
   });
 }
@@ -211,9 +214,23 @@ function normalizeProfile(profile) {
     portraitSrc: profile.portraitSrc || `/portraits/characters/${id}.png`,
     spriteSheetSrc: profile.spriteSheetSrc || `/portraits/sprites/${id}.png`,
     ...(profile.voiceId ? { voiceId: profile.voiceId } : {}),
+    ...(normalizePackIds(profile.packIds).length ? { packIds: normalizePackIds(profile.packIds) } : {}),
+    ...(normalizeChaosTier(profile.chaosTier) ? { chaosTier: normalizeChaosTier(profile.chaosTier) } : {}),
+    ...(profile.voiceTone ? { voiceTone: cleanText(profile.voiceTone, 80) } : {}),
     browserVoice: profile.browserVoice || browserVoiceForGender(gender),
     imagePrompt: cleanText(profile.imagePrompt || defaultImagePrompt(profile.name, profile.summary, profile.style), 420)
   };
+}
+
+function normalizePackIds(packIds) {
+  return Array.isArray(packIds)
+    ? [...new Set(packIds.map((packId) => normalizeId(packId)).filter(Boolean))].slice(0, 4)
+    : [];
+}
+
+function normalizeChaosTier(value) {
+  const tier = Number.parseInt(value, 10);
+  return tier >= 1 && tier <= 3 ? tier : undefined;
 }
 
 function normalizeFallbackLines(lines) {

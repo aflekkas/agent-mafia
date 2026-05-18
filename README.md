@@ -9,12 +9,13 @@ No hosted account is required. Clone the repo, add your own OpenAI key for gener
 ## Why Play It
 
 - A complete six-player Mafia loop: one Mafia, one Detective, one Doctor, three Villagers.
-- One human seat against five NPC personalities: Don Vito, Salvatore, Rosa, Vincenzo, and Carmela.
+- One human seat against five NPC personalities, with 40 selectable NPC profiles and reroll packs for stranger tables.
 - Hidden roles, solo Mafia deception, Detective investigations, Doctor saves, day discussion, voting, eliminations, and win checks.
 - OpenAI-powered NPC turns with deterministic fallback turns when no API key is configured.
 - Optional direct ElevenLabs REST TTS, plus browser speech synthesis fallback and a text transcript for every spoken line.
 - Text-first human input, with an optional OpenAI Whisper mic helper that fills the text box.
 - Pixel noir 2D table UI with animated character state portraits, role cards, vote board, transcript, and local debug logs.
+- Character packs include Classic Palermo, Chaos Core, World Tour, Cartoon Crimes, Office Hell, Mythic Reroll, and Full Roulette.
 
 ## Screenshots
 
@@ -117,7 +118,7 @@ pnpm dev -- -p 3001
 pnpm typecheck
 pnpm build
 pnpm generate:character-states -- --dry-run --ids=all
-pnpm generate:character -- --dry-run --id=paranoid-tailor --name="Marco Needle" --summary="Paranoid Palermo tailor" --description="A twitchy old tailor who notices clothing, posture, and nervous hands."
+pnpm generate:character -- --dry-run --id=paranoid-tailor --name="Marco Needle" --summary="Paranoid Palermo tailor" --description="A twitchy old tailor who notices clothing, posture, and nervous hands." --pack-id=world-tour-weirdos --chaos-tier=1
 ```
 
 Optional API-only smoke test:

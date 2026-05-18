@@ -10,11 +10,106 @@ export interface CharacterProfile {
   portraitSrc: string;
   spriteSheetSrc?: string;
   voiceId?: string;
+  packIds?: CharacterPackId[];
+  chaosTier?: 1 | 2 | 3;
+  voiceTone?: string;
   browserVoice: BrowserVoiceProfile;
   imagePrompt: string;
 }
 
 export const CHARACTER_PROFILES = characterData as CharacterProfile[];
+
+export type CharacterPackId =
+  | "classic-palermo"
+  | "chaos-core"
+  | "world-tour-weirdos"
+  | "cartoon-crime-table"
+  | "office-hell-mafia"
+  | "mythic-reroll-chaos";
+
+export const CHARACTER_PACKS: { id: CharacterPackId; name: string; summary: string }[] = [
+  {
+    id: "classic-palermo",
+    name: "Classic Palermo",
+    summary: "Original noir table personalities"
+  },
+  {
+    id: "chaos-core",
+    name: "Chaos Core",
+    summary: "Existing reroll oddballs"
+  },
+  {
+    id: "world-tour-weirdos",
+    name: "World Tour",
+    summary: "Accented international table chaos"
+  },
+  {
+    id: "cartoon-crime-table",
+    name: "Cartoon Crimes",
+    summary: "Mascot-grade suspicious nonsense"
+  },
+  {
+    id: "office-hell-mafia",
+    name: "Office Hell",
+    summary: "Corporate dysfunction with knives"
+  },
+  {
+    id: "mythic-reroll-chaos",
+    name: "Mythic Reroll",
+    summary: "Fantasy-adjacent table disasters"
+  }
+];
+
+export const CHARACTER_RANDOM_PRESETS: { id: string; name: string; packIds?: CharacterPackId[] }[] = [
+  {
+    id: "balanced-chaos",
+    name: "Balanced Chaos",
+    packIds: ["world-tour-weirdos", "cartoon-crime-table", "office-hell-mafia", "mythic-reroll-chaos", "chaos-core"]
+  },
+  {
+    id: "world-tour",
+    name: "World Tour",
+    packIds: ["world-tour-weirdos"]
+  },
+  {
+    id: "cartoon-crimes",
+    name: "Cartoon Crimes",
+    packIds: ["cartoon-crime-table"]
+  },
+  {
+    id: "office-hell",
+    name: "Office Hell",
+    packIds: ["office-hell-mafia"]
+  },
+  {
+    id: "mythic-reroll",
+    name: "Mythic Reroll",
+    packIds: ["mythic-reroll-chaos"]
+  },
+  {
+    id: "full-roulette",
+    name: "Full Roulette"
+  }
+];
+
+const DEFAULT_PROFILE_PACKS: Partial<Record<string, CharacterPackId[]>> = {
+  don_vito: ["classic-palermo"],
+  salvatore: ["classic-palermo"],
+  rosa: ["classic-palermo"],
+  vincenzo: ["classic-palermo"],
+  carmela: ["classic-palermo"],
+  "cute-anime-girls": ["chaos-core"],
+  "german-big-guy": ["chaos-core"],
+  "american-dumb-bro": ["chaos-core"],
+  "abrasive-sarah": ["chaos-core"],
+  "turkish-berlin-guy": ["chaos-core", "world-tour-weirdos"],
+  "stern-eastern-statesman": ["chaos-core"],
+  "goofy-supervillain": ["chaos-core", "cartoon-crime-table"],
+  "pastel-pony": ["chaos-core", "cartoon-crime-table"],
+  "annoyed-male": ["chaos-core", "office-hell-mafia"],
+  "clark-anime-hero": ["chaos-core", "mythic-reroll-chaos"],
+  "sultry-american-female": ["chaos-core"]
+};
 
 export const CHARACTER_PORTRAIT_STYLE_PROMPT =
   "Square 1:1 pixel-art portrait for Agent Mafia, 16-bit noir game sprite style, crisp chunky pixels, limited Palermo candlelight palette of black, brass gold, cream, and deep red accents, head-and-shoulders character seated at a Mafia table, strong readable silhouette, dark simple background, readable at 46px and 96px, no text, no UI, no photorealism, no painterly blending, no smooth gradients.";
@@ -81,14 +176,54 @@ function firstAvailableProfile(usedIds: Set<string>, seatId: NpcPlayerId): Chara
   return CHARACTER_PROFILES.find((profile) => !usedIds.has(profile.id)) ?? CHARACTER_PROFILES[0];
 }
 
-export function uniqueRandomCharacterSetup(): Record<NpcPlayerId, string> {
-  const shuffled = [...CHARACTER_PROFILES].sort(() => Math.random() - 0.5);
+export function characterPackIdsForProfile(profile: CharacterProfile): CharacterPackId[] {
+  return profile.packIds?.length ? profile.packIds : (DEFAULT_PROFILE_PACKS[profile.id] ?? ["chaos-core"]);
+}
+
+export function characterProfilesForPacks(packIds: CharacterPackId[] | undefined): CharacterProfile[] {
+  if (!packIds?.length) {
+    return CHARACTER_PROFILES;
+  }
+
+  return CHARACTER_PROFILES.filter((profile) => {
+    const profilePackIds = characterPackIdsForProfile(profile);
+    return packIds.some((packId) => profilePackIds.includes(packId));
+  });
+}
+
+export function uniqueRandomCharacterSetup(packIds?: CharacterPackId[]): Record<NpcPlayerId, string> {
+  const pool = characterProfilesForPacks(packIds);
+  const seededProfiles = packIds && packIds.length > 1 ? oneProfilePerPack(packIds) : [];
+  const shuffled = shuffleProfiles([...seededProfiles, ...pool.filter((profile) => !seededProfiles.includes(profile))]);
+  const enoughProfiles = shuffled.length >= NPC_PLAYER_IDS.length ? shuffled : shuffleProfiles(CHARACTER_PROFILES);
 
   return NPC_PLAYER_IDS.reduce(
     (setup, seatId, index) => ({
       ...setup,
-      [seatId]: shuffled[index % shuffled.length].id
+      [seatId]: enoughProfiles[index % enoughProfiles.length].id
     }),
     {} as Record<NpcPlayerId, string>
   );
+}
+
+function oneProfilePerPack(packIds: CharacterPackId[]): CharacterProfile[] {
+  const usedIds = new Set<string>();
+  return packIds
+    .map((packId) => shuffleProfiles(characterProfilesForPacks([packId])).find((profile) => !usedIds.has(profile.id)))
+    .filter((profile): profile is CharacterProfile => {
+      if (!profile) {
+        return false;
+      }
+      usedIds.add(profile.id);
+      return true;
+    });
+}
+
+function shuffleProfiles(profiles: CharacterProfile[]): CharacterProfile[] {
+  const shuffled = [...profiles];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }

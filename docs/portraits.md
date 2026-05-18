@@ -6,6 +6,9 @@ Each NPC profile can have:
 
 - `portraitSrc` - static square portrait fallback.
 - `spriteSheetSrc` - optional 3x3 animated-state sprite sheet.
+- `packIds` - optional reroll pack membership used by the settings dialog.
+- `chaosTier` - optional 1-3 hint for how weird the character is.
+- `voiceTone` - optional human-readable note for voice matching.
 
 The live table keeps `portraitSrc` as the approved visual source and applies deterministic CSS state motion to that clean portrait. `spriteSheetSrc` is still generated as a reusable state asset, but it should not replace the table portrait unless the sheet visually matches the approved portrait style.
 
@@ -68,7 +71,10 @@ pnpm generate:character -- \
   --name="Marco Needle" \
   --summary="Paranoid Palermo tailor" \
   --description="A twitchy old tailor who notices clothing, posture, and nervous hands." \
-  --voice-gender=masculine
+  --voice-gender=masculine \
+  --pack-id=world-tour-weirdos \
+  --chaos-tier=1 \
+  --voice-tone="Nervous old tailor"
 ```
 
 The script validates or creates the profile metadata, writes the static portrait, derives the 3x3 sprite sheet from that approved portrait, and appends the profile to `lib/characters/data.json`. Use `--dry-run` first when giving an agent a new character brief.
@@ -76,6 +82,9 @@ The script validates or creates the profile metadata, writes the static portrait
 Useful flags:
 
 - `--voice-id=<elevenlabs id>` to attach an explicit ElevenLabs voice.
+- `--pack-id=<pack id>` repeated as needed to place the character in reroll packs.
+- `--chaos-tier=1|2|3` to label how strange the profile should feel in random tables.
+- `--voice-tone="..."` to document the intended voice match.
 - `--fallback-line="..."` repeated three or more times to avoid AI-drafted fallback copy.
 - `--metadata-only`, `--portrait-only`, or `--sprites-only` for partial updates.
 - `--ai-sprites` to opt into AI-generated expressive sprite sheets after the portrait is made.

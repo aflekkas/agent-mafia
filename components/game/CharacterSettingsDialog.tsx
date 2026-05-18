@@ -15,6 +15,7 @@ import { Shuffle } from "pixelarticons/react/Shuffle";
 import {
   CHARACTER_PRESETS,
   CHARACTER_PROFILES,
+  CHARACTER_RANDOM_PRESETS,
   characterProfileById,
   normalizeCharacterSetup,
   uniqueRandomCharacterSetup
@@ -40,7 +41,13 @@ const SEAT_LABELS: Record<NpcPlayerId, string> = {
 
 const PRESET_ICONS: Record<string, typeof AiSettings2> = {
   classic: Castle,
-  chaos: Fire
+  chaos: Fire,
+  "balanced-chaos": Shuffle,
+  "world-tour": AiSettings2,
+  "cartoon-crimes": Fire,
+  "office-hell": Castle,
+  "mythic-reroll": Fire,
+  "full-roulette": Shuffle
 };
 
 type FloatingMenuPlacement = "above" | "below";
@@ -442,10 +449,22 @@ export function CharacterSettingsDialog({
                 </button>
               );
             })}
-            <button type="button" onClick={() => onCharacterSetupChange(uniqueRandomCharacterSetup())}>
-              <Shuffle aria-hidden="true" />
-              Randomize
-            </button>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <p className="settings-label">Reroll packs</p>
+          <div className="preset-grid">
+            {CHARACTER_RANDOM_PRESETS.map((preset) => {
+              const PresetIcon = PRESET_ICONS[preset.id] ?? Shuffle;
+
+              return (
+                <button key={preset.id} type="button" onClick={() => onCharacterSetupChange(uniqueRandomCharacterSetup(preset.packIds))}>
+                  <PresetIcon aria-hidden="true" />
+                  {preset.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 
