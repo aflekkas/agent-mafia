@@ -314,11 +314,16 @@ function addOpeningPrivateKnowledge(state: GameState): GameState {
 function addMafiaOpeningIntel(state: GameState): GameState {
   const mafiaPlayers = state.players.filter((player) => player.role === "mafia");
   return mafiaPlayers.reduce((nextState, mafia) => {
+    const partners = mafiaPlayers.filter((partner) => partner.id !== mafia.id).map((partner) => partner.name);
+    const partnerText = partners.length
+      ? `Your Mafia partner is ${partners.join(", ")}. Defend them subtly, redirect heat when useful, and coordinate through public behavior without exposing the partnership.`
+      : "No Mafia partner was assigned. Survive alone, redirect heat onto town players, fake uncertainty, and choose night kills that keep your cover intact.";
+
     return addTranscript(
       nextState,
       "system",
       "Private note",
-      "You are the only Mafia. Survive alone, redirect heat onto town players, fake uncertainty, and choose night kills that keep your cover intact.",
+      partnerText,
       "action",
       [mafia.id]
     );

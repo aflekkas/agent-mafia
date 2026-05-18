@@ -64,6 +64,7 @@ async function playGame(seed) {
   }
 
   observations.push(...auditGame(game, moves));
+  observations.push(...auditPrivateNotes(game));
 
   return {
     gameId: game.id,
@@ -243,6 +244,31 @@ function auditGame(game, moves) {
   const stockPhraseCount = (tableText.match(/\b(fog|perfume|clean pair|clean name)\b/gi) ?? []).length;
   if (stockPhraseCount > 10) {
     observations.push(`stock phrase repetition too high: ${stockPhraseCount}`);
+  }
+
+  return observations;
+}
+
+function auditPrivateNotes(game) {
+  const observations = [];
+  const human = humanPlayer(game);
+  const roleCounts = countRoles(game);
+  const privateNotes = game.transcript.filter((entry) => entry.privateTo?.includes(human.id));
+
+  if (roleCounts.mafia === 2 && human.role === "mafia") {
+    const partnerNote = privateNotes.find((entry) => /Your Mafia partner is/i.test(entry.text));
+    if (!partnerNote) {
+      observations.push("human Mafia private note did not name the Mafia partner");
+    }
+  }
+
+  for (const entry of privateNotes) {
+    if (/You are the only Mafia/i.test(entry.text) && roleCounts.mafia === 2) {
+      observations.push(`stale solo-Mafia private note: ${entry.text}`);
+    }
+    if (/\bplayer_[0-9]+\b/i.test(entry.text)) {
+      observations.push(`private note leaked storage id: ${entry.text}`);
+    }
   }
 
   return observations;

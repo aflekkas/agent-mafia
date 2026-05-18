@@ -169,10 +169,8 @@ export function TableScene3DBackdrop(props: BackdropState) {
 function buildTableScene(THREE: typeof import("three"), scene: import("three").Scene) {
   const { track, disposeAll } = createDisposableTracker();
   const root = new THREE.Group();
-  const activeGroup = new THREE.Group();
   const propGroup = new THREE.Group();
   const nightOverlay = new THREE.Group();
-  const seatGlows = new Map<number, import("three").Mesh<import("three").BufferGeometry, import("three").MeshBasicMaterial>>();
   const seatShadows = new Map<number, import("three").Mesh<import("three").BufferGeometry, import("three").MeshBasicMaterial>>();
 
   scene.add(root);
@@ -180,15 +178,6 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
 
   const feltMaterial = track(new THREE.MeshBasicMaterial({ color: 0x120d0a, transparent: true, opacity: 0.96 }));
   const tableEdgeMaterial = track(new THREE.MeshBasicMaterial({ color: 0x3b2415, transparent: true, opacity: 0.9 }));
-  const innerGlowMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xd3a34c,
-      transparent: true,
-      opacity: 0.08,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
   const propShadowMaterial = track(new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.38, depthWrite: false }));
   const cardMaterial = track(new THREE.MeshBasicMaterial({ color: 0xd8cab4, transparent: true, opacity: 0.86, depthWrite: false }));
   const cardBackMaterial = track(new THREE.MeshBasicMaterial({ color: 0x3d1718, transparent: true, opacity: 0.9, depthWrite: false }));
@@ -202,33 +191,6 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   const glassMaterial = track(new THREE.MeshBasicMaterial({ color: 0x9eb0a6, transparent: true, opacity: 0.24, depthWrite: false }));
   const chairMaterial = track(new THREE.MeshBasicMaterial({ color: 0x070504, transparent: true, opacity: 0.84 }));
   const deadSeatMaterial = track(new THREE.MeshBasicMaterial({ color: 0x050404, transparent: true, opacity: 0.58 }));
-  const seatGlowMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xd3a34c,
-      transparent: true,
-      opacity: 0.08,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
-  const activeMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xf4c56c,
-      transparent: true,
-      opacity: 0.1,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
-  const rippleMaterial = track(
-    new THREE.MeshBasicMaterial({
-      color: 0xf4c56c,
-      transparent: true,
-      opacity: 0.2,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    })
-  );
   const nightMaterial = track(new THREE.MeshBasicMaterial({ color: 0x07111a, transparent: true, opacity: 0.0, depthWrite: false }));
 
   const tableBase = new THREE.Mesh(track(new THREE.CircleGeometry(1, 72)), tableEdgeMaterial);
@@ -238,10 +200,6 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   const felt = new THREE.Mesh(track(new THREE.CircleGeometry(1, 72)), feltMaterial);
   felt.scale.set(4.05, 2.34, 1);
   root.add(felt);
-
-  const innerGlow = new THREE.Mesh(track(new THREE.CircleGeometry(1, 48)), innerGlowMaterial);
-  innerGlow.scale.set(2.25, 1.12, 1);
-  root.add(innerGlow);
 
   const addBox = (
     group: import("three").Group,
@@ -335,20 +293,6 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
 
   root.add(propGroup);
 
-  const activeGlow = new THREE.Mesh(track(new THREE.RingGeometry(0.56, 0.66, 32)), activeMaterial);
-  activeGlow.scale.set(1.2, 0.66, 1);
-  activeGroup.add(activeGlow);
-
-  const rippleA = new THREE.Mesh(track(new THREE.RingGeometry(0.48, 0.56, 36)), rippleMaterial);
-  rippleA.scale.set(1.45, 0.82, 1);
-  activeGroup.add(rippleA);
-
-  const rippleB = new THREE.Mesh(track(new THREE.RingGeometry(0.74, 0.8, 36)), rippleMaterial.clone());
-  track(rippleB.material);
-  rippleB.scale.set(1.45, 0.82, 1);
-  activeGroup.add(rippleB);
-  root.add(activeGroup);
-
   Object.entries(SEAT_COORDS).forEach(([seatKey, [x, y]]) => {
     const seat = Number(seatKey);
     const chair = new THREE.Mesh(track(new THREE.BoxGeometry(0.98, 0.54, 0.01)), chairMaterial);
@@ -356,13 +300,6 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
     chair.rotation.z = -Math.atan2(x, y) * 0.18;
     root.add(chair);
     seatShadows.set(seat, chair);
-
-    const glow = new THREE.Mesh(track(new THREE.CircleGeometry(0.62, 24)), seatGlowMaterial.clone());
-    track(glow.material);
-    glow.position.set(x * 0.88, y * 0.82, 0.15);
-    glow.scale.set(0.92, 0.42, 1);
-    root.add(glow);
-    seatGlows.set(seat, glow);
   });
 
   const nightPlane = new THREE.Mesh(track(new THREE.PlaneGeometry(10, 10)), nightMaterial);
@@ -370,36 +307,19 @@ function buildTableScene(THREE: typeof import("three"), scene: import("three").S
   root.add(nightOverlay);
 
   const tick = (_elapsed: number, state: BackdropState) => {
-    const activeSeat = state.players.find((player) => player.id === state.activeSpeakerId)?.seat;
     const isNight = state.phase === "night";
 
-    innerGlow.material.opacity = isNight ? 0.065 : 0.08;
     nightMaterial.opacity = isNight ? 0.22 : 0;
 
     state.players.forEach((player) => {
-      const glow = seatGlows.get(player.seat);
       const shadow = seatShadows.get(player.seat);
-      if (!glow || !shadow) {
+      if (!shadow) {
         return;
       }
 
-      const isActive = player.seat === activeSeat;
-      glow.material.opacity = player.alive ? (isActive ? 0.09 : 0.035) : 0.015;
       shadow.material.opacity = player.alive ? 0.84 : deadSeatMaterial.opacity;
       shadow.material.color.setHex(player.alive ? 0x070504 : 0x050404);
     });
-
-    if (activeSeat === undefined) {
-      activeGroup.visible = false;
-    } else {
-      const [x, y] = SEAT_COORDS[activeSeat] ?? [0, 0];
-      activeGroup.visible = true;
-      activeGroup.position.set(x * 0.78, y * 0.72, 0.28);
-      activeGroup.scale.setScalar(state.busy ? 1.035 : 1);
-      activeGlow.material.opacity = state.busy ? 0.1 : 0.085;
-      rippleA.material.opacity = state.busy ? 0.085 : 0.07;
-      rippleB.material.opacity = state.busy ? 0.065 : 0.05;
-    }
   };
 
   return {

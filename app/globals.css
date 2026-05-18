@@ -1049,28 +1049,6 @@ html.custom-cursor-enabled [contenteditable="true"] {
   font-size: 0.72rem;
 }
 
-.candle {
-  width: 28px;
-  height: clamp(58px, 10dvh, 78px);
-  margin: 0 auto 10px;
-  display: grid;
-  place-items: start center;
-  background: #c27a2e;
-  box-shadow:
-    0 0 0 6px rgba(211, 163, 76, 0.08),
-    0 0 52px rgba(211, 163, 76, 0.58);
-  image-rendering: pixelated;
-}
-
-.candle span {
-  width: 16px;
-  height: 22px;
-  margin-top: -18px;
-  background: #ffd36b;
-  box-shadow: 0 0 24px rgba(255, 211, 107, 0.9);
-  clip-path: polygon(50% 0, 90% 62%, 50% 100%, 10% 62%);
-}
-
 .portrait {
   position: absolute;
   z-index: 4;
