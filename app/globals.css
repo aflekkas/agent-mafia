@@ -996,17 +996,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
 }
 
 .table-scene::before {
-  content: "";
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 22%;
-  bottom: 18%;
-  z-index: 2;
-  border: 0;
-  background:
-    radial-gradient(circle at center, rgba(211, 163, 76, 0.09), rgba(0, 0, 0, 0) 68%);
-  pointer-events: none;
+  content: none;
 }
 
 .table-3d-backdrop {
@@ -1015,9 +1005,7 @@ html.custom-cursor-enabled [contenteditable="true"] {
   z-index: 1;
   pointer-events: none;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(211, 163, 76, 0.08), rgba(0, 0, 0, 0) 48%),
-    #000;
+  background: #000;
 }
 
 .table-3d-canvas {
