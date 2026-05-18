@@ -1,32 +1,29 @@
 # Agent Mafia
 
-Single-player first-person Mafia game in noir Palermo. Six souls at a candlelit table. Five are AI NPCs (Don Vito, Salvatore, Rosa, Vincenzo, Carmela) with distinct ElevenLabs voices and personalities. One is you. Two are Mafia. The Narrator speaks in classic Palermo noir. You play by typing accusations, lies, and votes, with an optional browser mic helper for filling the text box.
+Agent Mafia is a local-first single-player Mafia prototype set around a noir Palermo table. You play one human seat against five LLM-driven NPCs: Don Vito, Salvatore, Rosa, Vincenzo, and Carmela. The app runs a real six-player Mafia loop with hidden roles, private knowledge, night actions, discussion, votes, eliminations, and win/loss checks.
 
-Built as a personal voice-first game prototype.
+The current build is intentionally simple: one Next.js app, a 2D CSS table UI, OpenAI-backed NPC turns with deterministic fallbacks, optional ElevenLabs REST TTS, and browser voice fallback. Human input is text-first; the mic button is only a browser speech-recognition helper that fills the text box.
 
-## One-Sentence Pitch
+## Status
 
-> First-person Mafia in noir Palermo where you play against five voiced AI NPCs around a candlelit table — and two of them are Mafia.
+This repo is the playable local demo version of the project. It does not currently use Three.js, Tailwind, shadcn, Bun/Hono, SQLite, ElevenLabs Agents/WebRTC, Custom LLM SSE, or multi-voice XML routing.
 
-## Product Pillars
+Implemented today:
 
-| Pillar | Hook |
-|---|---|
-| **Voiced table loop** | NPC and narrator voices, Sound Effects, and Music make the characters feel present while human input stays text-first. |
-| **Playable social deduction** | Real Mafia mechanics: the player receives a random role, speaks during their turn, votes, lies, and can win or lose. |
-| **Noir AI theater** | Six souls at a candlelit table. Five are AIs. One is you. The Narrator speaks in restrained Palermo noir. |
-
-## Design Priorities
-
-- **Human-player layer.** Without it, this is a show. With it, it is an actual social-deduction game.
-- **Voice as performance.** NPC and narrator voice carries identity, role, phase, and atmosphere instead of acting as bolt-on narration.
-- **A distinctive premise.** The table should feel weird immediately: five voiced AI suspects and one human participant.
-- **Visual signature** — Three.js POV pan camera, pixelated post-process, candlelit table, dark/gloomy. Indie aesthetic, anti-generic.
-- **Shareable moments.** Agent personalities, narrator delivery, and the human at the table should produce short, memorable clips.
+- Six fixed seats: five NPCs plus the human player.
+- Random roles: two Mafia, one Detective, one Doctor, two Villagers.
+- Detective-only starting Mafia lead.
+- Mafia partner visibility.
+- First-night safety with Doctor/Detective actions still allowed.
+- Randomized day discussion order with NPC pressure turns.
+- OpenAI NPC dialogue and decisions, with fallback lines/actions when no API key is configured.
+- Direct ElevenLabs TTS by speaker when voice IDs are configured.
+- Browser speech synthesis fallback.
+- Local ambience and UI sound effects from `public/sfx`.
+- Text transcript, vote board, role card, pause/new-game controls, and avatar/portrait UI.
+- Full local game logs written to `.agent-mafia-logs/` for debugging bad conversations.
 
 ## Run Locally
-
-This project uses `npm`.
 
 ```bash
 npm install
@@ -35,16 +32,52 @@ npm run dev -- -p 3001
 
 Open `http://localhost:3001`.
 
-Optional AI/voice keys live in `.env`. Copy `.env.example` if needed. With no ElevenLabs key, the app keeps a browser voice fallback. Human input is text-first.
+Useful checks:
 
-## Files
+```bash
+npm run typecheck
+npm run build
+```
 
-- `CLAUDE.md` — Claude context and decisions
-- `AGENTS.md` — 5 personas (Italian names) + Narrator + human player mechanics + voice tag mapping
-- `VOICES.md` — ElevenLabs stack (Agents/TTS/SFX/Music), voice picks, audio tags, Custom LLM SSE
-- `BUILD.md` — architecture + implementation spine + decision gates + prep checklist + risks + reference repos + borrow list
-- `DEMO.md` — local demo flow, video outline, shareable clip direction, and aesthetic direction
+## Local Conversation Logs
 
-## Status
+Every started or updated game writes a full JSON snapshot to `.agent-mafia-logs/`, which is intentionally gitignored. Use `.agent-mafia-logs/latest.json` for the most recent game, or a specific `.agent-mafia-logs/<game-id>.json` file when comparing an exact transcript, hidden roles, votes, inner monologues, and state.
 
-Phase 1 is a local playable prototype: real role assignment, detective-only Mafia lead, Mafia partner awareness, first-night safety, night actions, randomized day discussion, voting, elimination, win/loss checks, OpenAI-backed NPC dialogue with fallbacks, Player 6 input, transcript, role card, noir table UI, pause/new-game controls, and in-app sound controls.
+## Environment
+
+Copy `.env.example` to `.env` and fill only what you need.
+
+- `OPENAI_API_KEY` enables generated NPC turns.
+- Without `OPENAI_API_KEY`, the game still plays with deterministic fallback turns.
+- `ELEVENLABS_API_KEY` plus per-speaker voice IDs enables REST TTS.
+- Without ElevenLabs config, browser speech synthesis is used.
+
+## Current Stack
+
+- Next.js App Router
+- React
+- TypeScript
+- OpenAI SDK
+- Zod
+- Pixelarticons
+- Plain CSS in `app/globals.css`
+- In-memory local game sessions
+
+## Project Structure
+
+- `app/` - Next routes and global CSS.
+- `components/GameShell.tsx` - current game UI shell.
+- `lib/game/` - game state, role setup, phase advancement, votes, night actions, redaction, selectors.
+- `lib/ai/` - NPC personas, prompts, OpenAI turn generation, fallback turns.
+- `lib/voice/` - speaker-to-ElevenLabs voice ID mapping.
+- `public/avatars/` and `public/portraits/` - player and NPC table portraits.
+- `public/sfx/` - local ambience and UI sounds.
+- `docs/` - current architecture, voice, demo, and cleanup notes.
+
+## Docs
+
+- `docs/architecture.md` - how the current app works.
+- `docs/voice.md` - current voice/TTS behavior and env vars.
+- `docs/demo.md` - local demo runbook.
+- `docs/refactor-notes.md` - cleanup findings and maintenance notes.
+- `AGENTS.md` - instructions for coding agents working in this repo.

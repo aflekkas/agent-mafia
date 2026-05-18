@@ -1,4 +1,5 @@
 import { GameState, Player, PlayerId, Role, TranscriptEntry } from "./types";
+import { analyzeSpeechStance, mentionedPlayersInText, mentionsPlayer, normalizeSpeech, shortQuote } from "./speech-analysis";
 
 export function getPlayer(state: GameState, playerId: PlayerId): Player {
   const player = state.players.find((candidate) => candidate.id === playerId);
@@ -109,84 +110,25 @@ export function privateKnowledgeFor(state: GameState, playerId: PlayerId): strin
 function describePublicEntry(state: GameState, entry: TranscriptEntry): string[] {
   if (entry.kind === "vote") {
     const target = targetFromVoteText(state, entry.text);
-    return target ? [`- ${entry.speakerName} voted for ${target.name}.`] : [`- ${entry.speakerName} cast a vote.`];
+    return target
+      ? [`- ${entry.speakerName} voted for ${target.name}: "${shortQuote(entry.text)}"`]
+      : [`- ${entry.speakerName} cast a vote: "${shortQuote(entry.text)}"`];
   }
 
   if (entry.kind !== "speech") {
     return [];
   }
 
-  const targets = mentionedPlayers(state, entry);
+  const targets = mentionedPlayersInText(state.players, entry.text, entry.speakerId as PlayerId);
   if (!targets.length) {
     return [`- ${entry.speakerName} spoke without naming a target: "${shortQuote(entry.text)}"`];
   }
 
-  const stance = speechStance(entry.text);
-  return targets.map((target) => `- ${entry.speakerName} ${stance} ${target.name}: "${shortQuote(entry.text)}"`);
-}
-
-function mentionedPlayers(state: GameState, entry: TranscriptEntry): Player[] {
-  const text = normalize(entry.text);
-  return state.players.filter((player) => player.id !== entry.speakerId && player.alive && mentionsPlayer(text, player));
-}
-
-function mentionsPlayer(normalizedText: string, player: Player): boolean {
-  const fullName = normalize(player.name);
-  const firstName = fullName.split(" ")[0];
-  return wordIncludes(normalizedText, fullName) || wordIncludes(normalizedText, firstName);
-}
-
-function wordIncludes(text: string, value: string): boolean {
-  if (!value) {
-    return false;
-  }
-
-  return new RegExp(`(^|\\W)${escapeRegExp(value)}(\\W|$)`, "i").test(text);
-}
-
-function speechStance(text: string): string {
-  const lowered = normalize(text);
-  const question = /[?]|\b(why|what|how|explain|answer|tell me)\b/.test(lowered);
-  const defense = /\b(trust|believe|innocent|clear|cleared|not mafia|not the mafia|isn't mafia|is not mafia|leave .* alone|wrong about)\b/.test(
-    lowered
-  );
-  const accusation =
-    /\b(mafia|lying|liar|lie|suspicious|suspect|guilty|dodg|cover|alibi|knife|murder|corpse|quiet|too clean|changed|performance|voted|panic)\b/.test(
-      lowered
-    );
-
-  if (defense && !accusation) {
-    return "defended";
-  }
-  if (question && accusation) {
-    return "pressed";
-  }
-  if (question) {
-    return "questioned";
-  }
-  if (defense) {
-    return "defended";
-  }
-  if (accusation) {
-    return "challenged";
-  }
-  return "addressed";
+  const stance = analyzeSpeechStance(entry.text).ledger;
+  return targets.map((target) => `- ${entry.speakerName} ${stance} ${target.name}: "${shortQuote(entry.text, 120)}"`);
 }
 
 function targetFromVoteText(state: GameState, text: string): Player | undefined {
-  const normalized = normalize(text);
+  const normalized = normalizeSpeech(text);
   return state.players.find((player) => mentionsPlayer(normalized, player));
-}
-
-function shortQuote(text: string): string {
-  const compact = text.replace(/\s+/g, " ").trim();
-  return compact.length > 120 ? `${compact.slice(0, 117)}...` : compact;
-}
-
-function normalize(text: string): string {
-  return text.toLowerCase().replace(/[’]/g, "'");
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

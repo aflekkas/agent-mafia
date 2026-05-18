@@ -5,12 +5,14 @@ import {
   publicConversationLedger,
   publicTranscriptSummary
 } from "@/lib/game/selectors";
+import { roleActionTargets } from "@/lib/game/role-actions";
+import { mentionsPlayer, normalizeSpeech } from "@/lib/game/speech-analysis";
 import { PERSONAS } from "./personas";
 
 export function buildNpcPrompt(state: GameState, player: Player): string {
   const persona = PERSONAS[player.id as Exclude<PlayerId, "player_6">];
   const legalVoteTargets = legalTargets(state, player.id, "vote");
-  const roleActionTargets = roleActionTargetsFor(state, player);
+  const legalRoleActionTargets = roleActionTargets(state, player);
 
   return [
     `You are ${player.name}, one of six people playing Mafia at a noir Palermo table.`,
@@ -36,24 +38,28 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "",
     "Conversation memory, parsed from public speech:",
     publicConversationLedger(state, 18) || "No public accusations, defenses, questions, or votes yet.",
-    latestPublicInstruction(state),
+    latestPublicInstruction(state, player),
     "",
     "How to play this turn:",
     phaseInstruction(state, player),
     "- First decide a real agenda in inner_monologue: target, reason, connection to another player, and what reaction you want.",
     "- Do not pick a random name. If your evidence is weak, ask a sharp question instead of pretending certainty.",
+    "- If no one has spoken publicly yet, do not pretend to have behavioral evidence. Make an opening gut read, ask a pointed question, or bait a reaction.",
     "- Build relationships: notice who protects whom, who piles on, who avoids accusing a dangerous person, and who changes targets after pressure.",
     "- If someone is accused and their partner/ally dodges or redirects, call that connection out.",
     "- Do not accuse someone of being quiet if they have not had a real chance to speak this day.",
     "- Make a concrete move: accuse, defend yourself, defend someone else, mock a weak accusation, redirect, align, or lie.",
     "- Directly answer the newest useful challenge when it names you or your ally. Do not ignore being accused.",
+    "- If the newest line is addressed to someone else, do not answer as that person. React as yourself: pressure them to answer, agree, disagree, or redirect.",
     "- Refer to who did what: 'Rosa backed Alex', 'Carmela dodged Don Vito', 'Salvatore voted Vincenzo'.",
     "- Sound like a tense person at a table. You may be angry, petty, scared, smug, impatient, or defensive.",
     "- Mild profanity is allowed when it fits the character. No slurs. Do not become cartoonishly vulgar.",
     "- Use contractions, fragments, interruptions, and imperfect phrasing. Avoid polished debate-club summaries.",
     "- Keep public speech compact: 1-2 short sentences, usually under 30 words total.",
+    "- Use plain punctuation. Avoid long dash-heavy clauses that make speech boxes awkward.",
     "- Do not monologue. Do not explain the whole board. Make one pointed emotional move and stop.",
     "- Private knowledge is private. Mafia may know their partner; Detective may know one Mafia lead. Do not say how you know.",
+    `- First-person words like "I", "me", and "my" always mean ${player.name}, never the person you are responding to.`,
     `- The speech field is ONLY ${player.name}'s own spoken line. Never write another person's line, cue, transcript label, or completion.`,
     "- Do not write 'Don:', 'Alex:', 'Narrator:', or any other speaker-label format. If addressing someone, use a comma: 'Don, listen...'",
     "- Do not invent what another player says next. You may quote actual prior public words only if they appear in the transcript.",
@@ -64,11 +70,12 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     `Current day: ${state.day}`,
     `Current phase: ${state.phase}`,
     `Legal vote targets: ${targetList(state, legalVoteTargets)}`,
-    `Legal role-action targets: ${targetList(state, roleActionTargets)}`,
+    `Legal role-action targets: ${targetList(state, legalRoleActionTargets)}`,
     "",
     "Return JSON with this exact shape:",
     '{ "strategy": { "target_id": "player id or null", "evidence": "actual public evidence or private reason", "connection": "relationship/pairing/read you are testing", "intent": "reaction wanted" }, "inner_monologue": "private thought", "speech": "your own spoken line only", "vote": null, "role_action": null }',
     "For day-vote, set vote to a player id from the legal vote targets.",
+    "For day-vote, speech must be the reason for your own vote. It will be logged publicly and included in future context.",
     "For night action, set role_action to a player id from the legal role-action targets.",
     "For day-discussion, vote and role_action must be null.",
     `Valid player ids: ${state.players.map((candidate) => candidate.id).join(", ")}`
@@ -211,13 +218,13 @@ function phaseInstruction(state: GameState, player: Player): string {
   }
 
   if (state.phase === "day-vote") {
-    return "Vote phase: choose the best elimination target, then justify it in one sharp public line.";
+    return "Vote phase: choose the best elimination target, then justify it in one sharp public line. Your speech must explain this exact vote target from your own perspective.";
   }
 
   return "Discussion phase: make the table move. Ask one pointed question, answer an accusation, or build a case.";
 }
 
-function latestPublicInstruction(state: GameState): string {
+function latestPublicInstruction(state: GameState, viewer: Player): string {
   const latestPublic = state.transcript
     .filter((entry) => !entry.privateTo?.length && ["speech", "vote", "narration"].includes(entry.kind))
     .at(-1);
@@ -226,23 +233,26 @@ function latestPublicInstruction(state: GameState): string {
     return "No one has spoken publicly yet.";
   }
 
+  const mentioned = mentionedPlayerNames(state, latestPublic.text);
+  const names = mentioned.length ? mentioned.join(", ") : "no living player by name";
+  const viewerWasNamed = mentioned.includes(viewer.name);
+  const namesViewer = viewerWasNamed
+    ? "This includes you. You may answer directly if it helps."
+    : `This does not include you. You were not accused or addressed by this line. Do not say "why am I", "I'm defensive", "you accused me", or answer as if you were named.`;
+
   return [
     `Latest public moment: ${latestPublic.speakerName} said "${latestPublic.text}"`,
+    `Latest line names or addresses: ${names}. You are ${viewer.name}. ${namesViewer}`,
+    `If that line challenges someone else, do not answer in first person as if you are them. You may demand that ${names} answer, agree with pressure on ${names}, or redirect from your own perspective.`,
     "React to the latest public moment only if it helps your agenda. Otherwise make a better move."
   ].join("\n");
 }
 
-function roleActionTargetsFor(state: GameState, player: Player): PlayerId[] {
-  if (player.role === "mafia") {
-    return legalTargets(state, player.id, "mafia-kill");
-  }
-  if (player.role === "doctor") {
-    return legalTargets(state, player.id, "doctor-save");
-  }
-  if (player.role === "detective") {
-    return legalTargets(state, player.id, "detective-investigate");
-  }
-  return [];
+function mentionedPlayerNames(state: GameState, text: string): string[] {
+  const normalized = normalizeSpeech(text);
+  return state.players
+    .filter((candidate) => candidate.alive && mentionsPlayer(normalized, candidate))
+    .map((candidate) => candidate.name);
 }
 
 function targetList(state: GameState, ids: PlayerId[]): string {

@@ -3,7 +3,7 @@ import { aliveIds, getPlayer, legalTargets } from "./selectors";
 import { addTranscript, touch } from "./setup";
 import { checkWinCondition } from "./win";
 
-export function submitVote(state: GameState, voterId: PlayerId, targetId: PlayerId): GameState {
+export function submitVote(state: GameState, voterId: PlayerId, targetId: PlayerId, rationaleText?: string): GameState {
   const legal = legalTargets(state, voterId, "vote");
   const voter = getPlayer(state, voterId);
   const finalTargetId = legal.includes(targetId) ? targetId : legal[0] ?? targetId;
@@ -24,6 +24,10 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
   ];
 
   const target = getPlayer(state, finalTargetId);
+  const text = voter.isHuman
+    ? `votes for ${target.name}.`
+    : formatNpcVoteText(target.name, rationaleText) ?? `votes for ${target.name}. ${voteRationale(voter.name, target.name, target.suspicion)}`;
+
   return addTranscript(
     {
       ...state,
@@ -32,9 +36,22 @@ export function submitVote(state: GameState, voterId: PlayerId, targetId: Player
     },
     voterId,
     voter.name,
-    voter.isHuman ? `votes for ${target.name}.` : `votes for ${target.name}. ${voteRationale(voter.name, target.name, target.suspicion)}`,
+    text,
     "vote"
   );
+}
+
+function formatNpcVoteText(targetName: string, rationaleText: string | undefined): string | undefined {
+  const trimmed = rationaleText?.replace(/\s+/g, " ").trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (new RegExp(`^votes?\\s+for\\s+${escapeRegExp(targetName)}\\b`, "i").test(trimmed)) {
+    return trimmed;
+  }
+
+  return `votes for ${targetName}. ${trimmed}`;
 }
 
 function voteRationale(voterName: string, targetName: string, suspicion: number): string {
@@ -54,6 +71,10 @@ function voteRationale(voterName: string, targetName: string, suspicion: number)
     return `${targetName}. I may be wrong, but hesitation is also a choice.`;
   }
   return `${targetName} is the cleanest vote I can make right now.`;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function resolveVote(state: GameState): GameState {

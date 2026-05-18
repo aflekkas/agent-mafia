@@ -1,6 +1,8 @@
 import { addTranscript, makeId, touch } from "./setup";
 import { resolveNight, submitNightAction } from "./night";
 import { alivePlayers, getHuman, getPlayer, livingRole } from "./selectors";
+import { roleActionTargets } from "./role-actions";
+import { analyzeSpeechStance, mentionedPlayersInText, shortQuote } from "./speech-analysis";
 import { submitVote, resolveVote } from "./votes";
 import { GameState, InnerMonologue, NpcTurn, Player, PlayerId } from "./types";
 
@@ -175,7 +177,7 @@ async function advanceNight(state: GameState): Promise<GameState> {
 
 async function runNpcNightAction(state: GameState, actor: Player): Promise<GameState> {
   const turn = await generateNpcTurnForPlayer(state, actor);
-  const targetId = turn.role_action;
+  const targetId = turn.role_action ?? fallbackNightTarget(state, actor);
   const withMind = addInnerMonologue(state, actor.id, turn.inner_monologue);
 
   if (!targetId) {
@@ -321,7 +323,7 @@ async function advanceVote(state: GameState): Promise<GameState> {
 
   const turn = await generateNpcTurnForPlayer(state, voter);
   const withMind = addInnerMonologue(state, voter.id, turn.inner_monologue);
-  const voted = submitVote(withMind, voter.id, turn.vote ?? fallbackVoteTarget(state, voter.id));
+  const voted = submitVote(withMind, voter.id, turn.vote ?? fallbackVoteTarget(state, voter.id), turn.speech);
 
   return touch({
     ...voted,
@@ -400,6 +402,30 @@ function fallbackVoteTarget(state: GameState, voterId: PlayerId): PlayerId {
   return (preferred ?? targets[0]).id;
 }
 
+function fallbackNightTarget(state: GameState, actor: Player): PlayerId | null {
+  const targets = roleActionTargets(state, actor);
+  if (!targets.length) {
+    return null;
+  }
+
+  const ranked = targets
+    .map((id) => getPlayer(state, id))
+    .sort((left, right) => {
+      if (actor.role === "mafia") {
+        return right.trust - left.trust || left.suspicion - right.suspicion || left.seat - right.seat;
+      }
+      if (actor.role === "doctor") {
+        return right.suspicion - left.suspicion || right.trust - left.trust || left.seat - right.seat;
+      }
+      if (actor.role === "detective") {
+        return right.suspicion - left.suspicion || left.trust - right.trust || left.seat - right.seat;
+      }
+      return left.seat - right.seat;
+    });
+
+  return ranked[0]?.id ?? targets[0];
+}
+
 function applySuspicionFromSpeech(state: GameState, speech: string, speakerId: PlayerId): GameState {
   return applySpeechMemory(state, speech, speakerId, 1);
 }
@@ -409,12 +435,9 @@ function applyHumanSpeechSuspicion(state: GameState, speech: string): GameState 
 }
 
 function applySpeechMemory(state: GameState, speech: string, speakerId: PlayerId, pressureWeight: number): GameState {
-  const lowered = normalizeSpeech(speech);
   const speaker = getPlayer(state, speakerId);
-  const mentionedIds = state.players
-    .filter((player) => player.id !== speakerId && player.alive && mentionsPlayer(lowered, player))
-    .map((player) => player.id);
-  const stance = speechStance(speech);
+  const mentionedIds = mentionedPlayersInText(state.players, speech, speakerId).map((player) => player.id);
+  const stance = analyzeSpeechStance(speech);
   const targetNames = mentionedIds.map((id) => getPlayer(state, id).name);
 
   if (!mentionedIds.length) {
@@ -458,55 +481,4 @@ function applySpeechMemory(state: GameState, speech: string, speakerId: PlayerId
 
 function addMemoryNote(notes: string[], note: string): string[] {
   return [...notes, note].slice(-MEMORY_NOTE_LIMIT);
-}
-
-function speechStance(speech: string): { kind: "pressure" | "defense"; self: string; target: string } {
-  const lowered = normalizeSpeech(speech);
-  const defense =
-    /\b(trust|believe|innocent|clear|cleared|not mafia|not the mafia|isn't mafia|is not mafia|leave .* alone|wrong about|back off)\b/.test(
-      lowered
-    );
-  const accusation =
-    /\b(mafia|lying|liar|lie|suspicious|suspect|guilty|dodg|cover|alibi|knife|murder|corpse|quiet|too clean|changed|performance|voted|panic|bullshit|damn)\b/.test(
-      lowered
-    );
-  const question = /[?]|\b(why|what|how|explain|answer|tell me)\b/.test(lowered);
-
-  if (defense && !accusation) {
-    return { kind: "defense", self: "defended", target: "defended" };
-  }
-  if (question && accusation) {
-    return { kind: "pressure", self: "pressed", target: "pressed" };
-  }
-  if (question) {
-    return { kind: "pressure", self: "questioned", target: "questioned" };
-  }
-  return { kind: "pressure", self: "challenged", target: "challenged" };
-}
-
-function mentionsPlayer(normalizedSpeech: string, player: Player): boolean {
-  const fullName = normalizeSpeech(player.name);
-  const firstName = fullName.split(" ")[0];
-  return wordIncludes(normalizedSpeech, fullName) || wordIncludes(normalizedSpeech, firstName);
-}
-
-function wordIncludes(text: string, value: string): boolean {
-  if (!value) {
-    return false;
-  }
-
-  return new RegExp(`(^|\\W)${escapeRegExp(value)}(\\W|$)`, "i").test(text);
-}
-
-function shortQuote(text: string): string {
-  const compact = text.replace(/\s+/g, " ").trim();
-  return compact.length > 96 ? `${compact.slice(0, 93)}...` : compact;
-}
-
-function normalizeSpeech(text: string): string {
-  return text.toLowerCase().replace(/[’]/g, "'");
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

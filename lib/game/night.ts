@@ -1,19 +1,13 @@
 import { GameState, PlayerId } from "./types";
 import { getPlayer, legalTargets } from "./selectors";
+import { roleActionForRole } from "./role-actions";
 import { addTranscript, touch } from "./setup";
 import { buildDiscussionQueueFromPlayers } from "./turn-order";
 import { checkWinCondition } from "./win";
 
 export function submitNightAction(state: GameState, actorId: PlayerId, targetId: PlayerId): GameState {
   const actor = getPlayer(state, actorId);
-  const action =
-    actor.role === "mafia"
-      ? "mafia-kill"
-      : actor.role === "doctor"
-        ? "doctor-save"
-        : actor.role === "detective"
-          ? "detective-investigate"
-          : undefined;
+  const action = roleActionForRole(actor.role);
 
   if (!action) {
     return {

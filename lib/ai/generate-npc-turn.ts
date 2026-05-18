@@ -1,7 +1,9 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import { GameState, NpcTurn, Player, PlayerId } from "@/lib/game/types";
+import { GameState, NpcTurn, PLAYER_IDS, Player, PlayerId } from "@/lib/game/types";
 import { legalTargets } from "@/lib/game/selectors";
+import { roleActionTargets } from "@/lib/game/role-actions";
+import { mentionsPlayer, normalizeSpeech } from "@/lib/game/speech-analysis";
 import { fallbackLineFor } from "./personas";
 import { buildNpcPrompt } from "./prompts";
 
@@ -87,7 +89,7 @@ function normalizeTurn(
     parsed.role_action && isPlayerId(parsed.role_action) && legalRoleTargets.includes(parsed.role_action)
       ? parsed.role_action
       : null;
-  const speech = cleanSingleSpeakerSpeech(state, parsed.speech.trim());
+  const speech = repairMisaddressedReply(state, player, cleanSingleSpeakerSpeech(state, parsed.speech.trim()));
 
   return {
     inner_monologue: parsed.inner_monologue.trim(),
@@ -113,19 +115,6 @@ function fallbackNpcTurn(state: GameState, player: Player, reason: string): NpcT
   };
 }
 
-function roleActionTargets(state: GameState, player: Player): PlayerId[] {
-  if (player.role === "mafia") {
-    return legalTargets(state, player.id, "mafia-kill");
-  }
-  if (player.role === "doctor") {
-    return legalTargets(state, player.id, "doctor-save");
-  }
-  if (player.role === "detective") {
-    return legalTargets(state, player.id, "detective-investigate");
-  }
-  return [];
-}
-
 function chooseFallbackTarget(state: GameState, targets: PlayerId[], actorId: PlayerId): PlayerId | null {
   if (!targets.length) {
     return null;
@@ -144,7 +133,7 @@ function chooseFallbackTarget(state: GameState, targets: PlayerId[], actorId: Pl
 }
 
 function isPlayerId(value: string): value is PlayerId {
-  return ["don_vito", "salvatore", "rosa", "vincenzo", "carmela", "player_6"].includes(value);
+  return PLAYER_IDS.includes(value as PlayerId);
 }
 
 function cleanSingleSpeakerSpeech(state: GameState, speech: string): string {
@@ -170,6 +159,33 @@ function cleanSingleSpeakerSpeech(state: GameState, speech: string): string {
   }
 
   return cleaned.replace(/\s+/g, " ").trim() || speech;
+}
+
+function repairMisaddressedReply(state: GameState, player: Player, speech: string): string {
+  const latest = state.transcript
+    .filter((entry) => !entry.privateTo?.length && ["speech", "vote"].includes(entry.kind))
+    .at(-1);
+  if (!latest || latest.speakerId === player.id || latest.speakerId === "narrator" || latest.speakerId === "system") {
+    return speech;
+  }
+
+  const latestText = normalizeSpeech(latest.text);
+  const latestNames = state.players.filter((candidate) => candidate.alive && mentionsPlayer(latestText, candidate));
+  const latestMentionsSpeaker = latestNames.some((candidate) => candidate.id === player.id);
+  if (latestMentionsSpeaker) {
+    return speech;
+  }
+
+  const looksLikePersonalDefense =
+    /\b(why am i|why i'm|why i am|i'm defensive|i am defensive|you accused me|you named me|you called me|my defense|me with|put me)\b/i.test(
+      speech
+    );
+  if (!looksLikePersonalDefense || !latestNames.length) {
+    return speech;
+  }
+
+  const target = latestNames[0];
+  return `${target.name}, answer ${latest.speakerName}. I'm watching whether this turns into a dodge.`;
 }
 
 function escapeRegExp(value: string): string {

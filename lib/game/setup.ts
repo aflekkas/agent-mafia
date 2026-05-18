@@ -8,6 +8,7 @@ import {
   SpeakerId,
   TranscriptEntry
 } from "./types";
+import { shuffle } from "./random";
 import { buildDiscussionQueueFromPlayers } from "./turn-order";
 
 const PLAYER_META: Record<PlayerId, Omit<Player, "role" | "alive" | "suspicion" | "trust" | "notes">> = {
@@ -71,7 +72,7 @@ export function createGame(seed = `demo-${Date.now()}`, options: CreateGameOptio
     role: roles[id],
     detectiveKnownRole: id === detectiveKnownMafiaId ? ("mafia" as Role) : undefined,
     alive: true,
-    suspicion: id === "salvatore" ? 1 : 0,
+    suspicion: 0,
     trust: 0,
     notes: []
   }));
@@ -228,32 +229,6 @@ export function touch(state: GameState): GameState {
 
 export function makeId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function shuffle<T>(values: T[], seed: string): T[] {
-  const result = [...values];
-  const rand = seededRandom(seed);
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(rand() * (index + 1));
-    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-  }
-  return result;
-}
-
-function seededRandom(seed: string): () => number {
-  let hash = 2166136261;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash ^= seed.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return () => {
-    hash += 0x6d2b79f5;
-    let value = hash;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 function pickDetectiveKnownMafia(roles: Record<PlayerId, Role>, seed: string): PlayerId {
