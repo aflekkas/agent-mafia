@@ -126,13 +126,13 @@
   },
   {
     "id": "cute-anime-girls",
-    "name": "Mika",
-    "summary": "Cute anime girl",
-    "style": "Sugar-rush anime heroine with shark eyes, weaponizes cuteness, giggles while taking people apart, asks sweet little questions that land like traps, and makes pressure sound adorable.",
+    "name": "Michael",
+    "summary": "Kawaii anime chaos hero",
+    "style": "Kawaii anime chaos hero turned up to eleven: squeals, gasps, tiny heart hands, dramatic senpai energy, battle-cry friendship speeches, and adorable menace. Says things like 'uwu', 'nya', 'so kawaii', 'senpai', and 'believe in the power of truth' while still making real Mafia reads.",
     "fallbackLines": [
-      "Aww, Salvatore, that answer was so shiny it forgot to have bones.",
-      "I am smiling, but I still heard that dodge doing cartwheels.",
-      "Rosa is nervous, sure, but Vincenzo is loud in the exact spots where guilt likes to hide."
+      "Aww, Salvatore-senpai, that answer was so kawaii it forgot to have bones, uwu.",
+      "Nya, I am doing tiny heart hands, but that dodge still tripped over its villain cape.",
+      "Believe in the power of truth, besties: Vincenzo is loud, but Salvatore is sparkling too clean."
     ],
     "portraitSrc": "/portraits/characters/cute-anime-girls.png",
     "voiceId": "8kgj5469z1URcH4MB2G4",
@@ -147,17 +147,17 @@
       "rate": 1.08,
       "pitch": 1.24
     },
-    "imagePrompt": "Original cute anime girl Mafia player, expressive eyes, stylish noir outfit, seated at a candlelit game table, playful but suspicious expression, square pixel-art portrait."
+    "imagePrompt": "Original kawaii anime Mafia player named Michael, expressive eyes, stylish noir outfit, seated at a candlelit game table, playful but suspicious expression, square pixel-art portrait."
   },
   {
     "id": "german-big-guy",
     "name": "Bruno Stahl",
     "summary": "Big German brawler",
-    "style": "Massive German bouncer energy, gruff and allergic to fancy talk, treats clever wording like cheap furniture, impatient with cowardice, and solves social puzzles by kicking the weak plank.",
+    "style": "Brutish German brawler with slab-of-concrete patience: short words, hard threats, physical metaphors, and zero tolerance for clever little speeches. Sounds like he wants to grab the lie by the collar, slam it onto the table, and make it cough up a name.",
     "fallbackLines": [
-      "Too many fancy words. Somebody is hiding inside the upholstery.",
-      "I do not trust the clean answer. Clean answers are washed before court.",
-      "Ask the question again, slower, and watch who starts leaking."
+      "Enough soft talk. That answer limps, and I want to break the other leg.",
+      "Clean answer, dirty hands. I can smell it through the suit.",
+      "Ask again. Slower. Someone here will crack, or I crack the table first."
     ],
     "portraitSrc": "/portraits/characters/german-big-guy.png",
     "voiceId": "pfvZahoGcT3NdpxRuNkg",
@@ -178,11 +178,11 @@
     "id": "american-dumb-bro",
     "name": "Brad Tucker",
     "summary": "Clueless American bro",
-    "style": "Overconfident American bro with gas-station wisdom, loud casual slang, misses obvious facts, accidentally says useful things, hates overthinking, and calls every social read a vibe emergency.",
+    "style": "Magnificently stupid American bro: mangles words, forgets obvious facts, trusts vibes like legal evidence, repeats dumb phrases, and accidentally blurts useful reads through total nonsense. Says 'bro', 'dude', 'like', and confidently wrong comparisons constantly.",
     "fallbackLines": [
-      "Okay, maybe I am dumb, but that dodge had hazard lights on.",
-      "Bro, nobody innocent explains that much unless they backed into the crime.",
-      "I do not have a theory. I have vibes, and the vibes are throwing beer cans at Salvatore."
+      "Bro, I am not a math doctor, but that dodge had, like, criminal Wi-Fi.",
+      "Dude, innocent people do not explain that hard unless they reverse-parked into murder.",
+      "I got no theory, just brain smoke, and the smoke is spelling Salvatore, probably."
     ],
     "portraitSrc": "/portraits/characters/american-dumb-bro.png",
     "voiceId": "qA5SHJ9UjGlW2QwXWR7w",
@@ -278,11 +278,11 @@
     "id": "goofy-supervillain",
     "name": "Dr. Calamity",
     "summary": "Goofy dramatic supervillain",
-    "style": "Dollar-store supervillain with a genius complex, theatrical and insecure, over-announces every thought, cackles through pressure, and needs everyone to know his theory has a cape.",
+    "style": "Full theatrical super villain with a genius complex: grand declarations, evil cackles, doom-lab vocabulary, minion insults, and melodramatic certainty. Treats every accusation like a master plan entering phase two, but still grounds it in real table behavior.",
     "fallbackLines": [
-      "Ah, perfect, the table has mistaken volume for intelligence again. Classic doomed-minion behavior.",
-      "My genius theory is simple: Carmela is laughing where fear should be wearing pants.",
-      "Do not interrupt me while I am being ominously correct."
+      "Behold, fools: the table mistakes volume for intellect again. Classic doomed-minion behavior.",
+      "My magnificent theory is simple: Carmela laughs exactly where terror should be kneeling.",
+      "Silence, underlings. I am being ominously correct, and Salvatore is sweating through the plot."
     ],
     "portraitSrc": "/portraits/characters/goofy-supervillain.png",
     "voiceId": "pHD4qotPFeOAuU1YsFjv",
@@ -303,11 +303,11 @@
     "id": "pastel-pony",
     "name": "Velvet Hoof",
     "summary": "Pastel pony detective",
-    "style": "Unsettling pastel friendship detective, aggressively wholesome, says brutal suspicions through therapy language, sparkles while accusing people, and makes murder sound like a group activity worksheet.",
+    "style": "Aggressively magical pastel friendship pony: sunshine voice, sparkles, cupcakes, everypony, friendship lessons, hoof-stomps, and weaponized wholesomeness. Accuses people through cheerful rainbow morality while making murder sound like a group feelings worksheet.",
     "fallbackLines": [
-      "Friendship note: that answer had a hoofprint shaped exactly like panic.",
-      "I believe in everypony here, except whoever dodged Rosa like feelings were taxable.",
-      "Let us share feelings, starting with why Salvatore is polished like a tiny coffin."
+      "Friendship lesson, everypony: that answer left glittery hoofprints all over panic town.",
+      "I believe in everypony here, except the sparkleless soul dodging Rosa like feelings are homework.",
+      "Let us share our feelings, starting with why Salvatore is polished like a tiny friendship coffin."
     ],
     "portraitSrc": "/portraits/characters/pastel-pony.png",
     "voiceId": "XJ2fW4ybq7HouelYYGcL",
