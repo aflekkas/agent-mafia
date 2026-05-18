@@ -183,8 +183,8 @@ function auditGame(game, moves) {
     if (!/\bbecause\b|\bpattern\b|\bread\b|\bcase\b|\breason\b|\bpressure\b|\bdodg|\becho|\bsmoke\b|\bfog\b|\bcover\b|\bposition\b|\bconvincing\b|\banswer\b|\bclean\b|\bsteer|\bstall|\bshield|\balibi|\bcontradiction\b|\bhunting\b|\bscumhunting\b/i.test(vote.text)) {
       observations.push(`weak vote rationale from ${vote.speakerName}: ${vote.text}`);
     }
-    if (/\b(I vote|I'm voting|I am voting|My vote is|Voting)\b.+\b(I vote|I'm voting|I am voting|My vote is|Voting)\b/i.test(vote.text)) {
-      observations.push(`duplicate vote phrase from ${vote.speakerName}: ${vote.text}`);
+    if (/\b(I vote|I'm voting|I am voting|My vote is|Voting)\b/i.test(vote.text)) {
+      observations.push(`ballot phrase leaked from ${vote.speakerName}: ${vote.text}`);
     }
   }
 

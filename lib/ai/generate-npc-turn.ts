@@ -321,9 +321,9 @@ function forceSelfReferencesToFirstPerson(player: Player, speech: string): strin
   }
 
   return fixed
-    .replace(/\bme\s+votes\b/gi, "I vote")
-    .replace(/\bme\s+vote\b/gi, "I vote")
-    .replace(/\bme\s+voted\b/gi, "I voted")
+    .replace(/\bme\s+votes\b/gi, "I choose")
+    .replace(/\bme\s+vote\b/gi, "I choose")
+    .replace(/\bme\s+voted\b/gi, "I chose")
     .replace(/\bme\s+am\b/gi, "I am")
     .replace(/\bme\s+was\b/gi, "I was")
     .replace(/\bme\s+has\b/gi, "I have")

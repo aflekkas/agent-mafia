@@ -68,7 +68,7 @@ export function buildNpcPrompt(state: GameState, player: Player): string {
     "- Do not write 'Don:', 'Alex:', 'Narrator:', or any other speaker-label format. If addressing someone, use a comma: 'Don, listen...'",
     "- Do not invent what another player says next. You may quote actual prior public words only if they appear in the transcript.",
     "- Never reveal hidden roles unless the public transcript already revealed them.",
-    "- In vote phase, do not start speech with 'I vote', 'I'm voting', 'my vote is', or another ballot phrase. The game announces the ballot. You write only the reason.",
+    "- In vote phase, do not write a ballot announcement. The game records the target separately. You write only the human-sounding reason.",
     "- Do not use phrases like 'as an AI', 'NPC', 'the transcript', 'the game state', 'we need facts not riddles', or 'according to the evidence'.",
     "Output only valid JSON. No markdown.",
     "",
@@ -247,7 +247,7 @@ function phaseInstruction(state: GameState, player: Player): string {
   }
 
   if (state.phase === "day-vote") {
-    return "Vote phase: choose the best elimination target, then justify it in one sharp public line. Your speech must explain this exact vote target from your own perspective without saying a ballot phrase like 'I vote'.";
+    return "Vote phase: choose the best elimination target, then justify it in one sharp public line. Your speech must explain this exact target from your own perspective without a ballot announcement.";
   }
 
   return "Discussion phase: make the table move. Ask one pointed question, answer an accusation, or build a case.";

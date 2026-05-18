@@ -72,41 +72,41 @@ function formatNpcVoteText(targetName: string, rationaleText: string | undefined
   const target = escapeRegExp(targetName);
   const thirdPersonVote = new RegExp(`^votes?\\s+(?:for\\s+)?${target}\\b`, "i");
   if (thirdPersonVote.test(trimmed)) {
-    return trimmed.replace(thirdPersonVote, voteLead(voterName, targetName));
+    return cleanVoteSpeech(trimmed.replace(thirdPersonVote, voteLead(voterName, targetName)), targetName);
   }
 
   const firstPersonVote = new RegExp(`^i\\s+vote\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVote.test(trimmed)) {
-    return trimmed.replace(firstPersonVote, voteLead(voterName, targetName));
+    return cleanVoteSpeech(trimmed.replace(firstPersonVote, voteLead(voterName, targetName)), targetName);
   }
 
   const firstPersonVoting = new RegExp(`^i(?:['’]m|\\s+am)\\s+voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (firstPersonVoting.test(trimmed)) {
-    return trimmed.replace(firstPersonVoting, voteLead(voterName, targetName));
+    return cleanVoteSpeech(trimmed.replace(firstPersonVoting, voteLead(voterName, targetName)), targetName);
   }
 
   const myVoteIs = new RegExp(`^my\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?${target}\\b`, "i");
   if (myVoteIs.test(trimmed)) {
-    return trimmed.replace(myVoteIs, voteLead(voterName, targetName));
+    return cleanVoteSpeech(trimmed.replace(myVoteIs, voteLead(voterName, targetName)), targetName);
   }
 
   const imOnTarget = new RegExp(`^i(?:['’]m|\\s+am)\\s+on\\s+${target}\\b`, "i");
   if (imOnTarget.test(trimmed)) {
-    return trimmed.replace(imOnTarget, voteLead(voterName, targetName));
+    return cleanVoteSpeech(trimmed.replace(imOnTarget, voteLead(voterName, targetName)), targetName);
   }
 
   const votingTarget = new RegExp(`^voting\\s+(?:for\\s+)?${target}\\b`, "i");
   if (votingTarget.test(trimmed)) {
-    return trimmed.replace(votingTarget, voteLead(voterName, targetName));
+    return cleanVoteSpeech(trimmed.replace(votingTarget, voteLead(voterName, targetName)), targetName);
   }
 
-  const targetGetsVote = new RegExp(`^${target}\\s+(?:gets|has)\\s+my\\s+vote\\b`, "i");
+  const targetGetsVote = new RegExp(`^${target}\\s+(?:gets|has)\\s+(?:my|the)\\s+vote\\b`, "i");
   if (targetGetsVote.test(trimmed)) {
-    return trimmed.replace(targetGetsVote, voteLead(voterName, targetName));
+    return cleanVoteSpeech(trimmed.replace(targetGetsVote, voteLead(voterName, targetName)), targetName);
   }
 
   const rationale = stripLeadingTargetSentence(stripEmbeddedVoteDeclarations(stateAgnosticVoteText(trimmed), targetName), targetName);
-  return `${voteLead(voterName, targetName)}. ${rationale || voteRationale("", targetName, 0)}`;
+  return joinVoteSpeech(voteLead(voterName, targetName), rationale || voteRationale("", targetName, 0));
 }
 
 function explicitVoteTargetFromText(
@@ -138,7 +138,7 @@ function explicitVoteDeclarationsForPlayer(text: string, targetName: string): nu
     ...matchIndexes(text, new RegExp(`\\bmy\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?${target}\\b`, "gi")),
     ...matchIndexes(text, new RegExp(`\\bi(?:['’]m|\\s+am)\\s+on\\s+${target}\\b`, "gi")),
     ...matchIndexes(text, new RegExp(`\\bvoting\\s+(?:for\\s+)?${target}\\b`, "gi")),
-    ...matchIndexes(text, new RegExp(`\\b${target}\\s+(?:gets|has)\\s+my\\s+vote\\b`, "gi"))
+    ...matchIndexes(text, new RegExp(`\\b${target}\\s+(?:gets|has)\\s+(?:my|the)\\s+vote\\b`, "gi"))
   ];
 }
 
@@ -147,26 +147,26 @@ function matchIndexes(text: string, regex: RegExp): number[] {
 }
 
 function fallbackVoteText(voterName: string, targetName: string, suspicion: number): string {
-  return `${voteLead(voterName, targetName)}. ${voteRationale(voterName, targetName, suspicion)}`;
+  return joinVoteSpeech(voteLead(voterName, targetName), voteRationale(voterName, targetName, suspicion));
 }
 
 function voteLead(voterName: string, targetName: string): string {
   if (voterName === "Vincenzo") {
-    return `My ballot's on ${targetName}`;
+    return `${targetName}. That's where I'm landing.`;
   }
   if (voterName === "Carmela") {
-    return `${targetName} gets my vote`;
+    return `${targetName}. Cute story, ugly pattern.`;
   }
   if (voterName === "Rosa") {
-    return `I'm marking ${targetName}`;
+    return `${targetName}. The pattern points there.`;
   }
   if (voterName === "Don Vito") {
-    return `I am choosing ${targetName}`;
+    return `${targetName}. I may be wrong, but that is where I land.`;
   }
   if (voterName === "Salvatore") {
-    return `I'm putting my vote on ${targetName}`;
+    return `${targetName}. That is the cleanest read on the table.`;
   }
-  return `My ballot is ${targetName}`;
+  return `${targetName}. That is my call.`;
 }
 
 function voteRationale(voterName: string, targetName: string, suspicion: number): string {
@@ -185,7 +185,23 @@ function voteRationale(voterName: string, targetName: string, suspicion: number)
   if (voterName === "Don Vito") {
     return `I may be wrong, but hesitation is also a choice.`;
   }
-  return `That is the cleanest vote I can make right now.`;
+  return `That is the cleanest read I can make right now.`;
+}
+
+function joinVoteSpeech(lead: string, rationale: string): string {
+  const cleanLead = lead.replace(/\s+/g, " ").trim();
+  const cleanRationale = rationale.replace(/\s+/g, " ").trim();
+  if (!cleanRationale) {
+    return cleanLead;
+  }
+  return `${/[.!?]$/.test(cleanLead) ? cleanLead : `${cleanLead}.`} ${cleanRationale}`;
+}
+
+function cleanVoteSpeech(text: string, targetName: string): string {
+  return stripEmbeddedVoteDeclarations(text, targetName)
+    .replace(/\s+/g, " ")
+    .replace(/\s+([,.!?])/g, "$1")
+    .trim();
 }
 
 function escapeRegExp(value: string): string {
@@ -200,7 +216,7 @@ function stripEmbeddedVoteDeclarations(text: string, targetName: string): string
     .replace(new RegExp(`\\b(?:so\\s+)?i(?:['’]m|\\s+am)\\s+on\\s+${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
     .replace(new RegExp(`\\bmy\\s+vote(?:\\s+is|['’]s)\\s+(?:for\\s+)?${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
     .replace(new RegExp(`\\bvoting\\s+(?:for\\s+)?${target}\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
-    .replace(new RegExp(`\\b${target}\\s+(?:gets|has)\\s+my\\s+vote\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
+    .replace(new RegExp(`\\b${target}\\s+(?:gets|has)\\s+(?:my|the)\\s+vote\\b\\s*(?:,?\\s*and\\s*)?`, "gi"), "")
     .replace(/\s+/g, " ")
     .replace(/\s+([,.!?])/g, "$1")
     .replace(/\bso\s+(?=[,.!?]|$)/gi, "")
