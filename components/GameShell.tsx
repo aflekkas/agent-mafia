@@ -10,6 +10,7 @@ import { Volume } from "pixelarticons/react/Volume";
 import { Volume2 } from "pixelarticons/react/Volume2";
 import { CharacterSetup, GameState, HumanRolePreference, PlayerId } from "@/lib/game/types";
 import { DEFAULT_CHARACTER_SETUP, normalizeCharacterSetup } from "@/lib/characters/profiles";
+import { mentionedPlayersInText } from "@/lib/game/speech-analysis";
 import { speakEntry } from "@/components/game/audio";
 import {
   AMBIENCE_URL,
@@ -26,6 +27,7 @@ import {
   VOICE_MODE_STORAGE_KEY,
   VOTE_CUE_VOLUME
 } from "@/components/game/constants";
+import { DesignedCue, phaseCueFor, playDesignedCue } from "@/components/game/sound-design";
 import { CharacterSettingsDialog } from "@/components/game/CharacterSettingsDialog";
 import { GameDialog } from "@/components/game/GameDialog";
 import { createGame, postGameAction } from "@/components/game/game-api";
@@ -74,6 +76,9 @@ export function GameShell() {
   const uiStartRef = useRef<HTMLAudioElement | null>(null);
   const latestDecisionCueRef = useRef<string | null>(null);
   const latestVoteCueRef = useRef<string | null>(null);
+  const latestPhaseCueRef = useRef<string | null>(null);
+  const latestPromptCueRef = useRef<string | null>(null);
+  const latestAccusationCueRef = useRef<string | null>(null);
   const decisionAudioContextRef = useRef<AudioContext | null>(null);
   const ambienceFadeRef = useRef<number | null>(null);
   const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
@@ -90,6 +95,9 @@ export function GameShell() {
   }, [game]);
   const latestVoteEntry = useMemo(() => {
     return game?.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "vote").at(-1) ?? null;
+  }, [game]);
+  const latestSpeechEntry = useMemo(() => {
+    return game?.transcript.filter((entry) => !entry.privateTo?.length && entry.kind === "speech").at(-1) ?? null;
   }, [game]);
   const latestBlockedActionEntry = useMemo(() => {
     return game?.transcript.filter((entry) => entry.kind === "action" && /was blocked|protected/i.test(entry.text)).at(-1) ?? null;
@@ -193,6 +201,26 @@ export function GameShell() {
   }, [game]);
 
   useEffect(() => {
+    if (!game) {
+      latestPhaseCueRef.current = null;
+      return;
+    }
+
+    const cue = phaseCueFor(game.phase, game.winner);
+    if (!cue) {
+      return;
+    }
+
+    const cueKey = `${game.id}:${game.phase}:${game.day}:${game.nightNumber}:${game.winner ?? "none"}`;
+    if (latestPhaseCueRef.current === cueKey) {
+      return;
+    }
+
+    latestPhaseCueRef.current = cueKey;
+    playGameCue(cue);
+  }, [game]);
+
+  useEffect(() => {
     if (!game || !latestVoteEntry) {
       return;
     }
@@ -205,6 +233,39 @@ export function GameShell() {
     latestVoteCueRef.current = cueKey;
     playVoteCue();
   }, [game, latestVoteEntry]);
+
+  useEffect(() => {
+    if (!game?.currentPrompt || game.phase === "game-over") {
+      return;
+    }
+
+    const cueKey = `${game.id}:${game.phase}:${game.day}:${game.nightNumber}:${game.currentPrompt}`;
+    if (latestPromptCueRef.current === cueKey) {
+      return;
+    }
+
+    latestPromptCueRef.current = cueKey;
+    playGameCue("human-prompt");
+  }, [game]);
+
+  useEffect(() => {
+    if (!game || !latestSpeechEntry || latestSpeechEntry.speakerId === "narrator" || latestSpeechEntry.speakerId === "system") {
+      return;
+    }
+
+    const cueKey = `${game.id}:${latestSpeechEntry.id}:accusation`;
+    if (latestAccusationCueRef.current === cueKey) {
+      return;
+    }
+
+    const mentionedPlayers = mentionedPlayersInText(game.players, latestSpeechEntry.text, latestSpeechEntry.speakerId);
+    if (!mentionedPlayers.length || !isPressureLine(latestSpeechEntry.text)) {
+      return;
+    }
+
+    latestAccusationCueRef.current = cueKey;
+    playGameCue("accusation");
+  }, [game, latestSpeechEntry]);
 
   useEffect(() => {
     if (!game || !latestBlockedActionEntry) {
@@ -692,10 +753,13 @@ export function GameShell() {
       return;
     }
 
-    const sound = button.dataset.sfx === "start" ? uiStartRef.current : uiClickRef.current;
-    const volume = button.dataset.sfx === "start" ? UI_START_VOLUME : UI_CLICK_VOLUME;
+    if (button.dataset.sfx === "start") {
+      playGameCue("start");
+      return;
+    }
+
     const forceSound = button.dataset.sfx === "sound-toggle";
-    playUiSound(sound, volume, forceSound);
+    playUiSound(uiClickRef.current, UI_CLICK_VOLUME, forceSound);
   }
 
   function playButtonSoundFromHover(event: {
@@ -809,6 +873,20 @@ export function GameShell() {
     const cue = sound.cloneNode(true) as HTMLAudioElement;
     cue.volume = volume;
     void cue.play().catch(() => undefined);
+  }
+
+  function playGameCue(cue: DesignedCue) {
+    if (audioMuted) {
+      return;
+    }
+
+    void playDesignedCue(decisionAudioContextRef.current, cue)
+      .then((context) => {
+        decisionAudioContextRef.current = context;
+      })
+      .catch(() => {
+        playUiSound(cue === "start" ? uiStartRef.current : uiClickRef.current, cue === "start" ? UI_START_VOLUME : 0.22);
+      });
   }
 
   function playDecisionCue() {
@@ -1104,6 +1182,12 @@ function joinDictationText(...parts: Array<string | undefined>): string {
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function isPressureLine(text: string): boolean {
+  return /\b(accuse|alibi|blood|cover|dodg|guilty|knife|lie|liar|lying|mafia|murder|quiet|suspicious|suspect|vote|voted|why)\b/i.test(
+    text
+  );
 }
 
 function micErrorMessage(error: string | undefined): string {

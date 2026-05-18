@@ -2,6 +2,8 @@
 
 Voice in the current app is direct TTS playback for NPCs and narration. It is not an ElevenLabs Agent/WebRTC session and does not use multi-voice XML tags.
 
+Sound design is handled locally in the browser. The app uses small bundled files for UI clicks/start fallback and home ambience, then layers Web Audio cues for game-state moments.
+
 ## Playback Order
 
 1. The game appends a public narration or speech transcript entry.
@@ -42,6 +44,21 @@ Only NPCs and the narrator need ElevenLabs voice IDs. Human speech is submitted 
 The Use Mic button is a browser speech-recognition helper only. It requests microphone permission with `getUserMedia`, starts the browser `SpeechRecognition`/`webkitSpeechRecognition` API, and writes recognized words into the human text box. The player can edit the text before submitting.
 
 Dictation requires a supported browser and a secure context such as `localhost` or HTTPS. If permission is blocked, no microphone is available, no speech is heard, or the browser speech service is unavailable, the UI reports that status and the player can keep typing.
+
+## Sound Effects
+
+`components/game/sound-design.ts` owns the procedural cue palette:
+
+- start sting for game launch and replay
+- night drop
+- day reveal
+- voting ticks
+- verdict stamp
+- player-turn prompt
+- accusation scrape when a pressure line names another living player
+- town/mafia game-over stings
+
+The existing ambience loop continues underneath when sound is on and fades down while voice playback is active. Voice mode can be Off while ambience and sound effects stay enabled.
 
 ## TTS Cache
 
