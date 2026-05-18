@@ -1,59 +1,124 @@
 # Agent Mafia
 
-Agent Mafia is a local-first single-player Mafia prototype set around a noir Palermo table. You play one human seat against five LLM-driven NPCs: Don Vito, Salvatore, Rosa, Vincenzo, and Carmela. The app runs a real six-player Mafia loop with hidden roles, private knowledge, night actions, discussion, votes, eliminations, and win/loss checks.
+Agent Mafia is a local-first, bring-your-own-key Mafia game for one human player and five AI-driven suspects at a noir Palermo table. You argue, accuse, lie, investigate, vote, and survive while the NPCs use hidden roles, private knowledge, and compact characterful dialogue to play a real six-seat Mafia round.
 
-The current build is intentionally simple: one Next.js app, a 2D CSS table UI, OpenAI-backed NPC turns with deterministic fallbacks, optional ElevenLabs REST TTS, and browser voice fallback. Human input is text-first; the mic button is only a browser speech-recognition helper that fills the text box.
+No hosted account is required. Clone the repo, add your own OpenAI key for generated NPC turns, optionally add ElevenLabs voices, and play in the browser.
 
-## Status
+![Agent Mafia start screen](public/readme/home-screen.png)
 
-This repo is the playable local demo version of the project. It does not currently use Three.js, Tailwind, shadcn, Bun/Hono, SQLite, ElevenLabs Agents/WebRTC, Custom LLM SSE, or multi-voice XML routing.
+## Why Play It
 
-Implemented today:
+- A complete six-player Mafia loop: two Mafia, one Detective, one Doctor, two Villagers.
+- One human seat against five NPC personalities: Don Vito, Salvatore, Rosa, Vincenzo, and Carmela.
+- Hidden roles, Mafia partner knowledge, Detective private intel, Doctor saves, day discussion, voting, eliminations, and win checks.
+- OpenAI-powered NPC turns with deterministic fallback turns when no API key is configured.
+- Optional direct ElevenLabs REST TTS, plus browser speech synthesis fallback and a text transcript for every spoken line.
+- Text-first human input, with an optional browser mic helper that fills the text box.
+- Pixel noir 2D table UI with character portraits, role cards, vote board, transcript, and local debug logs.
 
-- Six fixed seats: five NPCs plus the human player.
-- Random roles: two Mafia, one Detective, one Doctor, two Villagers.
-- Detective-only starting Mafia lead.
-- Mafia partner visibility.
-- First-night safety with Doctor/Detective actions still allowed.
-- Randomized day discussion order with NPC pressure turns.
-- OpenAI NPC dialogue and decisions, with fallback lines/actions when no API key is configured.
-- Direct ElevenLabs TTS by speaker when voice IDs are configured.
-- Browser speech synthesis fallback.
-- Voice-off mode for sound effects and ambience without spoken playback.
-- Local ambience and UI sound effects from `public/sfx`.
-- Text transcript, vote board, role card, pause/new-game controls, and avatar/portrait UI.
-- Full local game logs written to `.agent-mafia-logs/` for debugging bad conversations.
+## Screenshots
 
-## Run Locally
+Customize the table before the round starts:
+
+![Agent Mafia character selection](public/readme/character-selection.png)
+
+Then play the full social deduction loop:
+
+![Agent Mafia in-game table](public/readme/game-table.png)
+
+## Quick Start
+
+Requirements:
+
+- Node.js `20.9.0` or newer.
+- An OpenAI API key if you want generated NPC turns.
+- Optional ElevenLabs API key and voice IDs if you want server-side TTS.
 
 ```bash
+git clone <your-fork-or-this-repo-url>
+cd agent-mafia
 npm install
+cp .env.example .env
 npm run dev -- -p 3001
 ```
 
 Open `http://localhost:3001`.
 
-Useful checks:
+The game still runs without `OPENAI_API_KEY`, but NPC turns use deterministic fallback behavior. For the intended experience, add your own OpenAI key to `.env`.
+
+## Environment Variables
+
+Copy `.env.example` to `.env`, then fill only what you need:
 
 ```bash
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.4-mini
+OPENAI_API_MODE=responses
+OPENAI_REASONING_EFFORT=low
+OPENAI_MAX_OUTPUT_TOKENS=900
+OPENAI_TEMPERATURE=0.62
+
+ELEVENLABS_API_KEY=
+ELEVENLABS_TTS_MODEL=eleven_flash_v2_5
+ELEVENLABS_MAX_TTS_CHARS=900
+ELEVENLABS_TTS_CACHE_ENABLED=true
+ELEVENLABS_TTS_CACHE_DIR=.agent-mafia-cache/tts
+ELEVENLABS_VOICE_NARRATOR=
+ELEVENLABS_VOICE_DON_VITO=
+ELEVENLABS_VOICE_SALVATORE=
+ELEVENLABS_VOICE_ROSA=
+ELEVENLABS_VOICE_VINCENZO=
+ELEVENLABS_VOICE_CARMELA=
+```
+
+Important details:
+
+- `OPENAI_API_KEY` enables generated NPC speech and decisions.
+- `OPENAI_MODEL` defaults to `gpt-5.4-mini`.
+- `OPENAI_API_MODE=responses` is the default path.
+- `OPENAI_API_MODE=chat` is available for Chat Completions-compatible models.
+- `OPENAI_REASONING_EFFORT=low|medium|high` controls reasoning depth for compatible models.
+- `OPENAI_MAX_OUTPUT_TOKENS` includes reasoning tokens for reasoning models.
+- `OPENAI_TEMPERATURE` is only used by the chat fallback path.
+- `ELEVENLABS_API_KEY` and the per-speaker `ELEVENLABS_VOICE_*` IDs enable direct REST TTS.
+- If ElevenLabs is not configured, the game falls back to browser speech synthesis and always keeps the transcript visible.
+
+## Copy-Paste Setup Prompt
+
+If you use an AI coding agent, this prompt is safe to paste after cloning the repo:
+
+```text
+Set up this local Agent Mafia Next.js app for me. Inspect the repository first, then:
+1. Confirm my Node version is >=20.9.0.
+2. Run npm install if dependencies are missing.
+3. Copy .env.example to .env only if .env does not already exist.
+4. Tell me exactly which values I need to add for OPENAI_API_KEY and optional ElevenLabs voice IDs, but do not invent keys.
+5. Run npm run typecheck.
+6. Start the app with npm run dev -- -p 3001.
+7. Give me the local URL and summarize any setup problems.
+Do not add new frameworks, databases, hosted services, or voice systems.
+```
+
+## Useful Commands
+
+```bash
+npm run dev -- -p 3001
 npm run typecheck
 npm run build
 ```
 
-## Local Conversation Logs
+Optional API-only smoke test:
 
-Every started or updated game writes a full JSON snapshot to `.agent-mafia-logs/`, which is intentionally gitignored. Use `.agent-mafia-logs/latest.json` for the most recent game, or a specific `.agent-mafia-logs/<game-id>.json` file when comparing an exact transcript, hidden roles, votes, inner monologues, and state.
+```bash
+npm run playtest:api
+```
 
-## Environment
+## Local Logs
 
-Copy `.env.example` to `.env` and fill only what you need.
+Every started or updated game writes a full JSON snapshot to `.agent-mafia-logs/`, which is intentionally gitignored.
 
-- `OPENAI_API_KEY` enables generated NPC turns.
-- `OPENAI_MODEL` defaults to `gpt-5.4-mini`; `OPENAI_API_MODE` defaults to `responses`.
-- `OPENAI_REASONING_EFFORT` defaults to `low` so the table uses a cheaper reasoning-capable model by default.
-- Without `OPENAI_API_KEY`, the game still plays with deterministic fallback turns.
-- `ELEVENLABS_API_KEY` plus per-speaker voice IDs enables REST TTS.
-- Without ElevenLabs config, browser speech synthesis is used.
+- `.agent-mafia-logs/latest.json` is the most recent game.
+- `.agent-mafia-logs/<game-id>.json` stores exact transcripts, hidden roles, votes, inner monologues, and state for a specific round.
 
 ## Current Stack
 
@@ -65,24 +130,27 @@ Copy `.env.example` to `.env` and fill only what you need.
 - Pixelarticons
 - Plain CSS in `app/globals.css`
 - In-memory local game sessions
+- Optional direct ElevenLabs REST TTS
 
 ## Project Structure
 
 - `app/` - Next routes and global CSS.
 - `components/GameShell.tsx` - current game UI shell.
-- `lib/game/` - game state, role setup, phase advancement, votes, night actions, redaction, selectors.
-- `lib/ai/` - NPC personas, prompts, OpenAI turn generation, fallback turns.
+- `components/game/` - home screen, table UI, panels, audio helpers, settings dialog, and game API client.
+- `lib/game/` - game state, role setup, phase advancement, votes, night actions, redaction, selectors, and profanity sanitization.
+- `lib/ai/` - NPC personas, prompts, OpenAI turn generation, and fallback turns.
 - `lib/voice/` - speaker-to-ElevenLabs voice ID mapping.
 - `public/avatars/` and `public/portraits/` - player and NPC table portraits.
+- `public/readme/` - README screenshots captured from the app.
 - `public/sfx/` - local ambience and UI sounds.
 - `docs/` - current architecture, voice, demo, portrait generation, and cleanup notes.
 
 ## Docs
 
 - `docs/architecture.md` - how the current app works.
-- `docs/nextjs-16.md` - Next.js 16 upgrade and local documentation rules.
 - `docs/voice.md` - current voice/TTS behavior and env vars.
 - `docs/demo.md` - local demo runbook.
 - `docs/portraits.md` - pixel-art portrait generation prompt.
 - `docs/refactor-notes.md` - cleanup findings and maintenance notes.
+- `docs/nextjs-16.md` - Next.js 16 upgrade and local documentation rules.
 - `AGENTS.md` - instructions for coding agents working in this repo.
