@@ -248,6 +248,7 @@ export function HumanPanel({
   setHumanText,
   busy,
   listening,
+  dictationState,
   micInputEnabled,
   onSubmitSpeech,
   onStartListening,
@@ -259,6 +260,7 @@ export function HumanPanel({
   setHumanText: (text: string) => void;
   busy: boolean;
   listening: boolean;
+  dictationState: "idle" | "requesting" | "recording" | "transcribing";
   micInputEnabled: boolean;
   onSubmitSpeech: () => void;
   onStartListening: () => void;
@@ -277,6 +279,7 @@ export function HumanPanel({
   }
 
   if (prompt === "human-speech") {
+    const dictationMessage = dictationCopyFor(dictationState);
     return (
       <section className="human-panel">
         <p className="eyebrow">Your Turn</p>
@@ -286,6 +289,12 @@ export function HumanPanel({
           placeholder="Accuse, defend, lie, or stall..."
           rows={4}
         />
+        {dictationMessage ? (
+          <div className={`dictation-indicator dictation-${dictationState}`} role="status" aria-live="polite">
+            <span className="dictation-dot" aria-hidden="true" />
+            <span>{dictationMessage}</span>
+          </div>
+        ) : null}
         <div className="speech-actions">
           {micInputEnabled ? (
             <button
@@ -293,10 +302,9 @@ export function HumanPanel({
               disabled={busy}
               className={listening ? "listening" : ""}
               aria-pressed={listening}
-              title={listening ? "Stop microphone recording" : "Record microphone audio for Whisper transcription"}
             >
               <Mic aria-hidden="true" />
-              {listening ? "Stop Mic" : "Use Mic"}
+              {listening ? "Stop Dictation" : "Dictate"}
             </button>
           ) : null}
           <button onClick={onSubmitSpeech} disabled={busy || !humanText.trim()}>
@@ -325,6 +333,19 @@ export function HumanPanel({
   const targetIds = roleActionTargets(game, human);
   const targets = game.players.filter((player) => targetIds.includes(player.id));
   return <TargetPanel title={nightPromptTitleForRole(human.role)} targets={targets} busy={busy} onPick={onSubmitNightAction} />;
+}
+
+function dictationCopyFor(state: "idle" | "requesting" | "recording" | "transcribing"): string {
+  if (state === "requesting") {
+    return "Requesting microphone access...";
+  }
+  if (state === "recording") {
+    return "Dictating... stop when finished. Nothing submits until you press Submit Speech.";
+  }
+  if (state === "transcribing") {
+    return "Transcribing... the text will appear here for review.";
+  }
+  return "";
 }
 
 export function GameOverPanel({

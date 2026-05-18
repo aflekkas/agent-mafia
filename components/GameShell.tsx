@@ -133,6 +133,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
     setStatus("Screen too small. Resize to continue.");
     cancelMicCapture();
     setListening(false);
+    setDictationState("idle");
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
@@ -703,6 +704,7 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
     clearPrefetchedAdvance();
     stopMicCapture();
     setListening(false);
+    setDictationState("idle");
     setBusy(true);
     setStatus("Autoplay choosing your move.");
     try {
@@ -802,6 +804,9 @@ export function GameShell({ micInputEnabled = true }: { micInputEnabled?: boolea
 
   function confirmExit() {
     clearPrefetchedAdvance();
+    cancelMicCapture();
+    setListening(false);
+    setDictationState("idle");
     setGame(null);
     setHumanText("");
     setDialogMode(null);
